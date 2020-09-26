@@ -102,6 +102,7 @@ exports.register = [
  *
  * @returns {Object}
  */
+
 exports.login = [
 	body("email").isLength({ min: 1 }).trim().withMessage("Email must be specified.")
 		.isEmail().withMessage("Email must be a valid email address."),
