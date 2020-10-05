@@ -98,7 +98,7 @@ exports.create = [
     auth,
     body("name", "Name must not be empty.").isLength({ min: 1 }).trim(),
     body("place").trim(),
-    body("coordinates", "Invalid coordinates").custom(({ lat, lon }, { req }) => {
+    body("coordinates", "Invalid coordinates").custom(({ lat, lon }) => {
         const reg = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/;
         return reg.exec(lat) && reg.exec(lon);
     }),
