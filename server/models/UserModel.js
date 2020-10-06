@@ -1,11 +1,14 @@
 var mongoose = require("mongoose");
+const privilegeEnum = require("../helpers/privilegeEnum");
 
 var UserSchema = new mongoose.Schema({
 	firstName: {type: String, required: true},
-	lastName: {type: String, required: true},
-	email: {type: String, required: true},
+	lastName: {type: String, required: false},
+	email: {type: String, required: false},
+	phone:{type:Number,required:true },
+	type:{type:Number,default:privilegeEnum.salesman},
 	password: {type: String, required: true},
-	isConfirmed: {type: Boolean, required: true, default: 0},
+	isConfirmed: {type: Boolean, required: true, default: true},
 	confirmOTP: {type: String, required:false},
 	otpTries: {type: Number, required:false, default: 0},
 	status: {type: Boolean, required: true, default: 1}
@@ -15,7 +18,13 @@ var UserSchema = new mongoose.Schema({
 UserSchema
 	.virtual("fullName")
 	.get(function () {
-		return this.firstName + " " + this.lastName;
+		// eslint-disable-next-line no-extra-boolean-cast
+		return this.firstName + ((!!this.lastName)? " " + this.lastName : "");
+	})
+	.set(function (fullName){
+		const splitted = fullName.split(" ");
+		this.firstName = splitted[0];
+		this.lastName = splitted[1] || undefined;
 	});
 
 module.exports = mongoose.model("User", UserSchema);

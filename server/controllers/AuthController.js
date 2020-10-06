@@ -8,24 +8,99 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
+const _ = require("lodash");
+
+
+function UserData(params) {
+	this._id = params.id;
+	this.firstName = params.firstName
+	this.lastName=params.lastName;
+	this.email = params.email;
+	this.phone = params.phone;
+}
 
 /**
  * User registration.
  *
  * @param {string}      firstName
- * @param {string}      lastName
- * @param {string}      email
+ * @param {string=}      lastName
+ * @param {string=}      email
+ * @param {number}		phone
  * @param {string}      password
  *
  * @returns {Object}
  */
+function register(req, res) {
+	try {
+		// Extract the validation errors from a request.
+		const errors = validationResult(req);
+		debugger;
+		if (!errors.isEmpty()) {
+			// Display sanitized values/errors messages.
+			return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
+		} else {
+			//hash input password
+			bcrypt.hash(req.body.password,10,function(err, hash) {
+				// generate OTP for confirmation
+				//let otp = utility.randomNumber(4);
+				// Create User object with escaped and trimmed data
+				const undefinedOmitter = {
+					firstName: req.body.firstName,
+					lastName: req.body.lastName,
+					email: req.body.email,
+					phone: parseInt(req.body.phone),
+					password: hash,
+					//confirmOTP: otp
+				};
+
+				var user = new UserModel(
+					undefinedOmitter
+				);
+				
+				// Html email body
+				//let html = "<p>Please Confirm your Account.</p><p>OTP: "+otp+"</p>";
+				// Send confirmation email
+				/*mailer.send(
+					constants.confirmEmails.from, 
+					req.body.email,
+					"Confirm Account",
+					html
+				).then(function(){*/
+					// Save user.
+					user.save(function (err) {
+						if (err) { return apiResponse.ErrorResponse(res, err); }
+						let userData = new UserData(user);
+						return apiResponse.successResponseWithData(res,"Registration Success.",  userData);
+					});
+				/*}).catch(err => {
+					console.log(err);
+					return apiResponse.ErrorResponse(res,err);
+				}) ;*/
+			});
+		}
+	} catch (err) {
+		//throw error in json response with status 500.
+		return apiResponse.ErrorResponse(res, err);
+	}
+}
+	
+
+
 exports.register = [
 	// Validate fields.
 	body("firstName").isLength({ min: 1 }).trim().withMessage("First name must be specified.")
 		.isAlphanumeric().withMessage("First name has non-alphanumeric characters."),
-	body("lastName").isLength({ min: 1 }).trim().withMessage("Last name must be specified.")
+	body("lastName").trim().optional()
 		.isAlphanumeric().withMessage("Last name has non-alphanumeric characters."),
-	body("email").isLength({ min: 1 }).trim().withMessage("Email must be specified.")
+	body("phone").isLength({ min: 10, max:10 }).trim().withMessage("Phone must be 10 digits.")
+		.custom((value) => {
+			return UserModel.findOne({phone : parseInt(value)}).then((user) => {
+				if (user) {
+					return Promise.reject("Phone already in use");
+				}
+		});
+	}),
+	body("email").trim().optional()
 		.isEmail().withMessage("Email must be a valid email address.").custom((value) => {
 			return UserModel.findOne({email : value}).then((user) => {
 				if (user) {
@@ -37,77 +112,25 @@ exports.register = [
 	// Sanitize fields.
 	sanitizeBody("firstName").escape(),
 	sanitizeBody("lastName").escape(),
+	sanitizeBody("phone").escape(),
 	sanitizeBody("email").escape(),
 	sanitizeBody("password").escape(),
 	// Process request after validation and sanitization.
-	(req, res) => {
-		try {
-			// Extract the validation errors from a request.
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				// Display sanitized values/errors messages.
-				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
-			}else {
-				//hash input password
-				bcrypt.hash(req.body.password,10,function(err, hash) {
-					// generate OTP for confirmation
-					let otp = utility.randomNumber(4);
-					// Create User object with escaped and trimmed data
-					var user = new UserModel(
-						{
-							firstName: req.body.firstName,
-							lastName: req.body.lastName,
-							email: req.body.email,
-							password: hash,
-							confirmOTP: otp
-						}
-					);
-					// Html email body
-					let html = "<p>Please Confirm your Account.</p><p>OTP: "+otp+"</p>";
-					// Send confirmation email
-					mailer.send(
-						constants.confirmEmails.from, 
-						req.body.email,
-						"Confirm Account",
-						html
-					).then(function(){
-						// Save user.
-						user.save(function (err) {
-							if (err) { return apiResponse.ErrorResponse(res, err); }
-							let userData = {
-								_id: user._id,
-								firstName: user.firstName,
-								lastName: user.lastName,
-								email: user.email
-							};
-							return apiResponse.successResponseWithData(res,"Registration Success.", userData);
-						});
-					}).catch(err => {
-						console.log(err);
-						return apiResponse.ErrorResponse(res,err);
-					}) ;
-				});
-			}
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
-		}
-	}];
+	register];
 
 /**
  * User login.
  *
- * @param {string}      email
+ * @param {string}      phone
  * @param {string}      password
  *
  * @returns {Object}
  */
 
 exports.login = [
-	body("email").isLength({ min: 1 }).trim().withMessage("Email must be specified.")
-		.isEmail().withMessage("Email must be a valid email address."),
+	body("phone").isLength({ min: 1, max:10 }).trim().withMessage("Phone must be specified."),
 	body("password").isLength({ min: 1 }).trim().withMessage("Password must be specified."),
-	sanitizeBody("email").escape(),
+	sanitizeBody("phone").escape(),
 	sanitizeBody("password").escape(),
 	(req, res) => {
 		try {
@@ -115,7 +138,7 @@ exports.login = [
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
 			}else {
-				UserModel.findOne({email : req.body.email}).then(user => {
+				UserModel.findOne({phone : parseInt(req.body.phone)}).then(user => {
 					if (user) {
 						//Compare given password with db's hash.
 						bcrypt.compare(req.body.password,user.password,function (err,same) {
@@ -124,14 +147,10 @@ exports.login = [
 								if(user.isConfirmed){
 									// Check User's account active or not.
 									if(user.status) {
-										let userData = {
-											_id: user._id,
-											firstName: user.firstName,
-											lastName: user.lastName,
-											email: user.email,
-										};
+										let userData = new UserData(user);
+
 										//Prepare JWT token for authentication
-										const jwtPayload = userData;
+										const jwtPayload = _.pick(userData,["_id","phone","type","firstName"]);
 										const jwtData = {
 											expiresIn: process.env.JWT_TIMEOUT_DURATION,
 										};
@@ -146,11 +165,11 @@ exports.login = [
 									return apiResponse.unauthorizedResponse(res, "Account is not confirmed. Please confirm your account.");
 								}
 							}else{
-								return apiResponse.unauthorizedResponse(res, "Email or Password wrong.");
+								return apiResponse.unauthorizedResponse(res, "Phone or Password wrong.");
 							}
 						});
 					}else{
-						return apiResponse.unauthorizedResponse(res, "Email or Password wrong.");
+						return apiResponse.unauthorizedResponse(res, "User not found");
 					}
 				});
 			}
