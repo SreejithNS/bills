@@ -1,17 +1,6 @@
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
-
-const LocationSchema = new Schema({
-	type: {
-		type: String,
-		enum: ["Point"],
-		required: true
-	},
-	coordinates: {
-		type: [Number],
-		required: true
-	}
-});
+const LocationSchema = require("./LocationSchema");
 
 const CustomerSchema = new Schema(
 	{
