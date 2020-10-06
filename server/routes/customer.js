@@ -4,7 +4,7 @@ const CustomerController = require("../controllers/CustomerController");
 var router = express.Router();
 
 router.get("/:id", CustomerController.get);
-router.get("/getAll", CustomerController.getAll);
+router.get("/", CustomerController.getAll);
 router.post("/", CustomerController.create);
 router.delete("/:id", CustomerController.delete);
 
