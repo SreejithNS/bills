@@ -13,7 +13,7 @@ const _ = require("lodash");
 
 function UserData(params) {
 	this._id = params.id;
-	this.firstName = params.firstName
+	this.firstName = params.firstName;
 	this.lastName=params.lastName;
 	this.email = params.email;
 	this.phone = params.phone;
@@ -34,7 +34,6 @@ function register(req, res) {
 	try {
 		// Extract the validation errors from a request.
 		const errors = validationResult(req);
-		debugger;
 		if (!errors.isEmpty()) {
 			// Display sanitized values/errors messages.
 			return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());

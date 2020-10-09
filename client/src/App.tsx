@@ -10,8 +10,7 @@ function App() {
         </p>
         <a
           className="App-link"
-          href="#"
-          target="_blank"
+          href="/#"
           rel="noopener noreferrer"
         >
           Bills Client Ready
