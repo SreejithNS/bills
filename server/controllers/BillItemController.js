@@ -11,6 +11,16 @@ const Product = require("../models/ProductModel");
     get(code),
     update
 */
+function ProductData(data) {
+    this.code = data.code
+    this.name = data.code
+    this.weight = data.weight
+    this.weightUnit = data.weightUnit
+    this.quantity = data.quantity
+    this.rate = data.rate
+    this.mrp = data.mrp
+}
+
 exports.delete = [
     auth,
     function (req, res) {
