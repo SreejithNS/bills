@@ -5,6 +5,7 @@ const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
 
 var mongoose = require("mongoose");
+const BillModel = require("../models/BillModel");
 
 mongoose.set("useFindAndModify", false);
 
@@ -47,28 +48,26 @@ exports.billsList = [
 
 
 /**
- * Get Bills List of the logged in user.
- * 
- * @returns {Object}
+ * Get Bills List of the logged in user
  */
 
-exports.billsList = [
-	auth,
-	function (req, res) {
-		try {
-			Bill.find({ user: req.user._id }).then((books) => {
-				if (books.length > 0) {
-					return apiResponse.successResponseWithData(res, "Operation success", books);
-				} else {
-					return apiResponse.successResponseWithData(res, "Operation success", []);
-				}
-			});
-		} catch (err) {
-			//throw error in json response with status 500. 
-			return apiResponse.ErrorResponse(res, err);
-		}
-	}
-];
+// exports.billsList = [
+// 	auth,
+// 	function (req, res) {
+// 		try {
+// 			Bill.find({ user: req.user._id }).then((books) => {
+// 				if (books.length > 0) {
+// 					return apiResponse.successResponseWithData(res, "Operation success", books);
+// 				} else {
+// 					return apiResponse.successResponseWithData(res, "Operation success", []);
+// 				}
+// 			});
+// 		} catch (err) {
+// 			//throw error in json response with status 500. 
+// 			return apiResponse.ErrorResponse(res, err);
+// 		}
+// 	}
+// ];
 
 /**
  * Book Detail.
@@ -100,48 +99,49 @@ exports.bookDetail = [
 ];
 
 /**
- * Book store.
+ * Save a bill
  * 
- * @param {string}      title 
- * @param {string}      description
- * @param {string}      isbn
+ * @param {string}      customerId 
+ * @param {string[]}    items
+ * @param {string}      discountAmount
  * 
  * @returns {Object}
  */
 exports.bookStore = [
 	auth,
-	body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
-	body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
-	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value, { req }) => {
-		return Book.findOne({ isbn: value, user: req.user._id }).then(book => {
-			if (book) {
-				return Promise.reject("Book already exist with this ISBN no.");
-			}
-		});
+	body("customerId", "customerId must not be empty.").isLength({ min: 1 }).trim(),
+	body("items", "items List must not be empty.").isLength({ min: 1 }),
+	body("discountAmount", "ISBN must not be empty").custom((value) => {
+		if (value < 0) {
+			return Promise.reject("discountAmount must not be negative");
+		}
 	}),
 	sanitizeBody("*").escape(),
 	(req, res) => {
 		try {
 			const errors = validationResult(req);
-			var book = new Book(
-				{
-					title: req.body.title,
-					user: req.user,
-					description: req.body.description,
-					isbn: req.body.isbn
-				});
 
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
 			}
-			else {
-				//Save book.
-				book.save(function (err) {
-					if (err) { return apiResponse.ErrorResponse(res, err); }
-					let bookData = new BookData(book);
-					return apiResponse.successResponseWithData(res, "Book add Success.", bookData);
+
+			return BillModel.parseClientSideBillData(req.body)
+				.then(() => {
+					const bill = new BillModel({
+						...req.body
+					});
+
+					bill.soldBy = req.user._id;
+					bill.calculateItemsTotalAmount();
+					bill.calculateBillAmount();
+					// TODO: Finish this save bill function and test
+					bill.save((err) => {
+						if (err) { return apiResponse.ErrorResponse(res, err); }
+						return apiResponse.successResponseWithData(res, "Bill added", new BillModel(bill).lean());
+					});
+				}, (err) => {
+					return apiResponse.ErrorResponse(res, err);
 				});
-			}
 		} catch (err) {
 			//throw error in json response with status 500. 
 			return apiResponse.ErrorResponse(res, err);
