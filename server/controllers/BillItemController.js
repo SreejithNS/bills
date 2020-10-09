@@ -11,6 +11,38 @@ const Product = require("../models/ProductModel");
     get(code),
     update
 */
+exports.delete = [
+    auth,
+    function (req, res) {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
+        }
+        try {
+            Product.findById(req.params.id, function (err, foundProduct) {
+                if (foundProduct === null) {
+                    return apiResponse.notFoundResponse(res, "Product not exists with this id");
+                } else {
+                    //Check authorized user
+                    if (foundProduct.createdBy.toString() === req.user._id || req.user.type === privilegeEnum.admin) {
+                        //delete Product.
+                        Product.findByIdAndRemove(req.params.id, function (err) {
+                            if (err) {
+                                return apiResponse.ErrorResponse(res, err);
+                            } else {
+                                return apiResponse.successResponse(res, "Book delete Success.");
+                            }
+                        });
+                    }else return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
+                    
+                }
+            });
+        } catch (err) {
+            //throw error in json response with status 500. 
+            return apiResponse.ErrorResponse(res, err);
+        }
+    }
+];
+
 
 module.exports = [
     auth,
