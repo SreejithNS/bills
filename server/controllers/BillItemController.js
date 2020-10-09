@@ -76,13 +76,84 @@ exports.create = [
                         mrp: req.body.mrp,
                     }, _.identity));
 
-                //Save Customer.
-                newCustomer.save(function (err) {
+                //Save Product.
+                newProduct.save(function (err) {
                     if (err) { return apiResponse.ErrorResponse(res, err); }
-                    let customerData = new CustomerData(newCustomer);
-                    return apiResponse.successResponseWithData(res, "Product add Success.", customerData);
+                    let ProductData = new ProductData(newProduct);
+                    return apiResponse.successResponseWithData(res, "Product add Success.", ProductData);
                 });
             }
+        } catch (err) {
+            //throw error in json response with status 500. 
+            return apiResponse.ErrorResponse(res, err);
+        }
+    }
+];
+
+/** 
+ * Product update.
+ * 
+ * @returns {Object}
+ */
+
+exports.update = [
+    //If I do this do I not need to verify later?
+    auth,
+    body("name").escape().isLength().trim().isAlphanumeric(),
+    body("rate").escape().trim().isNumeric(),
+    body("mrp").escape().trim().isNumeric(),
+    body("weight").optional().escape().trim().isNumeric(),
+    function (req, res) {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return apiResponse.validationErrorWithData(res, "Invalid Product ID", {});
+        }
+        try {
+            //Schema doesn't have phone? 
+            //Do we need updatedAt?
+         
+            Product.findById(req.params.id, "_id name phone place location createdBy createdAt").then((Product) => {
+                if (Product !== null) {
+                    if  (req.body.code)
+                        //I dunno how to use validation here
+                        if (req.body.code)
+                            product.code = req.body.code;
+                    if  (req.body.name)
+                        //do validation here too
+                        if (req.body.name)
+                            product.name = req.body.name;
+                    if  (req.body.rate)
+                        if (req.body.rate)//validation not done
+                            product.rate = req.body.rate;
+
+                    if  (req.body.mrp)
+                        if (req.body.mrp)//validation not done
+                            product.mrp = req.body.mrp;
+
+                   if (req.body.weight)
+                        if (req.body.weight)//validation not done
+                            product.weight = req.body.weight;
+
+                   if  (req.body.weightUnit)
+                        if (req.body.weightUnit)//validation not done
+                            product.weightUnit = req.body.weightUnit;
+
+                    if  (req.body.quantity)
+                        if (req.body.quantity)//validation not done
+                            product.quantity = req.body.quantity;
+
+                    let productData = new ProductData(product);
+                    product.save(function (err) {
+                        if (err) { return apiResponse.ErrorResponse(res, err); }
+                        return apiResponse.successResponseWithData(res, "Product update Success.", productData);
+                    });
+                    if (Product.createdBy === req.user._id || req.user.type === privilegeEnum.admin)
+                        return apiResponse.successResponseWithData(res, "Operation success", productData);
+                    else
+                        return apiResponse.successResponseWithData(res, "Operation success", _.pick(productData, ["name"]));
+                } else {
+                    return apiResponse.successResponseWithData(res, "Operation success: No Product Found", {});
+                }
+            });
         } catch (err) {
             //throw error in json response with status 500. 
             return apiResponse.ErrorResponse(res, err);

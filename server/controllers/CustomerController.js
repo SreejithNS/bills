@@ -238,3 +238,57 @@ exports.delete = [
         }
     }
 ];
+
+/** 
+ * Customer update.
+ * 
+ * @returns {Object}
+ */
+
+exports.update = [
+    auth,
+    function (req, res) {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return apiResponse.validationErrorWithData(res, "Invalid Customer ID", {});
+        }
+        try {
+            //Schema doesn't have phone? 
+            //Do we need updatedAt?
+         
+            Customer.findById(req.params.id, "_id name phone place location createdBy createdAt").then((customer) => {
+                if (customer !== null) {
+                    if  (req.body.name)
+                        //I dunno how to use validation here
+                        if (req.body.isLength({ min: 1 }).trim())
+                            customer.name = req.body.name;
+                    if  (req.body.phone)
+                        //do validation here too
+                        if (req.body.phone.length==10)
+                            customer.phone = req.body.phone;
+                    if  (req.body.place)
+                        if (req.body.place)//validation not done
+                            customer.place = req.body.place;
+                    if  (req.body.location)
+                        const reg = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/;
+                        //CHECK I dont think location schema is implemented with lat and lon?
+                        if (reg.exec(req.body.location.lat) && reg.exec(req.body.location.lon))//validation
+                            customer.location = req.body.location;
+                    let customerData = new CustomerData(newCustomer);
+                    customer.save(function (err) {
+                        if (err) { return apiResponse.ErrorResponse(res, err); }
+                        return apiResponse.successResponseWithData(res, "Customer update Success.", customerData);
+                    });
+                    if (customer.createdBy === req.user._id || req.user.type === privilegeEnum.admin)
+                        return apiResponse.successResponseWithData(res, "Operation success", customerData);
+                    else
+                        return apiResponse.successResponseWithData(res, "Operation success", _.pick(customerData, ["name"]));
+                } else {
+                    return apiResponse.successResponseWithData(res, "Operation success: No Customer Found", {});
+                }
+            });
+        } catch (err) {
+            //throw error in json response with status 500. 
+            return apiResponse.ErrorResponse(res, err);
+        }
+    }
+];
