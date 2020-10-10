@@ -2,11 +2,9 @@ const { body, param, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 const { sanitizeBody } = require("express-validator");
 const auth = require("../middlewares/jwt");
-const onlyAdmin = require("../middlewares/onlyAdmin");
 const _ = require("lodash");
 const apiResponse = require("../helpers/apiResponse");
 const Product = require("../models/ProductModel");
-const privilegeEnum = require("../helpers/privilegeEnum");
 
 /*TODO:
     Create,
@@ -111,7 +109,7 @@ exports.update = [
     //If I do this do I not need to verify later?
     auth,
     body("code").optional().escape().trim().isAlphanumeric(),
-    body("name").optional().escape().trim().isAlphanumeric(),
+    body("name").optional().escape().trim(),
     body("rate").optional().escape().trim().isNumeric(),
     body("mrp").optional().escape().trim().isNumeric(),
     body("weight").optional().escape().trim().isNumeric(),
