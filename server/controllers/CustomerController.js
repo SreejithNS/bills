@@ -1,5 +1,5 @@
 const Customer = require("../models/CustomerModel");
-const { body, validationResult } = require("express-validator");
+const { body,param, validationResult } = require("express-validator");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
@@ -13,6 +13,7 @@ function CustomerData(data) {
     this.id = data._id;
     this.name = data.name;
     this.place = data.place;
+    this.phone = data.phone;
     this.location = data.location;
     this.createdBy = data.createdBy;
     this.createdAt = data.createdAt;
@@ -30,7 +31,7 @@ exports.getAll = [
     function (req, res) {
         try {
             if (req.user.type == privilegeEnum.admin)
-                Customer.find({ createdBy: req.user._id }, "_id name").then((customers) => {
+                Customer.find({ createdBy: req.user._id }, "_id name phone").then((customers) => {
                     if (customers.length > 0) {
                         return apiResponse.successResponseWithData(res, "Operation success", customers);
                     } else {
@@ -97,6 +98,7 @@ exports.get = [
 exports.create = [
     auth,
     body("name", "Name must not be empty.").isLength({ min: 1 }).trim(),
+    body("phone", "Phone Number must not be empty").trim().escape().isNumeric(),
     body("place").optional().trim(),
     body("coordinates", "Invalid coordinates").optional().custom(({ lat, lon }) => {
         const reg = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/;
@@ -112,6 +114,7 @@ exports.create = [
                 let newCustomer = new Customer(
                     _.pickBy({
                         name: req.body.name,
+                        phone:req.body.phone,
                         place: req.body.place || undefined,
                         location: req.body.coordinates ? {
                             type: "Point",
@@ -219,16 +222,14 @@ exports.delete = [
                     return apiResponse.notFoundResponse(res, "Customer not exists with this id");
                 } else {
                     //Check authorized user
-                    if (foundCustomer.createdBy.toString() === req.user._id || req.user.type === privilegeEnum.admin) {
                         //delete Customer.
                         Customer.findByIdAndRemove(req.params.id, function (err) {
                             if (err) {
                                 return apiResponse.ErrorResponse(res, err);
                             } else {
-                                return apiResponse.successResponse(res, "Book delete Success.");
+                                return apiResponse.successResponse(res, "Customer delete Success.");
                             }
                         });
-                    }else return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
                     
                 }
             });
@@ -249,39 +250,21 @@ exports.update = [
     auth,
     function (req, res) {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return apiResponse.validationErrorWithData(res, "Invalid Customer ID", {});
+            return apiResponse.validationErrorWithData(res, "Invalid Customre ID", {});
         }
+        if (!validationResult(req).isEmpty()) return apiResponse.validationErrorWithData(res, "Validation Error.", validationResult(req).array());
+
         try {
-            //Schema doesn't have phone? 
-            //Do we need updatedAt?
-         
-            Customer.findById(req.params.id, "_id name phone place location createdBy createdAt").then((customer) => {
+            Customer.findById(req.params.id).then((customer) => {
                 if (customer !== null) {
-                    if  (req.body.name)
-                        //I dunno how to use validation here
-                        if (req.body.isLength({ min: 1 }).trim())
-                            customer.name = req.body.name;
-                    if  (req.body.phone)
-                        //do validation here too
-                        if (req.body.phone.length==10)
-                            customer.phone = req.body.phone;
-                    if  (req.body.place)
-                        if (req.body.place)//validation not done
-                            customer.place = req.body.place;
-                    if  (req.body.location)
-                        const reg = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/;
-                        //CHECK I dont think location schema is implemented with lat and lon?
-                        if (reg.exec(req.body.location.lat) && reg.exec(req.body.location.lon))//validation
-                            customer.location = req.body.location;
-                    let customerData = new CustomerData(newCustomer);
+
+                    for (let key of Object.keys(req.body)) {
+                        customer[key] = req.body[key];
+                    }
                     customer.save(function (err) {
                         if (err) { return apiResponse.ErrorResponse(res, err); }
-                        return apiResponse.successResponseWithData(res, "Customer update Success.", customerData);
+                        return apiResponse.successResponseWithData(res, "Customer update Success.", JSON.parse(JSON.stringify(new CustomerData(customer))));
                     });
-                    if (customer.createdBy === req.user._id || req.user.type === privilegeEnum.admin)
-                        return apiResponse.successResponseWithData(res, "Operation success", customerData);
-                    else
-                        return apiResponse.successResponseWithData(res, "Operation success", _.pick(customerData, ["name"]));
                 } else {
                     return apiResponse.successResponseWithData(res, "Operation success: No Customer Found", {});
                 }
@@ -290,5 +273,24 @@ exports.update = [
             //throw error in json response with status 500. 
             return apiResponse.ErrorResponse(res, err);
         }
+    }
+];
+
+exports.getSuggestions = [
+    auth,
+    param("name").escape().trim(),
+    (req, res) => {
+        const validation = validationResult(req);
+        if (!validation.isEmpty()) return apiResponse.validationErrorWithData(res, "Validation Error", validation.array());
+
+        Customer.find({
+            name: {
+                $regex: new RegExp(`${req.params.name}`)
+            }
+        }, (err, customers) => {
+            if (err) return apiResponse.ErrorResponse(res, err);
+            if(customers.length === 0) return apiResponse.successResponseWithData(res, `No suggestions for ${req.params.name}`, []);
+            return apiResponse.successResponseWithData(res, `Customers with name: ${req.params.name}`, customers.map(customer => new CustomerData(customer)));
+        }).lean();
     }
 ];

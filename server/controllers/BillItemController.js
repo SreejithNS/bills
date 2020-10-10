@@ -1,9 +1,12 @@
-const { body,validationResult } = require("express-validator");
+const { body, param, validationResult } = require("express-validator");
+const mongoose = require("mongoose");
 const { sanitizeBody } = require("express-validator");
 const auth = require("../middlewares/jwt");
 const onlyAdmin = require("../middlewares/onlyAdmin");
+const _ = require("lodash");
 const apiResponse = require("../helpers/apiResponse");
 const Product = require("../models/ProductModel");
+const privilegeEnum = require("../helpers/privilegeEnum");
 
 /*TODO:
     Create,
@@ -12,13 +15,13 @@ const Product = require("../models/ProductModel");
     update
 */
 function ProductData(data) {
-    this.code = data.code
-    this.name = data.code
-    this.weight = data.weight
-    this.weightUnit = data.weightUnit
-    this.quantity = data.quantity
-    this.rate = data.rate
-    this.mrp = data.mrp
+    this.code = data.code;
+    this.name = data.name;
+    this.weight = data.weight;
+    this.weightUnit = data.weightUnit;
+    this.quantity = data.quantity;
+    this.rate = data.rate;
+    this.mrp = data.mrp;
 }
 
 exports.delete = [
@@ -33,17 +36,15 @@ exports.delete = [
                     return apiResponse.notFoundResponse(res, "Product not exists with this id");
                 } else {
                     //Check authorized user
-                    if (foundProduct.createdBy.toString() === req.user._id || req.user.type === privilegeEnum.admin) {
                         //delete Product.
                         Product.findByIdAndRemove(req.params.id, function (err) {
                             if (err) {
                                 return apiResponse.ErrorResponse(res, err);
                             } else {
-                                return apiResponse.successResponse(res, "Book delete Success.");
+                                return apiResponse.successResponse(res, "Product delete Success.");
                             }
                         });
-                    }else return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
-                    
+
                 }
             });
         } catch (err) {
@@ -53,21 +54,20 @@ exports.delete = [
     }
 ];
 
-//TODO: Create a product from code,name,rate,mrp.  
+//TODO: Create a product from code,name,rate,mrp.
 exports.create = [
     auth,
-    body("code").escape().isLength().trim().isAlphanumeric().custom((value)=>{
-        return Product.findOne({code:value}).then((doc)=>{
-            if(doc) return Promise.reject("Item with this code already exists.");
+    body("code").escape().isLength().trim().isAlphanumeric().custom((value) => {
+        return Product.findOne({ code: value }).then((doc) => {
+            if (doc) return Promise.reject("Item with this code already exists.");
         });
     }),
-    body("name").escape().isLength().trim().isAlphanumeric(),
+    body("name").escape().isLength().trim(),
     body("rate").escape().trim().isNumeric(),
     body("mrp").escape().trim().isNumeric(),
     body("weight").optional().escape().trim().isNumeric(),
-    body("weightUnit").optional().escape().trim().custom((value)=>{
-        return /\b(?:administrator|editor|contributor|user)\b/.exec(value)?true:Promise.reject("Please enter weight");
-
+    body("weightUnit").optional().escape().trim().custom((value) => {
+        return /\b(?:administrator|editor|contributor|user)\b/.exec(value) ? true : Promise.reject("Please enter weight");
     }),
     sanitizeBody("*").escape(),
     (req, res) => {
@@ -76,12 +76,12 @@ exports.create = [
             if (!errors.isEmpty()) {
                 return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
             } else {
-                let newProduct= new Product(
+                let newProduct = new Product(
                     _.pickBy({
                         code: req.body.code,
                         name: req.body.name,
-                        weight: req.body.weight,
-                        weightUnit: req.body.weight,
+                        weight: req.body.weight || undefined,
+                        weightUnit: req.body.weight || undefined,
                         rate: req.body.rate,
                         mrp: req.body.mrp,
                     }, _.identity));
@@ -89,12 +89,12 @@ exports.create = [
                 //Save Product.
                 newProduct.save(function (err) {
                     if (err) { return apiResponse.ErrorResponse(res, err); }
-                    let ProductData = new ProductData(newProduct);
-                    return apiResponse.successResponseWithData(res, "Product add Success.", ProductData);
+                    let productData = new ProductData(newProduct);
+                    return apiResponse.successResponseWithData(res, "Product add Success.", productData);
                 });
             }
         } catch (err) {
-            //throw error in json response with status 500. 
+            //throw error in json response with status 500.
             return apiResponse.ErrorResponse(res, err);
         }
     }
@@ -109,59 +109,77 @@ exports.create = [
 exports.update = [
     //If I do this do I not need to verify later?
     auth,
-    body("name").escape().isLength().trim().isAlphanumeric(),
-    body("rate").escape().trim().isNumeric(),
-    body("mrp").escape().trim().isNumeric(),
+    body("code").optional().escape().trim().isAlphanumeric(),
+    body("name").optional().escape().trim().isAlphanumeric(),
+    body("rate").optional().escape().trim().isNumeric(),
+    body("mrp").optional().escape().trim().isNumeric(),
     body("weight").optional().escape().trim().isNumeric(),
+    body("weightUnit").optional().escape().trim().isAlphanumeric(),
+    function (req, res) {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return apiResponse.validationErrorWithData(res, "Invalid Product ID", {});
+        }
+        if (!validationResult(req).isEmpty()) return apiResponse.validationErrorWithData(res, "Validation Error.", validationResult(req).array());
+
+        try {
+
+            //Schema doesn't have phone? 
+            //Do we need updatedAt?
+
+            Product.findById(req.params.id).then((product) => {
+                if (product !== null) {
+
+                    for (let key of Object.keys(req.body)) {
+                        product[key] = req.body[key];
+                    }
+
+                    product.save(function (err) {
+                        if (err) { return apiResponse.ErrorResponse(res, err); }
+                        return apiResponse.successResponseWithData(res, "Product update Success.", JSON.parse(JSON.stringify(new ProductData(product))));
+                    });
+                } else {
+                    return apiResponse.successResponseWithData(res, "Operation success: No Product Found", {});
+                }
+            });
+        } catch (err) {
+            //throw error in json response with status 500. 
+            return apiResponse.ErrorResponse(res, err);
+        }
+    }
+];
+
+exports.getSuggestions = [
+    auth,
+    param("code").escape().trim(),
+    (req, res) => {
+        const validation = validationResult(req);
+        if (!validation.isEmpty()) return apiResponse.validationErrorWithData(res, "Validation Error", validation.array());
+
+        Product.find({
+            code: {
+                $regex: new RegExp(`${req.params.code}`)
+            }
+        }, (err, products) => {
+            if (err) return apiResponse.ErrorResponse(res, err);
+            if(products.length === 0) return apiResponse.successResponseWithData(res, `No suggestions for ${req.params.code}`, []);
+            return apiResponse.successResponseWithData(res, `Products with code ${req.params.code}`, products.map(product => new ProductData(product)));
+        }).lean();
+    }
+];
+
+exports.get = [
+    auth,
     function (req, res) {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return apiResponse.validationErrorWithData(res, "Invalid Product ID", {});
         }
         try {
-            //Schema doesn't have phone? 
-            //Do we need updatedAt?
-         
-            Product.findById(req.params.id, "_id name phone place location createdBy createdAt").then((Product) => {
-                if (Product !== null) {
-                    if  (req.body.code)
-                        //I dunno how to use validation here
-                        if (req.body.code)
-                            product.code = req.body.code;
-                    if  (req.body.name)
-                        //do validation here too
-                        if (req.body.name)
-                            product.name = req.body.name;
-                    if  (req.body.rate)
-                        if (req.body.rate)//validation not done
-                            product.rate = req.body.rate;
-
-                    if  (req.body.mrp)
-                        if (req.body.mrp)//validation not done
-                            product.mrp = req.body.mrp;
-
-                   if (req.body.weight)
-                        if (req.body.weight)//validation not done
-                            product.weight = req.body.weight;
-
-                   if  (req.body.weightUnit)
-                        if (req.body.weightUnit)//validation not done
-                            product.weightUnit = req.body.weightUnit;
-
-                    if  (req.body.quantity)
-                        if (req.body.quantity)//validation not done
-                            product.quantity = req.body.quantity;
-
+            Product.findById(req.params.id).then((product) => {
+                if (product !== null) {
                     let productData = new ProductData(product);
-                    product.save(function (err) {
-                        if (err) { return apiResponse.ErrorResponse(res, err); }
-                        return apiResponse.successResponseWithData(res, "Product update Success.", productData);
-                    });
-                    if (Product.createdBy === req.user._id || req.user.type === privilegeEnum.admin)
                         return apiResponse.successResponseWithData(res, "Operation success", productData);
-                    else
-                        return apiResponse.successResponseWithData(res, "Operation success", _.pick(productData, ["name"]));
                 } else {
-                    return apiResponse.successResponseWithData(res, "Operation success: No Product Found", {});
+                    return apiResponse.successResponseWithData(res, "Operation success: No product Found", {});
                 }
             });
         } catch (err) {
