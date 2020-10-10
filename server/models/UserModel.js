@@ -5,7 +5,7 @@ var UserSchema = new mongoose.Schema({
 	firstName: {type: String, required: true},
 	lastName: {type: String, required: false},
 	email: {type: String, required: false},
-	phone:{type:Number,required:true },
+	phone:{type:Number,required:true,indexes:{unique:true} },
 	type:{type:Number,default:privilegeEnum.salesman},
 	password: {type: String, required: true},
 	isConfirmed: {type: Boolean, required: true, default: true},
