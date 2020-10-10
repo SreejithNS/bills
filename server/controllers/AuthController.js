@@ -127,7 +127,7 @@ exports.register = [
  */
 
 exports.login = [
-	body("phone").isLength({ min: 1, max:10 }).trim().withMessage("Phone must be specified."),
+	body("phone").trim().isNumeric().withMessage("Valid Phone Number must be specified."),
 	body("password").isLength({ min: 1 }).trim().withMessage("Password must be specified."),
 	sanitizeBody("phone").escape(),
 	sanitizeBody("password").escape(),
