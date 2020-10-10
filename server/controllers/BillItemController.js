@@ -15,6 +15,7 @@ const privilegeEnum = require("../helpers/privilegeEnum");
     update
 */
 function ProductData(data) {
+    this.id = data._id;
     this.code = data.code;
     this.name = data.name;
     this.weight = data.weight;

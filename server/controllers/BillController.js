@@ -6,10 +6,11 @@ const auth = require("../middlewares/jwt");
 
 var mongoose = require("mongoose");
 const BillModel = require("../models/BillModel");
+const CustomerModel = require("../models/CustomerModel");
 
 mongoose.set("useFindAndModify", false);
 
-// Book Schema
+// Bill Schema
 function BookData(data) {
 	this.id = data._id;
 	this.title = data.title;
@@ -24,71 +25,17 @@ function BookData(data) {
  * 
  * @returns {Object}
  */
-exports.billsList = [
+exports.getAllBills = [
 	auth,
 	function (req, res) {
-		if (req.user.type && req.user.type === "admin") {
-			try {
-				Bill.find().then((books) => {
-					if (books.length > 0) {
-						return apiResponse.successResponseWithData(res, "Operation success", books);
-					} else {
-						return apiResponse.successResponseWithData(res, "Operation success", []);
-					}
-				});
-			} catch (err) {
-				//throw error in json response with status 500. 
-				return apiResponse.ErrorResponse(res, err);
-			}
-		} else {
-			return apiResponse.unauthorizedResponse(res, "You are not allowed to do this operation");
-		}
-	}
-];
-
-
-/**
- * Get Bills List of the logged in user
- */
-
-// exports.billsList = [
-// 	auth,
-// 	function (req, res) {
-// 		try {
-// 			Bill.find({ user: req.user._id }).then((books) => {
-// 				if (books.length > 0) {
-// 					return apiResponse.successResponseWithData(res, "Operation success", books);
-// 				} else {
-// 					return apiResponse.successResponseWithData(res, "Operation success", []);
-// 				}
-// 			});
-// 		} catch (err) {
-// 			//throw error in json response with status 500. 
-// 			return apiResponse.ErrorResponse(res, err);
-// 		}
-// 	}
-// ];
-
-/**
- * Book Detail.
- * 
- * @param {string}      id
- * 
- * @returns {Object}
- */
-exports.bookDetail = [
-	auth,
-	function (req, res) {
-		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-			return apiResponse.successResponseWithData(res, "Operation success", {});
-		}
 		try {
-			Book.findOne({ _id: req.params.id, user: req.user._id }, "_id title description isbn createdAt").then((book) => {
-				if (book !== null) {
-					let bookData = new BookData(book);
-					return apiResponse.successResponseWithData(res, "Operation success", bookData);
+			Bill.find({}, (err, bills) => {
+				if (err) return apiResponse.ErrorResponse(res, err);
+
+				if (bills.length > 0) {
+					return apiResponse.successResponseWithData(res, "Operation success", bills);
 				} else {
-					return apiResponse.successResponseWithData(res, "Operation success", {});
+					return apiResponse.successResponseWithData(res, "Operation success", []);
 				}
 			});
 		} catch (err) {
@@ -97,6 +44,7 @@ exports.bookDetail = [
 		}
 	}
 ];
+
 
 /**
  * Save a bill
@@ -107,6 +55,42 @@ exports.bookDetail = [
  * 
  * @returns {Object}
  */
+exports.saveBill = [
+	auth,
+	body("customerId", "Not a valid Customer Id").trim().escape().isMongoId().withMessage("Error in customer id"),
+	body("items", "Items list must be an array").isArray(),
+	body("discountAmount", "Discount should be set").trim().escape().isNumeric(),
+	async function (req, res) {
+		const validationError = validationResult(req);
+		if (!validationError.isEmpty()) return apiResponse.validationErrorWithData(res, "Validation Error for bill", validationError.array());
+
+		await CustomerModel.countDocuments({ _id: req.body.customerId }).exec()
+			.then((count) => {
+				if (count === 0) {
+					return apiResponse.notFoundResponse(res, "CustomerID not found");
+				} else {
+					return Bill.populateItemsWithQuantity(req.body.items);
+				}
+			}, (err) => apiResponse.ErrorResponse(res, "CustomerID error:" + err.message))
+			.then((populatedItems) => {
+				req.body.items = populatedItems;
+
+				var newBill = new Bill({
+					customer: req.body.customerId,
+					items: req.body.items,
+					discountAmount: req.body.discountAmount,
+					soldBy: req.user._id
+				});
+				newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();
+				newBill.billAmount = newBill.calculateBillAmount();
+				
+				return newBill.save();
+			}, (err) => apiResponse.ErrorResponse(res, err.message))
+			.then((bill) => apiResponse.successResponseWithData(res, "Bill created", { id: bill.id })
+				, (err) => apiResponse.ErrorResponse(res, "Error in saving the bill:" + err.message));
+	}
+];
+
 exports.bookStore = [
 	auth,
 	body("customerId", "customerId must not be empty.").isLength({ min: 1 }).trim(),

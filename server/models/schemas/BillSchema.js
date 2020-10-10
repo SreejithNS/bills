@@ -1,17 +1,23 @@
 var mongoose = require("mongoose");
 const Product = require("../ProductModel");
-const Customer = require("../CustomerModel.js");
-const ProductSchema = require("./ProductSchema");
 var Schema = mongoose.Schema;
 
 const BillSchema = new Schema(
 	{
-		items: [{ type: ProductSchema }],
+		items: [{
+			code: { type: String, required: true },
+			name: { type: String, required: true },
+			weight: { type: Number },
+			weightUnit: { type: String },
+			quantity: { type: Number, required: true },
+			rate: { type: Number, default: 0 },
+			mrp: { type: Number, default: 0 },
+		}],
 		customer: { type: Schema.Types.ObjectId, ref: "Customer" },
 		discountAmount: { type: Number, default: 0 },
 		itemsTotalAmount: { type: Number, default: 0 },
 		billAmount: { type: Number, default: 0 },
-		soldBy: { type: Schema.Types.ObjectId }
+		soldBy: { type: Schema.Types.ObjectId, ref: "User" }
 	},
 	{ timestamps: true }
 );
@@ -127,10 +133,10 @@ BillSchema.methods.calculateBillAmount = function () {
 
 
 // set discount in amount that converts to percentage
-BillSchema.virtual("billAmount").set(function (amount) {
-	const itemsTotalAmount = this.itemsTotalAmount;
-	this.discountPercentage = parseFloat(((amount / itemsTotalAmount) * 100).toFixed(2));
-});
+// BillSchema.virtual("discountAmount").set(function (amount) {
+// 	const itemsTotalAmount = this.itemsTotalAmount;
+// 	this.discountPercentage = parseFloat(((amount / itemsTotalAmount) * 100).toFixed(2));
+// });
 
 /** 
  *	derive discount percentage from the discount amount
@@ -156,30 +162,21 @@ BillSchema.virtual("discountPercentage")
  * @param {string} clientIdString
  * @returns {object} BillSchema ready object
  */
-BillSchema.methods.parseClientSideBillData = function (BillDataFromClient) {
-	const { customer, items } = BillDataFromClient;
+BillSchema.statics.populateItemsWithQuantity = async function (items) {
 	var populatedItems = [];
 
-	Customer.exists(customer, (err, boolean) => {
-		if (err || boolean) throw new Error(err || boolean);
-	});
-
-	for (let item in items) {
-		Product.findById(item.id, (err, document) => {
-			if (err) {
-				throw new Error(err);
-			} else {
-				if (document) {
-					document.quantity = item.quantity;
-					populatedItems.push(document);
-				} else {
-					throw new Error(`Item not found:${document._id}`);
-				}
-			}
-		}).lean();
+	for (let item of items) {
+		const document = await Product.findById(item.id).lean().exec();
+		if (document) {
+			document.quantity = item.quantity;
+			populatedItems.push(document);
+		} else {
+			// apiResponse.ErrorResponse(res,`Product not found:${item.id}`);
+			throw new Error(`Product not found:${item.id}`);
+		}
 	}
 
-	BillDataFromClient.items = populatedItems;
+	return populatedItems;
 };
 
 module.exports = BillSchema;

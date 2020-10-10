@@ -8,7 +8,6 @@ const ProductSchema = new Schema(
 		name: { type: String, required: true },
 		weight: { type: Number },
 		weightUnit: { type: String },
-		quantity:{type: Number},
 		rate: { type: Number, default: 0 },
 		mrp: { type: Number, default: 0 },
 	},
