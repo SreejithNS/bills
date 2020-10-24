@@ -25,8 +25,8 @@ function CustomerData(data) {
  * 
  * @returns {Object}
  */
-
 exports.getAll = [
+    //FIXME: Wrong authorisations and privilage handling.
     auth,
     function (req, res) {
         try {

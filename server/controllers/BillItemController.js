@@ -6,12 +6,6 @@ const _ = require("lodash");
 const apiResponse = require("../helpers/apiResponse");
 const Product = require("../models/ProductModel");
 
-/*TODO:
-    Create,
-    delete,
-    get(code),
-    update
-*/
 function ProductData(data) {
     this.id = data._id;
     this.code = data.code;
@@ -23,9 +17,14 @@ function ProductData(data) {
     this.mrp = data.mrp;
 }
 
+/**
+ * To delete a bill created by the user.
+ * 
+ * @param {Mongoose.Schema.Types.ObjectId} billId - ID of the bill to be deleted.
+ */
 exports.delete = [
     auth,
-    function (req, res) {
+    (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
             return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
         }
@@ -35,14 +34,14 @@ exports.delete = [
                     return apiResponse.notFoundResponse(res, "Product not exists with this id");
                 } else {
                     //Check authorized user
-                        //delete Product.
-                        Product.findByIdAndRemove(req.params.id, function (err) {
-                            if (err) {
-                                return apiResponse.ErrorResponse(res, err);
-                            } else {
-                                return apiResponse.successResponse(res, "Product delete Success.");
-                            }
-                        });
+                    //delete Product.
+                    Product.findByIdAndRemove(req.params.id, function (err) {
+                        if (err) {
+                            return apiResponse.ErrorResponse(res, err);
+                        } else {
+                            return apiResponse.successResponse(res, "Product delete Success.");
+                        }
+                    });
 
                 }
             });
@@ -53,7 +52,16 @@ exports.delete = [
     }
 ];
 
-//TODO: Create a product from code,name,rate,mrp.
+/**
+ * Create a Product.
+ * 
+ * @param {string} name - Name of the product.
+ * @param {string} code - Unique Code of the product.
+ * @param {number} rate - Rate of the product.
+ * @param {number} mrp - MRP of the product.
+ * @param {number} [weight] - Weight of the product.
+ * @param {string} weightUnit - Unit of weight/quantity of the product. For eg. kg, g, pkt, box.
+ */
 exports.create = [
     auth,
     body("code").escape().isLength().trim().isAlphanumeric().custom((value) => {
@@ -99,12 +107,12 @@ exports.create = [
     }
 ];
 
-/** 
- * Product update.
- * 
- * @returns {Object}
- */
 
+/** 
+ * Update any fields of the product
+ * 
+ * @param {Mongoose.Schema.Types.ObjectId} [id] - ID of the product to be updated.
+ */
 exports.update = [
     //If I do this do I not need to verify later?
     auth,
@@ -147,6 +155,12 @@ exports.update = [
     }
 ];
 
+/**
+ * Get suggestions for the matching Product CODE.
+ * 
+ * @param {string} code - Phrase or parts of a product's code
+ * @returns {Products[]} products - Array of products that matches the code phrase
+ */
 exports.getSuggestions = [
     auth,
     param("code").escape().trim(),
@@ -166,6 +180,11 @@ exports.getSuggestions = [
     }
 ];
 
+/**
+ * Get a product details by its ID
+ * 
+ * @param {Mongoose.Schema.Types.ObjectId} id - ID of the product
+ */
 exports.get = [
     auth,
     function (req, res) {
