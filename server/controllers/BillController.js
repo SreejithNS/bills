@@ -9,16 +9,40 @@ const CustomerModel = require("../models/CustomerModel");
 mongoose.set("useFindAndModify", false);
 
 /**
- * Get all Bills List.
- * Only available for admins
+ * Get all Bills List created by the user.
  * 
- * @returns {Object}
+ * @returns [Object] {Object}
  */
 exports.getAllBills = [
 	auth,
 	function (req, res) {
+		try{
+			Bill.find({soldBy:req.user._id}, (err, bills) => {
+				if (err) return apiResponse.ErrorResponse(res, err);
+				if (bills.length > 0) {
+					return apiResponse.successResponseWithData(res, "Operation success", bills);
+				} else {
+					return apiResponse.successResponseWithData(res, "Operation success", []);
+				}
+			});
+		} catch (err) {
+			//throw error in json response with status 500. 
+			return apiResponse.ErrorResponse(res, err);
+		}
+	}
+];
+
+/**
+ * Get all Bills List created by salesmen under the admin.
+ * 
+ * @returns [Object] {Object}
+ */
+exports.getBillsFromSalesmen = [
+	auth,
+	function (req, res) {
 		try {
-			Bill.find({}, (err, bills) => {
+			//TODO: Aggregate to lookup to the salesmen of the admin.
+			Bill.find({soldBy:req.user._id}, (err, bills) => {
 				if (err) return apiResponse.ErrorResponse(res, err);
 
 				if (bills.length > 0) {
@@ -80,7 +104,7 @@ exports.saveBill = [
 	}
 ];
 
-
+//For data analys
 exports.itemsAndQuantities = [
 	auth,
 	function (req, res) {
