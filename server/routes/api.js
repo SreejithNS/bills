@@ -7,7 +7,7 @@ var billRouter = require("./bill");
 var app = express();
 
 app.use("/auth/", authRouter);
-app.use("/customer/", customerRouter); // All Customer Data Related Functions
+app.use("/customer/", customerRouter); 
 app.use("/product/", productRouter);
 app.use("/bill/",billRouter);
 
