@@ -8,7 +8,7 @@ import Typography from "@material-ui/core/Typography";
 import { CardActionArea, Grid } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 
-interface BillCardData {
+export interface BillCardData {
   customerName: String;
   timestamp: String;
   billAmount: Number;
