@@ -15,36 +15,28 @@ function CustomerData(data) {
     this.place = data.place;
     this.phone = data.phone;
     this.location = data.location;
-    this.createdBy = data.createdBy;
+    this.comesUnder = data.comesUnder;
     this.createdAt = data.createdAt;
 }
 
 /**
- * Get all Customers Created by user.
- * If user is admin returns all Customers.
+ * Get all Customers Created by user. Only for admins
  * 
  * @returns {Object}
  */
 exports.getAll = [
-    //FIXME: Wrong authorisations and privilage handling.
     auth,
     function (req, res) {
         try {
-            if (req.user.type == privilegeEnum.admin)
-                Customer.find({ createdBy: req.user._id }, "_id name phone").then((customers) => {
+            if (req.user.type === privilegeEnum.admin)
+                Customer.find({ comesUnder: req.user._id }, "_id name phone").then((customers) => {
                     if (customers.length > 0) {
                         return apiResponse.successResponseWithData(res, "Operation success", customers);
                     } else {
                         return apiResponse.successResponseWithData(res, "Operation success", []);
                     }
                 });
-            else Customer.find({}, "_id name").then((customers) => {
-                if (customers.length > 0) {
-                    return apiResponse.successResponseWithData(res, "Operation success", customers);
-                } else {
-                    return apiResponse.successResponseWithData(res, "Operation success", []);
-                }
-            });
+            else apiResponse.unauthorizedResponse(res, "Not authorised to get all customers");
         } catch (err) {
             //throw error in json response with status 500. 
             return apiResponse.ErrorResponse(res, err);
@@ -53,9 +45,9 @@ exports.getAll = [
 ];
 
 /**
- * Customer Detail.
+ * Get Customer Details.
  * 
- * If the user is not admin or not the one who created the customer will get only name
+ * Get the details of the customer with their _id
  * @param {string} id
  * 
  * @returns {Object}
@@ -67,13 +59,13 @@ exports.get = [
             return apiResponse.validationErrorWithData(res, "Invalid Customer ID", {});
         }
         try {
-            Customer.findById(req.params.id, "_id name place location createdBy createdAt").then((customer) => {
+            Customer.findById(req.params.id).then((customer) => {
                 if (customer !== null) {
                     let customerData = new CustomerData(customer);
-                    if (customer.createdBy === req.user._id || req.user.type === privilegeEnum.admin)
+                    if (customer.comesUnder === req.params.worksUnder || customer.comesUnder === req.params._id)
                         return apiResponse.successResponseWithData(res, "Operation success", customerData);
                     else
-                        return apiResponse.successResponseWithData(res, "Operation success", _.pick(customerData, ["name"]));
+                        return apiResponse.unauthorizedResponse(res,"You are not authorised to access this data");
                 } else {
                     return apiResponse.successResponseWithData(res, "Operation success: No Customer Found", {});
                 }
@@ -120,7 +112,7 @@ exports.create = [
                             type: "Point",
                             coordinates: [req.body.coordinates.lat, req.body.coordinates.lat].map(parseFloat)
                         } : undefined,
-                        createdBy: req.user._id
+                        comesUnder: req.user.worksUnder || req.user._id
                     }, _.identity));
 
                 //Save Customer.
@@ -204,6 +196,7 @@ exports.bookUpdate = [
 
 /** 
  * Customer Delete.
+ * Only Admins are allowed to delete
  * 
  * @param {string}     [id] 
  * 
@@ -221,8 +214,7 @@ exports.delete = [
                 if (foundCustomer === null) {
                     return apiResponse.notFoundResponse(res, "Customer not exists with this id");
                 } else {
-                    //Check authorized user
-                        //delete Customer.
+                    if (foundCustomer.comesUnder === req.params._id)
                         Customer.findByIdAndRemove(req.params.id, function (err) {
                             if (err) {
                                 return apiResponse.ErrorResponse(res, err);
@@ -230,7 +222,7 @@ exports.delete = [
                                 return apiResponse.successResponse(res, "Customer delete Success.");
                             }
                         });
-                    
+                    else return apiResponse.unauthorizedResponse(res, "You are not authorised to delete a customer");
                 }
             });
         } catch (err) {
@@ -250,15 +242,15 @@ exports.update = [
     auth,
     function (req, res) {
         if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return apiResponse.validationErrorWithData(res, "Invalid Customre ID", {});
+            return apiResponse.validationErrorWithData(res, "Invalid Customer ID", {});
         }
         if (!validationResult(req).isEmpty()) return apiResponse.validationErrorWithData(res, "Validation Error.", validationResult(req).array());
 
         try {
             Customer.findById(req.params.id).then((customer) => {
                 if (customer !== null) {
-
                     for (let key of Object.keys(req.body)) {
+                        if (key === "_id" || key === "id") return apiResponse.ErrorResponse(res, "Illegal update to data");
                         customer[key] = req.body[key];
                     }
                     customer.save(function (err) {
@@ -276,6 +268,12 @@ exports.update = [
     }
 ];
 
+
+/** 
+ * Get suggestions from parts of name
+ * 
+ * @returns {Object[]}
+ */
 exports.getSuggestions = [
     auth,
     param("name").escape().trim(),
