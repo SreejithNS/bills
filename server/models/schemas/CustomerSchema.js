@@ -11,7 +11,7 @@ const CustomerSchema = new Schema(
 			type:LocationSchema,
 			required:false
 		},
-		createdBy:{type:Schema.Types.ObjectId , ref:"User"}
+		comesUnder:{type:Schema.Types.ObjectId , ref:"User"}
 	},
 	{ timestamps: true }
 );
