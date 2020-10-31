@@ -7,11 +7,13 @@ import { createStore, applyMiddleware } from 'redux';
 import {Provider} from 'react-redux';
 import rootReducer from './reducers/rootReducer';
 import thunk from 'redux-thunk';
+import { CssBaseline } from '@material-ui/core';
 
 const store = createStore(rootReducer, applyMiddleware(thunk));
 
 ReactDOM.render(
   <React.StrictMode>
+     <CssBaseline />
     <Provider store={store}>
       <App />
     </Provider>
