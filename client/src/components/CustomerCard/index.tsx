@@ -13,6 +13,7 @@ export interface CustomerCardData {
   place: String;
   phone: Number;
   showLocation?(): void;
+  cardOnClick?(): void;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -45,7 +46,11 @@ export default function CustomerCard(data: CustomerCardData) {
           alignItems="center"
         >
           <Grid item xs>
-            <CardActionArea>
+            <CardActionArea
+              onClick={() => {
+                if (data.cardOnClick) return data.cardOnClick();
+              }}
+            >
               <Typography variant="h5">
                 {data.customerName || "Customer Name"}
               </Typography>
@@ -79,11 +84,9 @@ export default function CustomerCard(data: CustomerCardData) {
                 color="primary"
                 size="small"
                 startIcon={<LocationOnIcon />}
-                onClick={() =>
-                  data.showLocation
-                    ? data.showLocation()
-                    : console.error("Location function not received")
-                }
+                onClick={() => {
+                  if (data.showLocation) return data.showLocation();
+                }}
               >
                 Open in Map
               </Button>

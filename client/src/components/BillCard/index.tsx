@@ -79,7 +79,7 @@ export default function BillCard(data: BillCardData) {
                 color="secondary"
                 size="small"
                 startIcon={<DeleteIcon />}
-                onClick={() => data.deleteAction()}
+                onClick={() => {if(data.deleteAction) return data.deleteAction()}}
               >
                 Delete
               </Button>
