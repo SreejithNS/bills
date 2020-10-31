@@ -8,17 +8,17 @@ import Typography from "@material-ui/core/Typography";
 import { CardActionArea, Grid } from "@material-ui/core";
 import LocationOnIcon from "@material-ui/icons/LocationOn";
 
-export interface CustomerCardData {
-  customerName: String;
-  place: String;
-  phone: Number;
+export interface CustomerCardProps {
+  customerName?: String;
+  place?: String;
+  phone?: Number;
   showLocation?(): void;
   cardOnClick?(): void;
 }
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    minWidth: 275
+    minWidth: theme.breakpoints.width("xs")
   },
   content: {
     "&:last-child": {
@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function CustomerCard(data: CustomerCardData) {
+export default function CustomerCard(props: CustomerCardProps) {
   const classes = useStyles();
   const [actionsOpen, toggleActions] = useState(false);
   return (
@@ -48,17 +48,17 @@ export default function CustomerCard(data: CustomerCardData) {
           <Grid item xs>
             <CardActionArea
               onClick={() => {
-                if (data.cardOnClick) return data.cardOnClick();
+                if (props.cardOnClick) return props.cardOnClick();
               }}
             >
               <Typography variant="h5">
-                {data.customerName || "Customer Name"}
+                {props.customerName || "Customer Name"}
               </Typography>
               <Typography display="inline" variant="subtitle1">
-                {data.place ? data.place + " - " : ""}
+                {props.place ? props.place + " - " : ""}
               </Typography>
               <Typography display="inline" variant="subtitle1">
-                {data.phone || "9457845695"}
+                {props.phone || "9457845695"}
               </Typography>
             </CardActionArea>
           </Grid>
@@ -78,14 +78,14 @@ export default function CustomerCard(data: CustomerCardData) {
 
         {actionsOpen ? (
           <CardActions className={classes.zeroPadding}>
-            {data.showLocation ? (
+            {props.showLocation ? (
               <Button
                 variant="outlined"
                 color="primary"
                 size="small"
                 startIcon={<LocationOnIcon />}
                 onClick={() => {
-                  if (data.showLocation) return data.showLocation();
+                  if (props.showLocation) return props.showLocation();
                 }}
               >
                 Open in Map

@@ -8,16 +8,16 @@ import Typography from "@material-ui/core/Typography";
 import { CardActionArea, Grid } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 
-export interface BillCardData {
-  customerName: String;
-  timestamp: String;
-  billAmount: Number;
+export interface BillCardProps {
+  customerName?: String;
+  timestamp?: String;
+  billAmount?: Number;
   deleteAction(): void;
 }
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    minWidth: 275
+    minWidth: theme.breakpoints.width("xs")
   },
   content: {
     "&:last-child": {
@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function BillCard(data: BillCardData) {
+export default function BillCard(props: BillCardProps) {
   const classes = useStyles();
   const [actionsOpen, toggleActions] = useState(false);
   return (
@@ -47,17 +47,17 @@ export default function BillCard(data: BillCardData) {
           <Grid item xs>
             <CardActionArea>
               <Typography variant="h5">
-                {data.customerName || "Customer Name"}
+                {props.customerName || "Customer Name"}
               </Typography>
               <Typography variant="subtitle1">
-                {data.timestamp || "Timestamp"}
+                {props.timestamp || "Timestamp"}
               </Typography>
             </CardActionArea>
           </Grid>
 
           <Grid item xs>
             <Typography variant="h4" align="right">
-              ₹ {data.billAmount || 12345.25}
+              ₹ {props.billAmount || 12345.25}
             </Typography>
             <Typography
               color="textSecondary"
@@ -73,13 +73,13 @@ export default function BillCard(data: BillCardData) {
 
         {actionsOpen ? (
           <CardActions className={classes.zeroPadding}>
-            {data.deleteAction ? (
+            {props.deleteAction ? (
               <Button
                 variant="outlined"
                 color="secondary"
                 size="small"
                 startIcon={<DeleteIcon />}
-                onClick={() => {if(data.deleteAction) return data.deleteAction()}}
+                onClick={() => {if(props.deleteAction) return props.deleteAction()}}
               >
                 Delete
               </Button>
