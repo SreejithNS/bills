@@ -4,13 +4,13 @@ import {
     Route
 } from "react-router-dom";
 import BillsHomePage from '../pages/BillsHomePage';
-import {billsPaths} from './paths.enum';
+import { billsPaths } from './paths.enum';
 
 export default function BillsRoutes() {
     return (
         <Switch>
             <Route path={billsPaths.home} >
-                <BillsHomePage/>
+                <BillsHomePage />
             </Route>
         </Switch>
     )

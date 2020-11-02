@@ -4,16 +4,21 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { createStore, applyMiddleware } from 'redux';
-import {Provider} from 'react-redux';
+import { Provider } from 'react-redux';
 import rootReducer from './reducers/rootReducer';
 import thunk from 'redux-thunk';
 import { CssBaseline } from '@material-ui/core';
+import { createLogger } from 'redux-logger';
 
-const store = createStore(rootReducer, applyMiddleware(thunk));
+const logger = createLogger({
+  // ...options
+});
+
+const store = createStore(rootReducer, applyMiddleware(thunk, logger));
 
 ReactDOM.render(
   <React.StrictMode>
-     <CssBaseline />
+    <CssBaseline />
     <Provider store={store}>
       <App />
     </Provider>
