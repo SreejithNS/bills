@@ -79,17 +79,17 @@ export default function BillCard(props: BillCardProps) {
                 color="secondary"
                 size="small"
                 startIcon={<DeleteIcon />}
-                onClick={() => {if(props.deleteAction) return props.deleteAction()}}
+                onClick={() => { if (props.deleteAction) return props.deleteAction() }}
               >
                 Delete
               </Button>
             ) : (
-              ""
-            )}
+                ""
+              )}
           </CardActions>
         ) : (
-          ""
-        )}
+            ""
+          )}
       </CardContent>
     </Card>
   );

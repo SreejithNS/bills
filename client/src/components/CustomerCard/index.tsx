@@ -91,12 +91,12 @@ export default function CustomerCard(props: CustomerCardProps) {
                 Open in Map
               </Button>
             ) : (
-              ""
-            )}
+                ""
+              )}
           </CardActions>
         ) : (
-          ""
-        )}
+            ""
+          )}
       </CardContent>
     </Card>
   );

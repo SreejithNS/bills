@@ -9,7 +9,7 @@ function App() {
   return (
     <main>
       <Router>
-        <Routes/>
+        <Routes />
       </Router>
     </main>
   );
