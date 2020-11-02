@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { Container, Grid } from '@material-ui/core';
+import { connect } from 'react-redux';
 import CustomerCard from '../components/CustomerCard';
 
-export default class BillsHomePage extends Component {
+class BillsHomePage extends Component {
     render() {
         return (
             <Container fixed>
@@ -24,3 +25,13 @@ export default class BillsHomePage extends Component {
         )
     }
 }
+
+const mapStateToProps = (state:any) => { 
+    return {
+        ...state.customer
+    }
+};
+
+const mapDispatchToProps = () => { };
+
+export default connect(mapStateToProps, mapDispatchToProps)(BillsHomePage);
