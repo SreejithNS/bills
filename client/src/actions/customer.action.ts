@@ -4,11 +4,11 @@ export const fetchCustomerList = () => {
   return (dispatch: any) => {
     dispatch({ type: "FETCH_CUSTOMERS_LIST_LOAD", payload: true });
     axios
-      .get("https://jsonplaceholder.typicode.com/todos/1")
+      .get(process.env.REACT_APP_API_URL + "/api/customer/", { withCredentials: true })
       .then(function (response) {
         dispatch({
           type: "FETCH_CUSTOMERS_LIST",
-          payload: response.data,
+          payload: response.data.data,
         });
       })
       .catch(function (error) {

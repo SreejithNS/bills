@@ -25,6 +25,7 @@ class CustomerHomePage extends Component<Props> {
     }
 
     render() {
+        const { customersList, listLoading } = this.props;
         return (
             <Container fixed>
                 <Grid
@@ -34,10 +35,9 @@ class CustomerHomePage extends Component<Props> {
                     alignItems="center"
                     spacing={1}
                 >
-                    {[...Array(12)].map((e, k) =>
-                        <Grid item key={k} >
-                            {/* <Typography component="div" style={{ backgroundColor: '#cfe8fc' }} >Hello </Typography> */}
-                            <CustomerCard />
+                    {!listLoading && customersList.map(({ name }, key) =>
+                        <Grid item key={key} >
+                            < CustomerCard customerName={name} />
                         </Grid>
                     )}
                 </Grid>
