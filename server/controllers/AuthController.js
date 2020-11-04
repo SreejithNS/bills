@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
 const _ = require("lodash");
+const authenticate = require("../middlewares/jwt");
 
 function UserData(params) {
 	this._id = params.id;
@@ -410,5 +411,13 @@ exports.resendConfirmOtp = [
 		} catch (err) {
 			return apiResponse.ErrorResponse(res, err);
 		}
+	},
+];
+
+exports.logout = [
+	authenticate,
+	(req, res) => {
+		res.cookie("token", { httpOnly: true, expires: Date.now() });
+		return apiResponse.successResponse(res, "Successfully logged out");
 	},
 ];
