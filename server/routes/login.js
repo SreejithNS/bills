@@ -3,19 +3,18 @@ var router = express.Router();
 const path = require("path");
 const auth = require("../middlewares/jwt");
 
-/* GET home page. */
+/* GET Login Page */
 router.all(
-	"/",
-	auth,
+	"/login",
 	function (req, res, next) {
-		console.log(path.join(__dirname, "../client/build"));
+		console.log("Login:", path.join(__dirname, "../public"));
 		if (req.user) {
 			next();
 		} else {
-			res.redirect("/login");
+			res.redirect("/");
 		}
 	},
-	express.static(path.join(__dirname, "../client/build"))
+	express.static(path.join(__dirname, "../public"))
 );
 
 module.exports = router;
