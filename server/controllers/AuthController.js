@@ -17,6 +17,7 @@ function UserData(params) {
 	this.lastName = params.lastName;
 	this.email = params.email;
 	this.phone = params.phone;
+	this.type = params.type;
 }
 
 /**
