@@ -40,14 +40,25 @@ app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, "./public")));
 
 //To allow cross-origin requests
-app.use(cors());
+app.use(
+	cors({
+		origin: "http://localhost:3001",
+		optionsSuccessStatus: 200,
+		credentials: true,
+	})
+);
 
 //Route Prefixes
 
 app.use("/api", apiRouter);
+app.use("/api", function (err, req, res, next) {
+	if (err.name === "UnauthorizedError") {
+		apiResponse.unauthorizedResponse(res, err.message);
+	} else next(err);
+});
 app.use("/login", loginRouter);
 app.use("/", indexRouter);
-
+app.use("/*", indexRouter);
 // throw 404 if URL not found
 app.all("*", function (req, res) {
 	return apiResponse.notFoundResponse(res, "Page not found");
