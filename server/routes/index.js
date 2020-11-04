@@ -4,18 +4,17 @@ const path = require("path");
 const auth = require("../middlewares/jwt");
 
 /* GET home page. */
-router.all(
-	"/",
+//router.use("/");
+
+module.exports = [
 	auth,
-	function (req, res, next) {
-		console.log(path.join(__dirname, "../client/build"));
-		if (req.user) {
-			next();
-		} else {
+	function (err, req, res, next) {
+		if (err.name === "UnauthorizedError") {
+			debugger;
 			res.redirect("/login");
+		} else {
+			next(err);
 		}
 	},
-	express.static(path.join(__dirname, "../client/build"))
-);
-
-module.exports = router;
+	express.static(path.join(__dirname, "../../client/build")),
+];

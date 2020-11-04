@@ -4,17 +4,15 @@ const path = require("path");
 const auth = require("../middlewares/jwt");
 
 /* GET Login Page */
-router.all(
-	"/login",
-	function (req, res, next) {
-		console.log("Login:", path.join(__dirname, "../public"));
-		if (req.user) {
+
+module.exports = [
+	auth,
+	function (err, req, res, next) {
+		if (err.name === "UnauthorizedError") {
 			next();
-		} else {
+		} else if (res.user) {
 			res.redirect("/");
 		}
 	},
-	express.static(path.join(__dirname, "../public"))
-);
-
-module.exports = router;
+	express.static(path.join(__dirname, "../public")),
+];

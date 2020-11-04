@@ -1,4 +1,4 @@
-const privilegeEnum = require("../helpers/privilegeEnum")
+const privilegeEnum = require("../helpers/privilegeEnum");
 const apiResponse = require("../helpers/apiResponse");
 
 
