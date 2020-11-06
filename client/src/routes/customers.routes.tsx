@@ -1,17 +1,22 @@
 import React from 'react';
 import {
-    Switch,
     Route
 } from "react-router-dom";
+import NewCustomerCreationModal from '../components/NewCustomerCreationModal';
 import CustomersHomePage from '../pages/CustomersHomePage';
-import {customersPaths} from './paths.enum';
+import { customersPaths, paths } from './paths.enum';
 
 export default function CustomersRoutes() {
     return (
-        <Switch>
-            <Route path={customersPaths.home} >
-                <CustomersHomePage/>
+        <React.Fragment>
+            <Route exact path={paths.customer + customersPaths.home} >
+                {"home"}
+                <CustomersHomePage />
             </Route>
-        </Switch>
+            <Route path={paths.customer + customersPaths.createCustomer} >
+                {"create"}
+                <NewCustomerCreationModal />
+            </Route>
+        </React.Fragment>
     )
 }

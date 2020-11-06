@@ -10,5 +10,6 @@ export enum billsPaths {
 }
 
 export enum customersPaths {
-    home = '/'
+    home = '/',
+    createCustomer = '/create'
 }
