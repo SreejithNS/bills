@@ -32,7 +32,7 @@ class CustomerHomePage extends Component<Props> {
                     container
                     direction="column"
                     justify="flex-start"
-                    alignItems="center"
+                    alignItems="stretch"
                     spacing={1}
                 >
                     {!listLoading && customersList.map(({ name }, key) =>
