@@ -2,6 +2,9 @@ const initialState = {
 	customersList: [],
 	listLoading: false,
 	listLoadingError: "",
+	customerAddError: false,
+	customerAddLoad: false,
+	customerSuggestions: [],
 };
 
 export default function customerReducer(state = initialState, action) {
@@ -22,6 +25,30 @@ export default function customerReducer(state = initialState, action) {
 			return {
 				...state,
 				listLoadingError: action.payload,
+			};
+		}
+		case "ADD_CUSTOMER_LOAD": {
+			return {
+				...state,
+				customerAddLoad: action.payload,
+			};
+		}
+		case "ADD_CUSTOMER_ERROR": {
+			return {
+				...state,
+				customerAddError: action.payload,
+			};
+		}
+		case "CUSTOMER_SUGGESTIONS": {
+			return {
+				...state,
+				customerSuggestions: action.payload,
+			};
+		}
+		case "CUSTOMER_SUGGESTIONS_RESET": {
+			return {
+				...state,
+				customerSuggestions: [],
 			};
 		}
 		default:
