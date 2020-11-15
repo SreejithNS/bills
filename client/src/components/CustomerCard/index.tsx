@@ -7,6 +7,7 @@ import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import { CardActionArea, Grid } from "@material-ui/core";
 import LocationOnIcon from "@material-ui/icons/LocationOn";
+import DeleteIcon from "@material-ui/icons/Delete";
 
 export interface CustomerCardProps {
   customerName?: String;
@@ -14,6 +15,7 @@ export interface CustomerCardProps {
   phone?: Number;
   showLocation?(): void;
   cardOnClick?(): void;
+  delete(): void;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -89,6 +91,21 @@ export default function CustomerCard(props: CustomerCardProps) {
                 }}
               >
                 Open in Map
+              </Button>
+            ) : (
+                ""
+              )}
+            {props.delete ? (
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                startIcon={<DeleteIcon />}
+                onClick={() => {
+                  if (props.delete) return props.delete();
+                }}
+              >
+                Delete
               </Button>
             ) : (
                 ""
