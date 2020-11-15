@@ -6,7 +6,8 @@ export enum paths {
 
 export enum billsPaths {
     home = '/',
-    billDetail = '/open/:id'
+    billDetail = '/open/:id',
+    addBill = '/create'
 }
 
 export enum customersPaths {
