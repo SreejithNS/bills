@@ -1,6 +1,7 @@
 import { Button, CircularProgress, createStyles, Grid, makeStyles, Theme, Zoom } from '@material-ui/core';
 import React from 'react';
 import { Field, reduxForm } from 'redux-form';
+// import { addCustomer } from '../../actions/customer.action';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 
 function validate(values: { [x: string]: any; email: string; }) {
@@ -39,6 +40,7 @@ const useStyles = makeStyles((theme: Theme) =>
 const NewCustomerForm = (props: { handleSubmit: any; pristine: any; reset: any; submitting: any; }) => {
     const { handleSubmit, pristine, reset, submitting } = props;
     const classes = useStyles();
+
     return (
         <form onSubmit={handleSubmit} >
             <Grid
@@ -61,13 +63,17 @@ const NewCustomerForm = (props: { handleSubmit: any; pristine: any; reset: any; 
                 <Grid item xs>
                     <Field name="place" component={ReduxTextField} label="Place" /></Grid>
                 <Grid item xs container justify="center" alignItems="center" spacing={2}>
-                    <Button className={classes.marginButton} variant="contained" disabled={pristine || submitting} color="primary" disableElevation type="submit">
-                        Create
-                    </Button>
-                    <Button className={classes.marginButton} variant="outlined" disabled={pristine || submitting} color="primary" disableElevation onClick={reset}>
-                        Clear
-                    </Button>
-                    <Zoom in={submitting}><CircularProgress /></Zoom>
+                    {!(pristine || submitting)
+                        ? <React.Fragment>
+                            <Button className={classes.marginButton} variant="contained" disabled={pristine || submitting} color="primary" disableElevation type="submit">
+                                Create
+                            </Button>
+                            <Button className={classes.marginButton} variant="outlined" disabled={pristine || submitting} color="primary" disableElevation onClick={reset}>
+                                Clear
+                            </Button>
+                        </React.Fragment>
+                        :
+                        <Zoom in={submitting}><CircularProgress /></Zoom>}
                 </Grid>
 
             </Grid>

@@ -12,6 +12,8 @@ import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from '@material-ui/core';
 import NewCustomerForm from "../NewCustomerForm";
 import { useHistory } from 'react-router-dom';
+import { addCustomer } from '../../actions/customer.action';
+// import { useDispatch } from 'react-redux';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -35,29 +37,33 @@ const Transition = React.forwardRef(function Transition(
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
-export default function NewCustomerCreationModal() {
+export default function NewCustomerCreationModal(props: any) {
     const classes = useStyles();
     const history = useHistory();
-    const handleClose = () => {
-        console.log("modal close");
-    };
+
+    const handleSubmit = (values: any) => {
+        return addCustomer(values).then(() => {
+            if ("onCreate" in props) props.onCreate()
+            else history.goBack();
+        });
+    }
     return (
-        <Dialog fullScreen open={true} onClose={history.goBack} TransitionComponent={Transition}>
+        <Dialog fullScreen open={"visible" in props ? props.visible : true} onClose={props.onClose || history.goBack} TransitionComponent={Transition}>
             <AppBar className={classes.appBar}>
                 <Toolbar>
-                    <IconButton edge="start" color="inherit" onClick={history.goBack} aria-label="close">
+                    <IconButton edge="start" color="inherit" onClick={props.onClose || history.goBack} aria-label="close">
                         <CloseIcon />
                     </IconButton>
                     <Typography variant="h6" className={classes.title}>
                         Create New Customer
                         </Typography>
-                    <Button autoFocus color="inherit" onClick={handleClose}>
+                    <Button autoFocus color="inherit" onClick={props.onClose || history.goBack}>
                         Cancel
                          </Button>
                 </Toolbar>
             </AppBar>
             <Container fixed className={classes.containerPadding}>
-                <NewCustomerForm onSubmit={(value) => alert(JSON.stringify(value))} />
+                <NewCustomerForm onSubmit={handleSubmit} />
             </Container>
         </Dialog>
     );
