@@ -2,10 +2,10 @@ const Bill = require("../models/BillModel");
 const { body, validationResult } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
-
+const privilageEnum = require("../helpers/privilegeEnum.js");
 var mongoose = require("mongoose");
 const CustomerModel = require("../models/CustomerModel");
-
+const _ = require("lodash");
 mongoose.set("useFindAndModify", false);
 
 /**
@@ -17,22 +17,32 @@ exports.getAllBills = [
 	auth,
 	function (req, res) {
 		try {
-			Bill.find({ soldBy: req.user._id }, (err, bills) => {
-				if (err) return apiResponse.ErrorResponse(res, err);
-				if (bills.length > 0) {
-					return apiResponse.successResponseWithData(
-						res,
-						"Operation success",
-						bills
-					);
-				} else {
-					return apiResponse.successResponseWithData(
-						res,
-						"Operation success",
-						[]
-					);
-				}
-			});
+			const query =
+				req.user.type === privilageEnum.admin
+					? { soldBy: req.user._id }
+					: { comesUnder: req.user._id };
+			Bill.find(query)
+				.populate("customer")
+				.populate("soldBy")
+				.exec()
+				.then(
+					(bills) => {
+						if (bills.length > 0) {
+							return apiResponse.successResponseWithData(
+								res,
+								"Operation success",
+								_.reject(bills, ["customer", null])
+							);
+						} else {
+							return apiResponse.successResponseWithData(
+								res,
+								"Operation success",
+								[]
+							);
+						}
+					},
+					(err) => apiResponse.ErrorResponse(res, err)
+				);
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);
@@ -126,12 +136,16 @@ exports.saveBill = [
 			.then(
 				(populatedItems) => {
 					req.body.items = populatedItems;
-
+					const comesUnder =
+						req.user.type === privilageEnum.admin
+							? req.user._id
+							: req.user.worksUnder;
 					var newBill = new Bill({
 						customer: req.body.customerId,
 						items: req.body.items,
 						discountAmount: req.body.discountAmount,
 						soldBy: req.user._id,
+						comesUnder,
 					});
 					newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();
 					newBill.billAmount = newBill.calculateBillAmount();
