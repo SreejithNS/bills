@@ -17,11 +17,36 @@ export const saveBill = () => {
         billData.items = items.map((item: { id: string; quantity: number; }, key: number) => ({ id: item.id, quantity: item.quantity }));
 
         return axios
-            .post(process.env.REACT_APP_API_URL + "/api/bill",billData, { withCredentials: true })
+            .post(process.env.REACT_APP_API_URL + "/api/bill", billData, { withCredentials: true })
             .catch(error => toast.error("Bill Save Error:" + error.message))
             .finally(() => dispatch({ type: "BILL_SAVE_LOAD", payload: false }))
     }
 }
+
+
+export const fetchBillList = () => {
+    return (dispatch: any) => {
+        dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: true });
+        axios
+            .get(process.env.REACT_APP_API_URL + "/api/bill/", { withCredentials: true })
+            .then(function (response) {
+                dispatch({
+                    type: "FETCH_BILLS_LIST",
+                    payload: response.data.data,
+                });
+            })
+            .catch(function (error) {
+                dispatch({
+                    type: "FETCH_BILLS_LIST_ERROR",
+                    payload: error,
+                });
+                toast.error("Bills List Error:" + error.message)
+            })
+            .finally(function () {
+                dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: false });
+            });
+    };
+};
 
 export const fetchCustomerList = () => {
     return (dispatch: any) => {

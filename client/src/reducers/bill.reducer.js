@@ -7,6 +7,8 @@ const initialState = {
 	discountAmount: 0,
 	discountPercentage: 0,
 	billSaveLoad: false,
+	billsList: [],
+	billsListLoad: true,
 };
 
 export const getItemsTotalAmount = (billState) => {
@@ -114,6 +116,18 @@ export default function billReducer(state = initialState, action) {
 			return {
 				...state,
 				billSaveLoad: action.payload,
+			};
+		}
+		case "FETCH_BILLS_LIST_LOAD": {
+			return {
+				...state,
+				billsListLoad: action.payload,
+			};
+		}
+		case "FETCH_BILLS_LIST": {
+			return {
+				...state,
+				billsList: action.payload,
 			};
 		}
 		default:
