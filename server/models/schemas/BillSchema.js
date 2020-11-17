@@ -4,28 +4,31 @@ var Schema = mongoose.Schema;
 
 const BillSchema = new Schema(
 	{
-		items: [{
-			code: { type: String, required: true },
-			name: { type: String, required: true },
-			weight: { type: Number },
-			weightUnit: { type: String },
-			quantity: { type: Number, required: true },
-			rate: { type: Number, default: 0 },
-			mrp: { type: Number, default: 0 },
-		}],
+		items: [
+			{
+				code: { type: String, required: true },
+				name: { type: String, required: true },
+				weight: { type: Number },
+				weightUnit: { type: String },
+				quantity: { type: Number, required: true },
+				rate: { type: Number, default: 0 },
+				mrp: { type: Number, default: 0 },
+			},
+		],
 		customer: { type: Schema.Types.ObjectId, ref: "Customer" },
 		discountAmount: { type: Number, default: 0 },
 		itemsTotalAmount: { type: Number, default: 0 },
 		billAmount: { type: Number, default: 0 },
-		soldBy: { type: Schema.Types.ObjectId, ref: "User" }
+		soldBy: { type: Schema.Types.ObjectId, ref: "User" },
+		comesUnder: { type: Schema.Types.ObjectId, ref: "User" },
 	},
 	{ timestamps: true }
 );
 
 /**
  * Add item or add quantity (if item exist) an item to the list
- * @param {*} item 
- * @param {*} quantity 
+ * @param {*} item
+ * @param {*} quantity
  */
 BillSchema.methods.addItem = function (item, quantity) {
 	const billItem = this.items.find(
@@ -40,25 +43,22 @@ BillSchema.methods.addItem = function (item, quantity) {
 	return this.items.length;
 };
 
-
 /**
  * Remove item by its id
- * @param {Number} id 
+ * @param {Number} id
  * @returns boolean
  */
 BillSchema.methods.removeItem = function (id) {
 	const length = this.items.length;
-	this.items = this.items.filter(
-		(item) => {
-			return item._id.toString() !== id;
-		}
-	);
+	this.items = this.items.filter((item) => {
+		return item._id.toString() !== id;
+	});
 	return length !== this.items.length;
 };
 
 /**
  * Explicit updation of Quantity
- * @param {BillItem} item 
+ * @param {BillItem} item
  * @param {Number} quantity
  * @returns boolean
  */
@@ -79,18 +79,17 @@ BillSchema.methods.updateItemQuantity = function (item, quantity) {
 
 /**
  * Reduce item quantity by id
- * @param {String} id 
+ * @param {String} id
  * @param {Number} quantity
- * @returns boolean 
+ * @returns boolean
  */
 BillSchema.methods.reduceItemQuantity = function (id, quantity) {
-	const billItem = this.items.find(
-		(foundItem) => {
-			return foundItem._id.toString() === id;
-		}
-	);
+	const billItem = this.items.find((foundItem) => {
+		return foundItem._id.toString() === id;
+	});
 	if (billItem) {
-		billItem.quantity -= (billItem.quantity < quantity) ? billItem.quantity : quantity;
+		billItem.quantity -=
+			billItem.quantity < quantity ? billItem.quantity : quantity;
 	} else {
 		return false;
 	}
@@ -122,7 +121,6 @@ BillSchema.methods.calculateBillAmount = function () {
 	return itemsTotalAmount - discountAmount;
 };
 
-
 // BillSchema.virtual("itemsTotalAmount").get(function () {
 // 	return this.calculateItemsTotalAmount();
 // });
@@ -131,21 +129,22 @@ BillSchema.methods.calculateBillAmount = function () {
 // 	return this.calculateBillAmount();
 // });
 
-
 // set discount in amount that converts to percentage
 // BillSchema.virtual("discountAmount").set(function (amount) {
 // 	const itemsTotalAmount = this.itemsTotalAmount;
 // 	this.discountPercentage = parseFloat(((amount / itemsTotalAmount) * 100).toFixed(2));
 // });
 
-/** 
+/**
  *	derive discount percentage from the discount amount
  */
 BillSchema.virtual("discountPercentage")
 	.get(function () {
 		const itemsTotalAmount = this.itemsTotalAmount;
 		const discountAmount = this.discountAmount;
-		return parseFloat(((discountAmount / itemsTotalAmount) * 100).toFixed(2));
+		return parseFloat(
+			((discountAmount / itemsTotalAmount) * 100).toFixed(2)
+		);
 	})
 	/**
 	 * Set discount in percentage that converts to discountAmount
@@ -153,7 +152,9 @@ BillSchema.virtual("discountPercentage")
 	 */
 	.set(function (percentage) {
 		const itemsTotalAmount = this.itemsTotalAmount;
-		this.discountAmount = parseFloat((itemsTotalAmount * (percentage / 100)).toFixed(2));
+		this.discountAmount = parseFloat(
+			(itemsTotalAmount * (percentage / 100)).toFixed(2)
+		);
 	});
 
 /**
