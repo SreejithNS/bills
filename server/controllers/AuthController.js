@@ -18,6 +18,7 @@ function UserData(params) {
 	this.email = params.email;
 	this.phone = params.phone;
 	this.type = params.type;
+	this.worksUnder = params.worksUnder;
 }
 
 /**
@@ -199,6 +200,7 @@ exports.login = [
 														"phone",
 														"type",
 														"firstName",
+														"worksUnder",
 													]
 												);
 												const jwtData = {
