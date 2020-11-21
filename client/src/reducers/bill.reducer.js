@@ -9,8 +9,8 @@ const initialState = {
 	billSaveLoad: false,
 	billsList: [],
 	billsListLoad: true,
+	billData: {},
 };
-
 export const getItemsTotalAmount = (billState) => {
 	var sum = 0;
 	billState.items.forEach((item) => {
