@@ -3,6 +3,7 @@ import {
     Switch,
     Route
 } from "react-router-dom";
+import BillViewerModal from '../components/BillViewerModal';
 import NewBillModal from '../components/NewBillModal';
 import BillsHomePage from '../pages/BillsHomePage';
 import { billsPaths, paths } from './paths.enum';
@@ -17,6 +18,10 @@ export default function BillsRoutes() {
             <Route path={paths.billsHome + billsPaths.addBill} >
                 {"Bill creation " + paths.billsHome + billsPaths.addBill}
                 <NewBillModal />
+            </Route>
+            <Route path={paths.billsHome + billsPaths.billDetail} >
+                {"Bill viewer " + paths.billsHome + billsPaths.billDetail}
+                <BillViewerModal />
             </Route>
         </Switch>
     )
