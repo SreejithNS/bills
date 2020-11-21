@@ -9,6 +9,41 @@ const _ = require("lodash");
 mongoose.set("useFindAndModify", false);
 
 /**
+ * Get the bill data from id
+ *
+ * @returns [object] {Object}
+ */
+exports.getBill = [
+	auth,
+	function (req, res) {
+		Bill.findById(req.params.id)
+			.populate("customer")
+			.populate("soldBy")
+			.exec()
+			.then(
+				(doc) => {
+					if (
+						doc.comesUnder === req.user.id ||
+						doc.comesUnder === req.user.worksUnder
+					) {
+						return apiResponse.successResponseWithData(
+							res,
+							"Bill found",
+							doc
+						);
+					} else {
+						return apiResponse.unauthorizedResponse(
+							res,
+							"You are not authorised to access this bill"
+						);
+					}
+				},
+				() => apiResponse.ErrorResponse(res, "Bill fetch error")
+			);
+	},
+];
+
+/**
  * Get all Bills List created by the user.
  *
  * @returns [Object] {Object}
