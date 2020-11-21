@@ -11,9 +11,10 @@ export const fetchbill = (id: string, fallBack: any) => {
     return (dispatch: any, getState: any) => {
         dispatch({ type: "BILL_DATA_LOAD", payload: true });
         const { billsList } = getState().bill;
-        const bill = billsList.filter((billThat: { id: string; }) => billThat.id === id);
+        const bill = billsList.filter((billThat: { _id: string; }) => billThat._id === id);
         if (bill.length > 0) {
             dispatch({ type: "BILL_DATA", payload: bill[0] });
+            dispatch({ type: "BILL_DATA_LOAD", payload: false })
         } else {
             axios
                 .get(process.env.REACT_APP_API_URL + "/api/bill/" + id, { withCredentials: true })
@@ -44,26 +45,28 @@ export const saveBill = () => {
 
 
 export const fetchBillList = () => {
-    return (dispatch: any) => {
-        dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: true });
-        axios
-            .get(process.env.REACT_APP_API_URL + "/api/bill/", { withCredentials: true })
-            .then(function (response) {
-                dispatch({
-                    type: "FETCH_BILLS_LIST",
-                    payload: response.data.data,
+    return (dispatch: any, getState: any) => {
+        if (getState().bill.billsList.length === 0) {
+            dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: true });
+            axios
+                .get(process.env.REACT_APP_API_URL + "/api/bill/", { withCredentials: true })
+                .then(function (response) {
+                    dispatch({
+                        type: "FETCH_BILLS_LIST",
+                        payload: response.data.data,
+                    });
+                })
+                .catch(function (error) {
+                    dispatch({
+                        type: "FETCH_BILLS_LIST_ERROR",
+                        payload: error,
+                    });
+                    toast.error("Bills List Error:" + error.message)
+                })
+                .finally(function () {
+                    dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: false });
                 });
-            })
-            .catch(function (error) {
-                dispatch({
-                    type: "FETCH_BILLS_LIST_ERROR",
-                    payload: error,
-                });
-                toast.error("Bills List Error:" + error.message)
-            })
-            .finally(function () {
-                dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: false });
-            });
+        }
     };
 };
 
