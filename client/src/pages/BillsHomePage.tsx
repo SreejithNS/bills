@@ -4,9 +4,12 @@ import { connect } from 'react-redux';
 import { fetchBillList } from '../actions/bill.actions';
 import BillCard from '../components/BillCard';
 import AddIcon from '@material-ui/icons/Add';
+import { compose } from 'redux';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { billsPaths, paths } from '../routes/paths.enum';
 //import CustomerCard from '../components/CustomerCard';
 
-type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles>;
+type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles> & RouteComponentProps;
 
 const styles = (theme: Theme) => createStyles({
     fab: {
@@ -27,7 +30,7 @@ const styles = (theme: Theme) => createStyles({
 
 class BillsHomePage extends Component<Props> {
     render() {
-        const { billsList, billsListLoad, classes } = this.props;
+        const { billsList, billsListLoad, classes, history } = this.props;
         return (
             <React.Fragment>
                 <Container fixed>
@@ -42,13 +45,14 @@ class BillsHomePage extends Component<Props> {
                                 Your Bills
                             </Typography>
                         </Grid>
-                        {!billsListLoad ? billsList.map((bill: { customer: { name: String | undefined; }; billAmount: Number | undefined; key: string | number | null | undefined; createdAt: String | undefined; }, key: any) =>
+                        {!billsListLoad ? billsList.map((bill: { customer: { name: String | undefined; }; billAmount: Number | undefined; createdAt: String | undefined; _id: string; }, key: any) =>
                             <Grid item key={key} xs={12} className={classes.cardPadding}>
                                 <BillCard
                                     customerName={bill.customer.name}
                                     billAmount={bill.billAmount}
                                     timestamp={bill.createdAt}
                                     deleteAction={console.log}
+                                    onClickAction={() => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", bill._id))}
                                 />
                             </Grid>
                         ) : <Grid item xs container alignItems="center" justify="center">
@@ -57,7 +61,7 @@ class BillsHomePage extends Component<Props> {
                         }
                     </Grid>
                 </Container>
-                <Fab className={classes.fab} color="primary" variant="extended">
+                <Fab onClick={() => history.push(paths.billsHome + billsPaths.addBill)} className={classes.fab} color="primary" variant="extended">
                     <AddIcon className={classes.fabIcon} />
                         New Bill
                 </Fab>
@@ -77,4 +81,4 @@ const mapDispatchToProps = (dispatch: any) => {
     return { getBillsList: dispatch(fetchBillList()) }
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(BillsHomePage));
+export default compose(withRouter, withStyles(styles), connect(mapStateToProps, mapDispatchToProps))(BillsHomePage) as React.ComponentType;

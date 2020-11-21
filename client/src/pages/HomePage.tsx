@@ -13,10 +13,10 @@ export default class HomePage extends Component {
                     alignItems="center"
                     spacing={1}
                 >
-                    {[...Array(12)].map((e,k) =>
+                    {[...Array(12)].map((e, k) =>
                         <Grid item key={k} >
                             {/*<Typography component="div" style={{ backgroundColor: '#cfe8fc' }} >Hello </Typography>*/}
-                            <BillCard deleteAction={()=>console.log(new Date())}/>
+                            <BillCard deleteAction={() => console.log(new Date())} onClickAction={console.log} />
                         </Grid>
                     )}
                 </Grid>

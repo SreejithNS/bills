@@ -13,6 +13,7 @@ export interface BillCardProps {
   timestamp?: String;
   billAmount?: Number;
   deleteAction(): void;
+  onClickAction(): void;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -45,7 +46,7 @@ export default function BillCard(props: BillCardProps) {
           alignItems="stretch"
         >
           <Grid item xs>
-            <CardActionArea>
+            <CardActionArea onClick={props.onClickAction}>
               <Typography variant="h5">
                 {props.customerName || "Customer Name"}
               </Typography>
