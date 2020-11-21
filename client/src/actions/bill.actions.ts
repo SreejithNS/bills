@@ -7,6 +7,25 @@ interface BillData extends Object {
     items: { id: string; quantity: number; }[];
 }
 
+export const fetchbill = (id: string, fallBack: any) => {
+    return (dispatch: any, getState: any) => {
+        dispatch({ type: "BILL_DATA_LOAD", payload: true });
+        const { billsList } = getState().bill;
+        const bill = billsList.filter((billThat: { id: string; }) => billThat.id === id);
+        if (bill.length > 0) {
+            dispatch({ type: "BILL_DATA", payload: bill[0] });
+        } else {
+            axios
+                .get(process.env.REACT_APP_API_URL + "/api/bill/" + id, { withCredentials: true })
+                .then(response => {
+                    dispatch({ type: "BILL_DATA", payload: response.data.data });
+                })
+                .catch(error => { toast.error("Bill Fetching Error:" + error.message); fallBack() })
+                .finally(() => dispatch({ type: "BILL_DATA_LOAD", payload: false }))
+        }
+    }
+}
+
 export const saveBill = () => {
     return (dispatch: any, getState: any) => {
         dispatch({ type: "BILL_SAVE_LOAD", payload: true });

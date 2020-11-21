@@ -33,8 +33,9 @@ interface BillItem {
 }
 
 export interface BillProps {
+    _id?: any;
     customer: Customer;
-    createdAt: Date;
+    createdAt: string;
     soldBy: User;
     items: BillItem[];
     discountAmount: number;
@@ -84,7 +85,7 @@ export default function BillViewer(props: BillProps) {
                         Place: {props.customer?.place || "Tirupattur"}
                     </Typography> : ""}
                     <Typography variant="subtitle2" display="block">
-                        Date: {props?.createdAt.toString() || new Date().toString()}
+                        Date: {new Date(props?.createdAt).toString() || new Date().toString()}
                     </Typography>
                 </Grid>
                 <Grid item className={classes.itemPadding} xs={12}>
@@ -149,7 +150,7 @@ export default function BillViewer(props: BillProps) {
                                     Total Items: {props?.items.length || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
-                                    Discount: {props?.discountAmount || 12}
+                                    Discount: {props?.discountAmount || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
                                     Discount (%): {props?.discountAmount ? ((props.discountAmount / (props.billAmount + props.discountAmount)) * 100).toFixed(2) : 0}%

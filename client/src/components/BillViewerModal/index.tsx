@@ -1,5 +1,5 @@
 import React from 'react';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import AppBar from '@material-ui/core/AppBar';
@@ -9,25 +9,26 @@ import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
 import Slide from '@material-ui/core/Slide';
 import { TransitionProps } from '@material-ui/core/transitions';
-import { Container } from '@material-ui/core';
-import { useHistory, useParams } from 'react-router-dom';
-import BillViewer, { BillProps } from '../BillViewer';
-import { useDispatch, useSelector } from 'react-redux';
+import { CircularProgress, Container, Zoom } from '@material-ui/core';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
+import BillViewer from '../BillViewer';
+import { connect } from 'react-redux';
+import { fetchbill } from "../../actions/bill.actions";
+import { compose } from 'redux';
+import { paths } from '../../routes/paths.enum';
 
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        appBar: {
-            position: 'relative',
-        },
-        title: {
-            marginLeft: theme.spacing(2),
-            flex: 1,
-        },
-        containerPadding: {
-            padding: theme.spacing(2)
-        }
-    }),
-);
+const styles = (theme: Theme) => createStyles({
+    appBar: {
+        position: 'relative',
+    },
+    title: {
+        marginLeft: theme.spacing(2),
+        flex: 1,
+    },
+    containerPadding: {
+        padding: theme.spacing(2)
+    }
+});
 
 const Transition = React.forwardRef(function Transition(
     props: TransitionProps & { children?: React.ReactElement },
@@ -36,69 +37,59 @@ const Transition = React.forwardRef(function Transition(
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
-type RootState = {
-    bill: {
-        billData: BillProps;
-    }
-}
+type Props = ReturnType<typeof mapStatetoProps> & ReturnType<typeof mapDispatchToProps> & WithStyles<typeof styles> & RouteComponentProps<{ id: string }>
 
-export default function BillViewerModal() {
-    const classes = useStyles();
-    const history = useHistory();
-    const params = useParams<{ id?: string }>();
-    const billData = useSelector((state: RootState) => state.bill.billData)
-    const dispatch = useDispatch();
-    console.log(params);
-    const bill: BillProps = {
-        createdAt: new Date(),
-        customer: {
-            name: "Customer Name",
-            phone: 9489126016,
-            place: "Tirupattur"
-        },
-        items: [
-            {
-                code: "MAGGIE",
-                mrp: 10,
-                name: "Maggie Noodles",
-                quantity: 10,
-                rate: 10,
-                amount: 100
-            }
-        ],
-        soldBy: {
-            firstName: "Test User"
-        },
-        billAmount: 123456.255,
-        discountAmount: 20
-    }
-    console.log(dispatch(params.id && ""), billData)//fetchBill(params.id)))
 
-    return (
-        <Dialog fullScreen open={true} onClose={history.goBack} TransitionComponent={Transition}>
-            <AppBar className={classes.appBar}>
-                <Toolbar>
-                    <IconButton edge="start" color="inherit" onClick={history.goBack} aria-label="close">
-                        <CloseIcon />
-                    </IconButton>
-                    <Typography variant="h6" className={classes.title}>
-                        Bill
+class BillViewerModal extends React.Component<Props> {
+    componentDidMount() {
+        const { getBill, match, history } = this.props;
+        getBill(match.params.id, () => history.push(paths.billsHome));
+    }
+
+    render() {
+        const { bill, billDataLoad, classes, history } = this.props;
+        return (
+            <Dialog fullScreen open={true} onClose={history.goBack} TransitionComponent={Transition}>
+                <AppBar className={classes.appBar}>
+                    <Toolbar>
+                        <IconButton edge="start" color="inherit" onClick={history.goBack} aria-label="close">
+                            <CloseIcon />
+                        </IconButton>
+                        <Typography variant="h6" className={classes.title}>
+                            Bill
                     </Typography>
-                    <Button autoFocus color="inherit" onClick={history.goBack}>
-                        Close
+                        <Button autoFocus color="inherit" onClick={history.goBack}>
+                            Close
                     </Button>
-                </Toolbar>
-            </AppBar>
-            <Container fixed className={classes.containerPadding}>
-                <BillViewer
-                    createdAt={bill.createdAt}
-                    customer={bill.customer}
-                    items={bill.items}
-                    soldBy={bill.soldBy}
-                    billAmount={bill.billAmount}
-                    discountAmount={bill.discountAmount}
-                />
-            </Container>
-        </Dialog>
-    );
+                    </Toolbar>
+                </AppBar>
+                <Container fixed className={classes.containerPadding}>
+                    {billDataLoad || (Object.keys(bill).length < 1) ?
+                        <Zoom in={billDataLoad}><CircularProgress /></Zoom>
+                        : <BillViewer
+                            createdAt={bill.createdAt}
+                            customer={bill.customer}
+                            items={bill.items}
+                            soldBy={bill.soldBy}
+                            billAmount={bill.billAmount}
+                            discountAmount={bill.discountAmount}
+                        />}
+                </Container>
+            </Dialog>
+        );
+    }
 }
+const mapStatetoProps = (state: { bill: { billData: any; billDataLoad: any; }; }) => ({
+    bill: state.bill.billData,
+    billDataLoad: state.bill.billDataLoad
+});
+
+const mapDispatchToProps = (dispatch: any) => ({
+    getBill: (id: string, fallBack: any) => dispatch(fetchbill(id, fallBack))
+})
+
+export default compose<React.ComponentType>(
+    withRouter,
+    withStyles(styles),
+    connect(mapStatetoProps, mapDispatchToProps),
+)(BillViewerModal);
