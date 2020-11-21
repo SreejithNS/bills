@@ -15,7 +15,7 @@ import BillViewer from '../BillViewer';
 import { connect } from 'react-redux';
 import { fetchbill } from "../../actions/bill.actions";
 import { compose } from 'redux';
-import { paths } from '../../routes/paths.enum';
+import { billsPaths, paths } from '../../routes/paths.enum';
 
 const styles = (theme: Theme) => createStyles({
     appBar: {
@@ -41,24 +41,30 @@ type Props = ReturnType<typeof mapStatetoProps> & ReturnType<typeof mapDispatchT
 
 
 class BillViewerModal extends React.Component<Props> {
+    state = {
+        modalOpen: true
+    }
     componentDidMount() {
         const { getBill, match, history } = this.props;
         getBill(match.params.id, () => history.push(paths.billsHome));
     }
 
+    setOpen = (value: boolean) => this.setState({ modalOpen: value })
     render() {
         const { bill, billDataLoad, classes, history } = this.props;
+        const { modalOpen } = this.state;
+        const { setOpen } = this;
         return (
-            <Dialog fullScreen open={true} onClose={history.goBack} TransitionComponent={Transition}>
+            <Dialog fullScreen open={modalOpen} onClose={() => { setOpen(false); history.goBack() }} TransitionComponent={Transition}>
                 <AppBar className={classes.appBar}>
                     <Toolbar>
-                        <IconButton edge="start" color="inherit" onClick={history.goBack} aria-label="close">
+                        <IconButton edge="start" color="inherit" onClick={() => { setOpen(false); history.goBack() }} aria-label="close">
                             <CloseIcon />
                         </IconButton>
                         <Typography variant="h6" className={classes.title}>
                             Bill
                     </Typography>
-                        <Button autoFocus color="inherit" onClick={history.goBack}>
+                        <Button autoFocus color="inherit" onClick={() => { setOpen(false); history.goBack() }}>
                             Close
                     </Button>
                     </Toolbar>

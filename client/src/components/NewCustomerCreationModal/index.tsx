@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
@@ -38,6 +38,7 @@ const Transition = React.forwardRef(function Transition(
 });
 
 export default function NewCustomerCreationModal(props: any) {
+    const [open, setOpen] = useState(true);
     const classes = useStyles();
     const history = useHistory();
 
@@ -48,16 +49,16 @@ export default function NewCustomerCreationModal(props: any) {
         });
     }
     return (
-        <Dialog fullScreen open={"visible" in props ? props.visible : true} onClose={props.onClose || history.goBack} TransitionComponent={Transition}>
+        <Dialog fullScreen open={"visible" in props ? props.visible : open} onClose={props.onClose || (() => { setOpen(false); history.goBack() })} TransitionComponent={Transition}>
             <AppBar className={classes.appBar}>
                 <Toolbar>
-                    <IconButton edge="start" color="inherit" onClick={props.onClose || history.goBack} aria-label="close">
+                    <IconButton edge="start" color="inherit" onClick={props.onClose || (() => { setOpen(false); history.goBack() })} aria-label="close">
                         <CloseIcon />
                     </IconButton>
                     <Typography variant="h6" className={classes.title}>
                         Create New Customer
                         </Typography>
-                    <Button autoFocus color="inherit" onClick={props.onClose || history.goBack}>
+                    <Button autoFocus color="inherit" onClick={props.onClose || (() => { setOpen(false); history.goBack() })}>
                         Cancel
                          </Button>
                 </Toolbar>

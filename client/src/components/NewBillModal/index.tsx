@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
@@ -36,20 +36,21 @@ const Transition = React.forwardRef(function Transition(
 });
 
 export default function NewBillModal() {
+    const [open, setOpen] = useState(true)
     const classes = useStyles();
     const history = useHistory();
 
     return (
-        <Dialog fullScreen open={true} onClose={history.goBack} TransitionComponent={Transition}>
+        <Dialog fullScreen open={open} onClose={() => { setOpen(false); history.goBack() }} TransitionComponent={Transition}>
             <AppBar className={classes.appBar}>
                 <Toolbar>
-                    <IconButton edge="start" color="inherit" onClick={history.goBack} aria-label="close">
+                    <IconButton edge="start" color="inherit" onClick={() => { setOpen(false); history.goBack() }} aria-label="close">
                         <CloseIcon />
                     </IconButton>
                     <Typography variant="h6" className={classes.title}>
                         New Bill
                     </Typography>
-                    <Button autoFocus color="inherit" onClick={history.goBack}>
+                    <Button autoFocus color="inherit" onClick={() => { setOpen(false); history.goBack() }}>
                         Cancel
                     </Button>
                 </Toolbar>
