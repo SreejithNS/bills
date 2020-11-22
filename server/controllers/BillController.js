@@ -56,28 +56,48 @@ exports.getAllBills = [
 				req.user.type === privilageEnum.admin
 					? { soldBy: req.user._id }
 					: { comesUnder: req.user._id };
-			Bill.find(query)
-				.populate("customer")
-				.populate("soldBy")
-				.exec()
-				.then(
-					(bills) => {
-						if (bills.length > 0) {
-							return apiResponse.successResponseWithData(
-								res,
-								"Operation success",
-								_.reject(bills, ["customer", null])
-							);
-						} else {
-							return apiResponse.successResponseWithData(
-								res,
-								"Operation success",
-								[]
-							);
-						}
-					},
-					(err) => apiResponse.ErrorResponse(res, err)
-				);
+			const paginateOptions = {
+				offset:
+					req.query.offset &&
+					!!Math.abs(req.query.offset) &&
+					Math.abs(req.query.offset) > 0
+						? Math.abs(req.query.offset)
+						: undefined,
+				page:
+					req.query.page &&
+					!!Math.abs(req.query.page) &&
+					Math.abs(req.query.page) > 0
+						? Math.abs(req.query.page)
+						: undefined,
+				limit:
+					req.query.limit &&
+					!!Math.abs(req.query.limit) &&
+					Math.abs(req.query.limit) > 0
+						? Math.abs(req.query.limit)
+						: 10,
+				populate: ["customer", "soldBy"],
+				sort: req.query.sort || "",
+				lean: true,
+			};
+			Bill.paginate(query, paginateOptions).then(
+				(bills) => {
+					if (bills !== null) {
+						bills.docs = _.reject(bills.docs, ["customer", null]);
+						return apiResponse.successResponseWithData(
+							res,
+							"Operation success",
+							bills
+						);
+					} else {
+						return apiResponse.successResponseWithData(
+							res,
+							"Operation success",
+							[]
+						);
+					}
+				},
+				(err) => apiResponse.ErrorResponse(res, err)
+			);
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);

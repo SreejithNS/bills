@@ -1,4 +1,5 @@
 var mongoose = require("mongoose");
+const mongoosePaginate = require("mongoose-paginate-v2");
 const Product = require("../ProductModel");
 var Schema = mongoose.Schema;
 
@@ -179,5 +180,7 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 
 	return populatedItems;
 };
+
+BillSchema.plugin(mongoosePaginate);
 
 module.exports = BillSchema;
