@@ -44,12 +44,18 @@ export const saveBill = () => {
 }
 
 
-export const fetchBillList = () => {
+export const fetchBillList = (extraBills?: boolean) => {
     return (dispatch: any, getState: any) => {
-        if (getState().bill.billsList.length === 0) {
+        if (getState().bill.billsList.length === 0 || extraBills) {
             dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: true });
+
+            const queryString = new URL(process.env.REACT_APP_API_URL + "/api/bill/query/");
+
+            queryString.searchParams.append("offset", getState().bill.billsList.length);
+            queryString.searchParams.append("sort", "-createdAt");
+
             axios
-                .get(process.env.REACT_APP_API_URL + "/api/bill/", { withCredentials: true })
+                .get(queryString.toString(), { withCredentials: true })
                 .then(function (response) {
                     dispatch({
                         type: "FETCH_BILLS_LIST",

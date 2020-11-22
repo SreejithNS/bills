@@ -8,6 +8,7 @@ const initialState = {
 	discountPercentage: 0,
 	billSaveLoad: false,
 	billsList: [],
+	billsListHasNextPage: false,
 	billsListLoad: true,
 	billData: {},
 	billDataLoad: true,
@@ -126,10 +127,13 @@ export default function billReducer(state = initialState, action) {
 			};
 		}
 		case "FETCH_BILLS_LIST": {
-			return {
+			const newState = {
 				...state,
-				billsList: action.payload,
+				billsList: [...state.billsList, ...action.payload.docs],
 			};
+			newState.billsListHasNextPage =
+				newState.billsList.length < action.payload.totalDocs;
+			return newState;
 		}
 		case "BILL_DATA": {
 			return {

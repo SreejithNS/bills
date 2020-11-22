@@ -15,7 +15,7 @@ import BillViewer from '../BillViewer';
 import { connect } from 'react-redux';
 import { fetchbill } from "../../actions/bill.actions";
 import { compose } from 'redux';
-import { billsPaths, paths } from '../../routes/paths.enum';
+import { paths } from '../../routes/paths.enum';
 
 const styles = (theme: Theme) => createStyles({
     appBar: {
