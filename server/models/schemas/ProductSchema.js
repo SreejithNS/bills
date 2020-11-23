@@ -1,10 +1,11 @@
 var mongoose = require("mongoose");
+const mongoosePaginate = require("mongoose-paginate-v2");
 
 var Schema = mongoose.Schema;
 
 const ProductSchema = new Schema(
 	{
-		code: { type: String, required: true , index: { unique: true } },
+		code: { type: String, required: true, index: { unique: true } },
 		name: { type: String, required: true },
 		weight: { type: Number },
 		weightUnit: { type: String },
@@ -13,5 +14,7 @@ const ProductSchema = new Schema(
 	},
 	{ timestamps: true }
 );
+
+ProductSchema.plugin(mongoosePaginate);
 
 module.exports = ProductSchema;

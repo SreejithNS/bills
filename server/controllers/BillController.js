@@ -44,7 +44,7 @@ exports.getBill = [
 ];
 
 /**
- * Get all Bills List created by the user.
+ * Get  Bills List created by the user based on query received.
  *
  * @returns [Object] {Object}
  */

@@ -5,6 +5,7 @@ const auth = require("../middlewares/jwt");
 const _ = require("lodash");
 const apiResponse = require("../helpers/apiResponse");
 const Product = require("../models/ProductModel");
+const privilegeEnum = require("../helpers/privilegeEnum.js");
 
 function ProductData(data) {
 	this.id = data._id;
@@ -244,6 +245,98 @@ exports.getSuggestions = [
 					res,
 					`Products with code ${req.params.code}`,
 					products.map((product) => new ProductData(product))
+				);
+			}
+		).lean();
+	},
+];
+
+/**
+ * Get  Bills List created by the user based on query received.
+ *
+ * @returns [Object] {Object}
+ */
+exports.query = [
+	auth,
+	function (req, res) {
+		try {
+			if (req.user.type !== privilegeEnum.admin)
+				return apiResponse.unauthorizedResponse(
+					res,
+					"You are not authorised to do this operation"
+				);
+			const query = {
+				name: {
+					$regex: new RegExp(`${req.query.search}`, "i"),
+				},
+			}; // comesUnder: req.user._id };
+
+			const paginateOptions = {
+				page:
+					req.query.page &&
+					!!Math.abs(req.query.page) &&
+					Math.abs(req.query.page) > 0
+						? Math.abs(req.query.page)
+						: 1,
+				limit:
+					req.query.limit &&
+					!!Math.abs(req.query.limit) &&
+					Math.abs(req.query.limit) > 0
+						? Math.abs(req.query.limit)
+						: 5,
+				sort: req.query.sort || "",
+				lean: true,
+			};
+			Product.paginate(query, paginateOptions).then(
+				(items) => {
+					if (items !== null) {
+						return apiResponse.successResponseWithData(
+							res,
+							"Operation success",
+							items
+						);
+					} else {
+						return apiResponse.successResponseWithData(
+							res,
+							"Operation success: No data",
+							[]
+						);
+					}
+				},
+				(err) => apiResponse.ErrorResponse(res, err)
+			);
+		} catch (err) {
+			//throw error in json response with status 500.
+			return apiResponse.ErrorResponse(res, err);
+		}
+	},
+];
+
+/**
+ * Get availibity for the Product CODE.
+ *
+ * @param {string} code - Product's code
+ * @returns {boolean} availability - Availibility of the product code
+ */
+exports.productAvailability = [
+	auth,
+	param("code").escape().trim(),
+	(req, res) => {
+		if (req.user.type !== privilegeEnum.admin)
+			return apiResponse.unauthorizedResponse(
+				res,
+				"You are not authorised to do this operation"
+			);
+		Product.find(
+			{
+				code: req.params.code,
+			},
+			(err, products) => {
+				if (err) return apiResponse.ErrorResponse(res, err);
+				return apiResponse.successResponseWithData(
+					res,
+					"Product code availibility",
+					!(products.length === 0)
 				);
 			}
 		).lean();
