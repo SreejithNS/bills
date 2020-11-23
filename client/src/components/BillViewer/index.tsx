@@ -124,7 +124,8 @@ export default function BillViewer(props: BillProps) {
                                 title: "Amount",
                                 field: "amount",
                                 type: "numeric",
-                                editable: "never"
+                                editable: "never",
+                                render: rowData => rowData.quantity * rowData.rate
                             }
                         ]}
                         data={props?.items || []}
