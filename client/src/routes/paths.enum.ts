@@ -1,7 +1,8 @@
 export enum paths {
     home = '/',
     customer = '/customers',
-    billsHome = '/bills'
+    billsHome = '/bills',
+    items = "/items"
 }
 
 export enum billsPaths {
@@ -13,4 +14,9 @@ export enum billsPaths {
 export enum customersPaths {
     home = '/',
     createCustomer = '/create'
+}
+
+export enum itemPaths {
+    home = '/',
+    addItem = '/create'
 }
