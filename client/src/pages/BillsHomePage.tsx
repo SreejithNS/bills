@@ -14,9 +14,9 @@ type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateT
 
 const styles = (theme: Theme) => createStyles({
     fab: {
-        position: "fixed",
-        bottom: theme.spacing(2),
-        right: theme.spacing(2),
+        position: "sticky",
+        left: theme.spacing(2),
+        bottom: theme.spacing(8),
     },
     fabIcon: {
         marginRight: theme.spacing(1)
@@ -47,6 +47,7 @@ class BillsHomePage extends React.Component<Props> {
                         <Grid item xs={12}>
                             <Typography variant="h4">
                                 Your Bills
+                                 <Button onClick={() => history.push("/items")}>inventory</Button>
                             </Typography>
                         </Grid>
                         {(billsList.length) ? billsList.map((bill: { customer: { name: String | undefined; }; billAmount: Number | undefined; createdAt: String | undefined; _id: string; }, key: any) =>

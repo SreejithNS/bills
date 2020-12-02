@@ -5,9 +5,11 @@ interface BillData extends Object {
     customerId: string,
     discountAmount: number,
     items: { id: string; quantity: number; }[];
+    credit: boolean;
+    paidAmount: number;
 }
 
-export const fetchbill = (id: string, fallBack: any) => {
+export const fetchbill = (id: string, fallBack?: any) => {
     return (dispatch: any, getState: any) => {
         dispatch({ type: "BILL_DATA_LOAD", payload: true });
         const { billsList } = getState().bill;
@@ -21,7 +23,7 @@ export const fetchbill = (id: string, fallBack: any) => {
                 .then(response => {
                     dispatch({ type: "BILL_DATA", payload: response.data.data });
                 })
-                .catch(error => { toast.error("Bill Fetching Error:" + error.message); fallBack() })
+                .catch(error => { toast.error("Bill Fetching Error:" + error.message); fallBack && fallBack() })
                 .finally(() => dispatch({ type: "BILL_DATA_LOAD", payload: false }))
         }
     }
@@ -30,18 +32,44 @@ export const fetchbill = (id: string, fallBack: any) => {
 export const saveBill = () => {
     return (dispatch: any, getState: any) => {
         dispatch({ type: "BILL_SAVE_LOAD", payload: true });
-        const billData: BillData = { customerId: "", discountAmount: 0, items: [] };
-        const { customer, items, discountAmount } = getState().bill;
+        const billData: BillData = { customerId: "", discountAmount: 0, items: [], credit: true, paidAmount: 0 };
+        const { customer, items, discountAmount, credit, paidAmount } = getState().bill;
         billData.customerId = customer.id;
         billData.discountAmount = discountAmount;
         billData.items = items.map((item: { id: string; quantity: number; }, key: number) => ({ id: item.id, quantity: item.quantity }));
-
+        billData.credit = credit;
+        billData.paidAmount = paidAmount;
         return axios
             .post(process.env.REACT_APP_API_URL + "/api/bill", billData, { withCredentials: true })
             .catch(error => toast.error("Bill Save Error:" + error.message))
             .finally(() => dispatch({ type: "BILL_SAVE_LOAD", payload: false }))
     }
 }
+
+export const postReceivePayment = (id: string, amount: number) => {
+    return (dispatch: any, getState: any) => {
+        return axios
+            .post(process.env.REACT_APP_API_URL + "/api/bill/payment", { bill: id, paidAmount: amount }, { withCredentials: true })
+            .catch(error => toast.error("Bill Payment Receive Error:" + error.message))
+            .finally(() => {
+                toast.success("Payment Updated!");
+                fetchbill(id)(dispatch, getState);
+            });
+    }
+}
+
+export const putBillCredit = (id: string) => {
+    return (dispatch: any, getState: any) => {
+        return axios
+            .put(process.env.REACT_APP_API_URL + "/api/bill/toggleCredit", { bill: id }, { withCredentials: true })
+            .catch(error => toast.error("Bill Credit Change:" + error.message))
+            .finally(() => {
+                toast.success("Bill open payments!");
+                fetchbill(id)(dispatch, getState);
+            });
+    }
+}
+
 
 
 export const fetchBillList = (extraBills?: boolean) => {

@@ -1,6 +1,6 @@
 import React from "react";
 import TextField from "@material-ui/core/TextField";
-import { Button, CircularProgress, Grid, Zoom } from "@material-ui/core";
+import { Button, Checkbox, CircularProgress, FormControlLabel, Grid, Zoom } from "@material-ui/core";
 import { Autocomplete } from "@material-ui/lab";
 import MaterialTable from "material-table";
 import { connect } from "react-redux";
@@ -22,6 +22,8 @@ interface DispatchProps {
     setDiscountPercentage(percentage: number): void;
     addItem(id: string, quantity: number): void;
     updateQuantity(id: string, newQuantity: number): void;
+    setCredit(isCredit: boolean): void;
+    setPaidAmount(paidAmount: number): void;
     saveBill(): void;
 }
 
@@ -36,6 +38,8 @@ interface StateProps {
     discountAmount: number;
     discountPercentage: number;
     billSaveLoad: boolean;
+    credit: boolean;
+    paidAmount: number;
 }
 
 
@@ -117,7 +121,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps> {
     }
 
     render() {
-        const { customer, customerSuggestions, itemSuggestions, items, billAmount, discountAmount, itemsLoad, discountPercentage, billSaveLoad, saveBill, setDiscountPercentage, updateQuantity, setDiscountAmount, getCustomerSuggestions, getItemSuggestions } = this.props;
+        const { customer, customerSuggestions, itemSuggestions, items, billAmount, discountAmount, itemsLoad, discountPercentage, billSaveLoad, credit, paidAmount, setCredit, setPaidAmount, saveBill, setDiscountPercentage, updateQuantity, setDiscountAmount, getCustomerSuggestions, getItemSuggestions } = this.props;
         const { customerModal, item } = this.state;
         const { openCustomerModal, closeCustomerModal, handleCustomerChange, handleItemCodeChange, handleItemQuantityChange, handleAddItem } = this;
 
@@ -216,7 +220,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps> {
                             }}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         <TextField
                             label="Discount Percentage"
                             type="number"
@@ -227,7 +231,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps> {
                             value={discountPercentage}
                         />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         <TextField
                             label="Discount Amount"
                             type="number"
@@ -245,6 +249,37 @@ class NewBillForm extends React.Component<StateProps & DispatchProps> {
                             InputProps={{
                                 readOnly: true
                             }}
+                            type="number"
+                            variant="outlined"
+                        />
+                    </Grid>
+                    <Grid item xs={4}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={credit}
+                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setCredit(event.target.checked)}
+                                    name="credit"
+                                    color="primary"
+                                />
+                            }
+                            label="Credit Amount"
+                        />
+                        {/* <TextField
+                            value={billAmount}
+                            label="Total Amount"
+                            InputProps={{
+                                readOnly: true
+                            }}
+                            type="radio"
+                            variant="outlined"
+                        /> */}
+                    </Grid>
+                    <Grid item xs={4}>
+                        <TextField
+                            value={paidAmount}
+                            label="Paid Amount"
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPaidAmount(parseFloat(event.target.value))}
                             type="number"
                             variant="outlined"
                         />
@@ -274,6 +309,8 @@ const mapStateToProps = (state: any): StateProps => {
         discountPercentage: state.bill.discountPercentage,
         itemsTotalAmount: getItemsTotalAmount(state.bill),
         billAmount: getBillAmount(state.bill),
+        paidAmount: state.bill.paidAmount,
+        credit: state.bill.credit,
         billSaveLoad: state.bill.billSaveLoad
     }
 };
@@ -286,6 +323,8 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>): DispatchProps
     setDiscountAmount: (amount) => dispatch({ type: "BILL_SET_DISCOUNT", payload: amount }),
     setDiscountPercentage: (percentage) => dispatch({ type: "BILL_SET_DISCOUNT_PERCENTAGE", payload: percentage }),
     updateQuantity: (id, newQuantity) => dispatch({ type: "BILL_ITEM_QUANTITY_UPDATE", payload: [id, newQuantity] }),
+    setCredit: (isCredit: boolean) => dispatch({ type: "BILL_SET_CREDIT", payload: isCredit }),
+    setPaidAmount: (paidAmount: number) => dispatch({ type: "BILL_PAID_AMOUNT", payload: paidAmount }),
     saveBill: () => dispatch(saveBill())
 });
 

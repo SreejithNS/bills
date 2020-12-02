@@ -1,12 +1,11 @@
 import * as React from 'react'
-import { CircularProgress, Container, Fab, Grid, Theme, withStyles, Zoom, WithStyles, createStyles, Typography, Button } from '@material-ui/core';
+import { Container, Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
-import { fetchBillList } from '../actions/bill.actions';
 import AddIcon from '@material-ui/icons/Add';
 import { compose } from 'redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { itemPaths, paths } from '../routes/paths.enum';
-import MaterialTable, { MaterialTableProps } from 'material-table';
+import MaterialTable from 'material-table';
 import { tableIcons } from '../components/MaterialTableIcons';
 import { fetchItemsList } from '../actions/item.actions';
 import Axios from 'axios';
@@ -18,8 +17,8 @@ type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateT
 const styles = (theme: Theme) => createStyles({
     fab: {
         position: "fixed",
-        bottom: theme.spacing(2),
-        right: theme.spacing(2),
+        bottom: theme.spacing(8),
+        right: theme.spacing(2)
     },
     fabIcon: {
         marginRight: theme.spacing(1)
@@ -38,7 +37,7 @@ class ItemsHomePage extends React.Component<Props> {
     }
     tableRef = React.createRef<{ onQueryChange(): void }>();
     render() {
-        const { itemsList, itemsListLoad, classes, history } = this.props;
+        const { classes, history } = this.props;
         return (
             <React.Fragment>
                 <Container fixed>

@@ -12,6 +12,8 @@ const initialState = {
 	billsListLoad: true,
 	billData: {},
 	billDataLoad: true,
+	paidAmount: 0,
+	credit: true,
 };
 export const getItemsTotalAmount = (billState) => {
 	var sum = 0;
@@ -145,6 +147,18 @@ export default function billReducer(state = initialState, action) {
 			return {
 				...state,
 				billDataLoad: action.payload,
+			};
+		}
+		case "BILL_SET_CREDIT": {
+			return {
+				...state,
+				credit: action.payload,
+			};
+		}
+		case "BILL_PAID_AMOUNT": {
+			return {
+				...state,
+				paidAmount: action.payload,
 			};
 		}
 		default:
