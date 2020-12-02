@@ -19,12 +19,15 @@ exports.getBill = [
 		Bill.findById(req.params.id)
 			.populate("customer")
 			.populate("soldBy")
+			.populate("payments.paymentReceivedBy")
 			.exec()
 			.then(
 				(doc) => {
 					if (
-						doc.comesUnder === req.user.id ||
-						doc.comesUnder === req.user.worksUnder
+						(doc.comesUnder &&
+							doc.comesUnder.toString() === req.user._id) ||
+						(doc.comesUnder &&
+							doc.comesUnder.toString() === req.user.worksUnder)
 					) {
 						return apiResponse.successResponseWithData(
 							res,
@@ -75,7 +78,11 @@ exports.getAllBills = [
 					Math.abs(req.query.limit) > 0
 						? Math.abs(req.query.limit)
 						: 10,
-				populate: ["customer", "soldBy"],
+				populate: [
+					"customer",
+					"soldBy",
+					"payments.paymentReceivedBy firstName",
+				],
 				sort: req.query.sort || "",
 				lean: true,
 			};
@@ -83,6 +90,17 @@ exports.getAllBills = [
 				(bills) => {
 					if (bills !== null) {
 						bills.docs = _.reject(bills.docs, ["customer", null]);
+						bills.docs = bills.docs.map((doc) => {
+							if (doc.payments && doc.payments.length)
+								doc.payments = doc.payments.map((payment) => {
+									payment.paymentReceivedBy = _.pick(
+										payment.paymentReceivedBy,
+										"firstName"
+									);
+									return payment;
+								});
+							return doc;
+						});
 						return apiResponse.successResponseWithData(
 							res,
 							"Operation success",
@@ -160,6 +178,8 @@ exports.saveBill = [
 		.trim()
 		.escape()
 		.isNumeric(),
+	body("paidAmount").optional().trim().escape().isNumeric(),
+	body("credit").optional().trim().escape().isBoolean(),
 	async function (req, res) {
 		const validationError = validationResult(req);
 		if (!validationError.isEmpty())
@@ -200,10 +220,26 @@ exports.saveBill = [
 						items: req.body.items,
 						discountAmount: req.body.discountAmount,
 						soldBy: req.user._id,
+						credit:
+							req.body.credit === undefined ||
+							req.body.credit === null
+								? true
+								: req.body.credit,
+						paidAmount:
+							req.body.paidAmount === undefined ||
+							req.body.paidAmount === null
+								? 0
+								: req.body.paidAmount,
 						comesUnder,
 					});
 					newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();
 					newBill.billAmount = newBill.calculateBillAmount();
+
+					if (newBill.paidAmount > 0)
+						newBill.payments.push({
+							paidAmount: newBill.paidAmount,
+							paymentReceivedBy: req.user._id,
+						});
 
 					return newBill.save();
 				},
@@ -220,6 +256,92 @@ exports.saveBill = [
 						"Error in saving the bill:" + err.message
 					)
 			);
+	},
+];
+
+exports.receivePayment = [
+	auth,
+	body("paidAmount").escape().trim().isNumeric(),
+	body("bill").escape().trim().isMongoId(),
+	function (req, res) {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
+		}
+		if (req.body.paidAmount <= 0) {
+			return apiResponse.ErrorResponse(res, "Invalid payment amount");
+		}
+		Bill.findById(req.body.bill, (err, doc) => {
+			if (err) return apiResponse.ErrorResponse(res, "Bill not found");
+			if (doc.credit) {
+				if (
+					!(
+						(doc.comesUnder &&
+							doc.comesUnder.toString() === req.user._id) ||
+						(doc.comesUnder &&
+							doc.comesUnder.toString() === req.user.worksUnder)
+					)
+				)
+					return apiResponse.unauthorizedResponse(
+						res,
+						"You are not allowed to receive payment for this bill"
+					);
+				doc.payments.push({
+					paidAmount: req.body.paidAmount,
+					paymentReceivedBy: req.user._id,
+				});
+				doc.paidAmount += parseInt(req.body.paidAmount);
+				doc.save().then(() =>
+					apiResponse.successResponse(res, "Bill payment received!")
+				);
+			} else {
+				return apiResponse.ErrorResponse(
+					res,
+					"This Bill will not accept payments anymore"
+				);
+			}
+		});
+	},
+];
+
+exports.toggleBillCredit = [
+	auth,
+	body("bill").escape().trim().isMongoId(),
+	function (req, res) {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
+		}
+		if (req.body.paidAmount <= 0) {
+			return apiResponse.ErrorResponse(res, "Invalid payment amount");
+		}
+		Bill.findById(req.body.bill, (err, doc) => {
+			if (err) return apiResponse.ErrorResponse(res, "Bill not found");
+			if (
+				!(
+					(doc.comesUnder &&
+						doc.comesUnder.toString() === req.user._id) ||
+					(doc.comesUnder &&
+						doc.comesUnder.toString() === req.user.worksUnder)
+				)
+			)
+				return apiResponse.unauthorizedResponse(
+					res,
+					"You are not allowed to update this bill"
+				);
+			doc.credit = !doc.credit;
+			doc.save().then(() =>
+				apiResponse.successResponse(res, "Bill credit toggled!")
+			);
+		});
 	},
 ];
 

@@ -18,6 +18,7 @@ function UserData(params) {
 	this.email = params.email;
 	this.phone = params.phone;
 	this.type = params.type;
+	this.settings = params.settings || { restrictedRoutes: [] };
 	this.worksUnder = params.worksUnder;
 }
 
@@ -201,6 +202,7 @@ exports.login = [
 														"type",
 														"firstName",
 														"worksUnder",
+														"settings",
 													]
 												);
 												const jwtData = {
@@ -257,6 +259,13 @@ exports.login = [
 		} catch (err) {
 			return apiResponse.ErrorResponse(res, err);
 		}
+	},
+];
+
+exports.userData = [
+	authenticate,
+	(req, res) => {
+		res.send(_.omit(req.user, ["exp", "iat"]));
 	},
 ];
 

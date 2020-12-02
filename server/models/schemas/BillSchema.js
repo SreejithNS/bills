@@ -2,7 +2,7 @@ var mongoose = require("mongoose");
 const mongoosePaginate = require("mongoose-paginate-v2");
 const Product = require("../ProductModel");
 var Schema = mongoose.Schema;
-
+const Payment = require("./PaymentSchema");
 const BillSchema = new Schema(
 	{
 		items: [
@@ -21,7 +21,17 @@ const BillSchema = new Schema(
 		itemsTotalAmount: { type: Number, default: 0 },
 		billAmount: { type: Number, default: 0 },
 		soldBy: { type: Schema.Types.ObjectId, ref: "User" },
+		credit: { type: Boolean, default: true },
+		paidAmount: { type: Number, default: 0 },
 		comesUnder: { type: Schema.Types.ObjectId, ref: "User" },
+		payments: {
+			type: [
+				{
+					type: Payment,
+				},
+			],
+			default: [],
+		},
 	},
 	{ timestamps: true }
 );
