@@ -1,6 +1,9 @@
 const initialState = {
 	settings: {},
 	userData: {},
+	salesmenListError: false,
+	salesmenList: [],
+	salesmenListLoading: false,
 	appInitilised: false,
 	userDataLoading: true,
 	appInitiliseError: {
@@ -27,6 +30,23 @@ export default function appReducer(state = initialState, action) {
 			return {
 				...state,
 				appInitiliseError: action.payload,
+			};
+		}
+		case "SALESMEN_LIST": {
+			const newState = { ...state };
+			newState.salesmenList = action.payload;
+			return { ...newState };
+		}
+		case "SALESMEN_LIST_LOAD": {
+			return {
+				...state,
+				salesmenListLoading: action.payload,
+			};
+		}
+		case "SALESMEN_LIST_ERROR": {
+			return {
+				...state,
+				salesmenListError: action.payload,
 			};
 		}
 		default:
