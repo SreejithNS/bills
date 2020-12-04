@@ -39,6 +39,7 @@ interface BillItem {
 export interface BillProps {
     payments?: any;
     _id?: any;
+    serialNumber: number;
     customer: Customer;
     createdAt: string;
     soldBy: User;
@@ -96,6 +97,9 @@ export default function BillViewer(props: BillProps & AdditionalProps) {
                     </Typography>
                     <Typography variant="subtitle2" display="block">
                         Phone: {props.customer?.phone || 9489126016}
+                    </Typography>
+                    <Typography variant="subtitle1" display="block">
+                        Bill: #{props.serialNumber || "Serial Number Error"}
                     </Typography>
                 </Grid>
                 <Grid item className={classes.itemPadding + " " + classes.alignRight} xs >

@@ -3,10 +3,12 @@ import { CircularProgress, Container, Fab, Grid, Theme, withStyles, Zoom, WithSt
 import { connect } from 'react-redux';
 import { fetchBillList } from '../actions/bill.actions';
 import BillCard from '../components/BillCard';
+import ParagraphIconCard from "../components/ParagraphIconCard";
 import AddIcon from '@material-ui/icons/Add';
 import { compose } from 'redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { billsPaths, paths } from '../routes/paths.enum';
+import { LineWeightRounded } from '@material-ui/icons';
 const Fade = require('react-reveal/Fade');
 //import CustomerCard from '../components/CustomerCard';
 
@@ -14,9 +16,9 @@ type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateT
 
 const styles = (theme: Theme) => createStyles({
     fab: {
-        position: "sticky",
-        left: theme.spacing(2),
-        bottom: theme.spacing(8),
+        position: "fixed",
+        right: theme.spacing(2),
+        bottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(2),
     },
     fabIcon: {
         marginRight: theme.spacing(1)
@@ -24,7 +26,7 @@ const styles = (theme: Theme) => createStyles({
     cardPadding: {
         padding: theme.spacing(1),
         "&:last-of-type": {
-            marginBottom: theme.spacing(8)
+            marginBottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(8)
         }
     }
 })
@@ -70,10 +72,23 @@ class BillsHomePage extends React.Component<Props> {
                                         </Fade>
                                     </Grid> : ""}
                             </React.Fragment>
-                        ) : billsList.length === 0 && billsListLoad ? <Grid item xs container alignItems="center" justify="center">
-                            <Typography variant="h6" align="center"><Zoom in={billsListLoad}><CircularProgress /></Zoom><br />Please wait while fetching bills</Typography>
-                        </Grid>
-                                : ""}
+                        )
+                            : billsList.length === 0 && billsListLoad
+                                ? <Grid item xs>
+                                    <ParagraphIconCard
+                                        icon={<Zoom in={billsListLoad}><CircularProgress /></Zoom>}
+                                        heading="Bills loading"
+                                        content="Please wait while fetching the list of Bills you created so far."
+                                    />
+                                </Grid>
+                                : billsList.length === 0 && !billsListLoad
+                                    ? <Grid item xs>
+                                        <ParagraphIconCard
+                                            icon={<LineWeightRounded fontSize="large" />}
+                                            heading="Nothing Billed yet"
+                                            content={<>This is where you see all your bills, click on <strong>Add New Bill</strong> icon to start Billing.</>} />
+                                    </Grid>
+                                    : <></>}
                     </Grid>
                 </Container>
                 <Fab onClick={() => history.push(paths.billsHome + billsPaths.addBill)} className={classes.fab} color="primary" variant="extended">

@@ -92,6 +92,7 @@ class BillViewerModal extends React.Component<Props> {
                                 credit={bill.credit}
                                 paidAmount={bill.paidAmount}
                                 creditAction={this.handleCreditUpdate}
+                                serialNumber={bill.serialNumber}
                             />}
                     </Container>
                 </Dialog>

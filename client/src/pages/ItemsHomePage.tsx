@@ -17,8 +17,9 @@ type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateT
 const styles = (theme: Theme) => createStyles({
     fab: {
         position: "fixed",
-        bottom: theme.spacing(8),
-        right: theme.spacing(2)
+        right: theme.spacing(2),
+        bottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(2),
+        transition: theme.transitions.easing.easeIn
     },
     fabIcon: {
         marginRight: theme.spacing(1)
@@ -26,7 +27,7 @@ const styles = (theme: Theme) => createStyles({
     cardPadding: {
         padding: theme.spacing(1),
         "&:last-of-type": {
-            marginBottom: theme.spacing(8)
+            marginBottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(8)
         }
     }
 })
@@ -147,7 +148,7 @@ class ItemsHomePage extends React.Component<Props> {
                                 : ""} */}
                     </Grid>
                 </Container>
-                <Fab onClick={() => history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
+                <Fab onClick={() => this.props.history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
                     <AddIcon className={classes.fabIcon} />
                         Add Item
                 </Fab>
