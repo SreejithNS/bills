@@ -50,7 +50,7 @@ export default function Routes() {
                         <AccountRoutes />
                     </Suspense>
                 </Route>
-                <Route path='*' exact={true}>
+                <Route path='*'>
                     <Suspense fallback={<FullScreenLoading />}>
                         <NotFoundPage />
                     </Suspense>
