@@ -25,6 +25,7 @@ mongoose
 		console.error("App starting error:", err.message);
 		process.exit(1);
 	});
+
 var db = mongoose.connection;
 
 var app = express();
@@ -42,7 +43,7 @@ app.use(cookieParser());
 //To allow cross-origin requests
 app.use(
 	cors({
-		origin: "http://localhost:3000",
+		origin: "https://billswebclient.s3.ap-south-1.amazonaws.com/",
 		optionsSuccessStatus: 200,
 		credentials: true,
 	})
