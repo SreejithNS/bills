@@ -7,15 +7,14 @@ import AppBottomNavigation from '../components/AppBottomNavigation';
 import FullScreenLoading from '../components/FullScreenLoading';
 import AccountRoutes from './account.routes';
 import { paths } from './paths.enum';
+import NotFoundPage from '../pages/NotFoundPage';
 
 const HomePage = React.lazy(() => import('../pages/HomePage'));
-const NotFoundPage = React.lazy(() => import('../pages/NotFoundPage'));
 const BillsRoutes = React.lazy(() => import('./bills.routes'));
 const CustomersRoutes = React.lazy(() => import('./customers.routes'));
 const ItemsRoutes = React.lazy(() => import('./items.routes'));
 
 //import HomePage from '../pages/HomePage';
-//import NotFoundPage from '../pages/NotFoundPage';
 //import BillsRoutes from './bills.routes';
 //import CustomersRoutes from './customers.routes';
 //import ItemsRoutes from './items.routes';
@@ -23,39 +22,34 @@ const ItemsRoutes = React.lazy(() => import('./items.routes'));
 export default function Routes() {
     return (
         <><Switch>
-            <Suspense fallback={<FullScreenLoading />}>
-                <Route exact path={paths.home}>
-                    <Suspense fallback={<FullScreenLoading />}>
-                        <HomePage />
-                    </Suspense>
-
-                </Route>
-                <Route path={paths.billsHome}>
-                    <Suspense fallback={<FullScreenLoading />}>
-                        <BillsRoutes />
-                    </Suspense>
-                </Route>
-                <Route path={paths.customer}>
-                    <Suspense fallback={<FullScreenLoading />}>
-                        <CustomersRoutes />
-                    </Suspense>
-                </Route>
-                <Route path={paths.items}>
-                    <Suspense fallback={<FullScreenLoading />}>
-                        <ItemsRoutes />
-                    </Suspense>
-                </Route>
-                <Route path={paths.account}>
-                    <Suspense fallback={<FullScreenLoading />}>
-                        <AccountRoutes />
-                    </Suspense>
-                </Route>
-                <Route path='*'>
-                    <Suspense fallback={<FullScreenLoading />}>
-                        <NotFoundPage />
-                    </Suspense>
-                </Route>
-            </Suspense>
+            <Route exact path={paths.home}>
+                <Suspense fallback={<FullScreenLoading />}>
+                    <HomePage />
+                </Suspense>
+            </Route>
+            <Route path={paths.billsHome}>
+                <Suspense fallback={<FullScreenLoading />}>
+                    <BillsRoutes />
+                </Suspense>
+            </Route>
+            <Route path={paths.customer}>
+                <Suspense fallback={<FullScreenLoading />}>
+                    <CustomersRoutes />
+                </Suspense>
+            </Route>
+            <Route path={paths.items}>
+                <Suspense fallback={<FullScreenLoading />}>
+                    <ItemsRoutes />
+                </Suspense>
+            </Route>
+            <Route path={paths.account}>
+                <Suspense fallback={<FullScreenLoading />}>
+                    <AccountRoutes />
+                </Suspense>
+            </Route>
+            <Route>
+                <NotFoundPage />
+            </Route>
         </Switch>
             <AppBottomNavigation /></>
     )
