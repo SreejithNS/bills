@@ -48,11 +48,11 @@ export default function Routes() {
                     <AccountRoutes />
                 </Suspense>
             </Route>
-            <Route>
+            {/* <Route>
                 <Suspense fallback={<FullScreenLoading />}>
                     <NotFoundPage />
                 </Suspense>
-            </Route>
+            </Route> */}
         </Switch>
             <AppBottomNavigation /></>
     )
