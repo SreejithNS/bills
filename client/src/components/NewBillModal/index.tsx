@@ -56,7 +56,7 @@ export default function NewBillModal() {
                 </Toolbar>
             </AppBar>
             <Container fixed className={classes.containerPadding}>
-                <NewBillForm />
+                <NewBillForm closeModal={() => { setOpen(false); history.goBack() }} />
             </Container>
         </Dialog>
     );

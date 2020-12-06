@@ -24,7 +24,7 @@ interface DispatchProps {
     updateQuantity(id: string, newQuantity: number): void;
     setCredit(isCredit: boolean): void;
     setPaidAmount(paidAmount: number): void;
-    saveBill(): void;
+    saveBill(): Promise<any> | any;
 }
 
 interface StateProps {
@@ -42,8 +42,12 @@ interface StateProps {
     paidAmount: number;
 }
 
+interface ComponentProps {
+    closeModal(): void;
+}
 
-class NewBillForm extends React.Component<StateProps & DispatchProps> {
+
+class NewBillForm extends React.Component<StateProps & DispatchProps & ComponentProps> {
     state = {
         customerModal: {
             name: "",
@@ -121,7 +125,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps> {
     }
 
     render() {
-        const { customer, customerSuggestions, itemSuggestions, items, billAmount, discountAmount, itemsLoad, discountPercentage, billSaveLoad, credit, paidAmount, setCredit, setPaidAmount, saveBill, setDiscountPercentage, updateQuantity, setDiscountAmount, getCustomerSuggestions, getItemSuggestions } = this.props;
+        const { customer, customerSuggestions, itemSuggestions, items, billAmount, discountAmount, itemsLoad, discountPercentage, billSaveLoad, credit, paidAmount, closeModal, setCredit, setPaidAmount, saveBill, setDiscountPercentage, updateQuantity, setDiscountAmount, getCustomerSuggestions, getItemSuggestions } = this.props;
         const { customerModal, item } = this.state;
         const { openCustomerModal, closeCustomerModal, handleCustomerChange, handleItemCodeChange, handleItemQuantityChange, handleAddItem } = this;
 
@@ -285,7 +289,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps> {
                         />
                     </Grid>
                     <Grid item xs={12}>
-                        <Button variant="contained" disabled={billSaveLoad} onClick={saveBill} color="primary">
+                        <Button variant="contained" disabled={billSaveLoad} onClick={() => saveBill().then(closeModal)} color="primary">
                             Save Bill
                         </Button>
                         <Zoom in={billSaveLoad}><CircularProgress /></Zoom>
