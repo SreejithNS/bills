@@ -109,7 +109,6 @@ function register(req, res) {
  */
 
 exports.register = [
-	authenticate,
 	// Validate fields.
 	body("firstName")
 		.isLength({ min: 1 })
