@@ -15,7 +15,11 @@ var UserSchema = new mongoose.Schema(
 		confirmOTP: { type: String, required: false },
 		otpTries: { type: Number, required: false, default: 0 },
 		status: { type: Boolean, required: true, default: 1 },
-		settings: { type: UserSettingsSchema, required: false, default: [] },
+		settings: {
+			type: UserSettingsSchema,
+			required: false,
+			default: { restrictedRoutes: [] },
+		},
 	},
 	{ timestamps: true }
 );

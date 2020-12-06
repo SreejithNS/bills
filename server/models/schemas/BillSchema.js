@@ -3,8 +3,19 @@ const mongoosePaginate = require("mongoose-paginate-v2");
 const Product = require("../ProductModel");
 var Schema = mongoose.Schema;
 const Payment = require("./PaymentSchema");
+
+const autoIncrement = require("mongoose-auto-increment");
+autoIncrement.initialize(mongoose.connection);
+
 const BillSchema = new Schema(
 	{
+		serialNumber: {
+			type: Number,
+			required: true,
+			index: {
+				unique: true,
+			},
+		},
 		items: [
 			{
 				code: { type: String, required: true },
@@ -192,5 +203,9 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 };
 
 BillSchema.plugin(mongoosePaginate);
+BillSchema.plugin(autoIncrement.plugin, {
+	model: "Bill",
+	field: "serialNumber",
+});
 
 module.exports = BillSchema;

@@ -10,6 +10,8 @@ const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
 const _ = require("lodash");
 const authenticate = require("../middlewares/jwt");
+const { salesman } = require("../helpers/privilegeEnum");
+const privilegeEnum = require("../helpers/privilegeEnum");
 
 function UserData(params) {
 	this._id = params.id;
@@ -94,7 +96,20 @@ function register(req, res) {
 	}
 }
 
+/**
+ * Salesman registration.
+ *
+ * @param {string}      firstName
+ * @param {string=}      lastName
+ * @param {string=}      email
+ * @param {number}		phone
+ * @param {string}      password
+ *
+ * @returns {Object}
+ */
+
 exports.register = [
+	authenticate,
 	// Validate fields.
 	body("firstName")
 		.isLength({ min: 1 })
@@ -144,6 +159,124 @@ exports.register = [
 	sanitizeBody("password").escape(),
 	// Process request after validation and sanitization.
 	register,
+];
+
+exports.registerSalesman = [
+	authenticate,
+	// Validate fields.
+	body("firstName")
+		.isLength({ min: 1 })
+		.trim()
+		.withMessage("First name must be specified.")
+		.isAlphanumeric()
+		.withMessage("First name has non-alphanumeric characters."),
+	body("lastName")
+		.trim()
+		.optional()
+		.isAlphanumeric()
+		.withMessage("Last name has non-alphanumeric characters."),
+	body("phone")
+		.isLength({ min: 10, max: 10 })
+		.trim()
+		.withMessage("Phone must be 10 digits.")
+		.custom((value) => {
+			return UserModel.findOne({ phone: parseInt(value) }).then(
+				(user) => {
+					if (user) {
+						return Promise.reject("Phone already in use");
+					}
+				}
+			);
+		}),
+	body("email")
+		.trim()
+		.optional()
+		.isEmail()
+		.withMessage("Email must be a valid email address.")
+		.custom((value) => {
+			return UserModel.findOne({ email: value }).then((user) => {
+				if (user) {
+					return Promise.reject("E-mail already in use");
+				}
+			});
+		}),
+	body("password")
+		.isLength({ min: 6 })
+		.trim()
+		.withMessage("Password must be 6 characters or greater."),
+	// Sanitize fields.
+	sanitizeBody("firstName").escape(),
+	sanitizeBody("lastName").escape(),
+	sanitizeBody("phone").escape(),
+	sanitizeBody("email").escape(),
+	sanitizeBody("password").escape(),
+	// Process request after validation and sanitization.
+	(req, res) => {
+		try {
+			if (req.user.type !== privilegeEnum.admin)
+				return apiResponse.unauthorizedResponse(
+					res,
+					"You are not authorised to create a salesman"
+				);
+			// Extract the validation errors from a request.
+			const errors = validationResult(req);
+			if (!errors.isEmpty()) {
+				// Display sanitized values/errors messages.
+				return apiResponse.validationErrorWithData(
+					res,
+					"Validation Error.",
+					errors.array()
+				);
+			} else {
+				//hash input password
+				bcrypt.hash(req.body.password, 10, function (err, hash) {
+					// generate OTP for confirmation
+					//let otp = utility.randomNumber(4);
+					// Create User object with escaped and trimmed data
+					const undefinedOmitter = {
+						firstName: req.body.firstName,
+						lastName: req.body.lastName,
+						email: req.body.email,
+						phone: parseInt(req.body.phone),
+						password: hash,
+						worksUnder: req.user._id,
+						//confirmOTP: otp
+					};
+
+					var user = new UserModel(undefinedOmitter);
+
+					// Html email body
+					//let html = "<p>Please Confirm your Account.</p><p>OTP: "+otp+"</p>";
+					// Send confirmation email
+					/*mailer.send(
+						constants.confirmEmails.from,
+						req.body.email,
+						"Confirm Account",
+						html
+					).then(function(){*/
+					// Save user.
+					user.save(function (err) {
+						if (err) {
+							return apiResponse.ErrorResponse(res, err);
+						}
+						let userData = new UserData(user);
+						return apiResponse.successResponseWithData(
+							res,
+							"Salesman Registration Success.",
+							userData
+						);
+					});
+					/*}).catch(err => {
+						console.log(err);
+						return apiResponse.ErrorResponse(res,err);
+					}) ;*/
+				});
+			}
+		} catch (err) {
+			//throw error in json response with status 500.
+			return apiResponse.ErrorResponse(res, err);
+		}
+	},
 ];
 
 /**
@@ -220,6 +353,8 @@ exports.login = [
 												);
 												res.cookie("token", token, {
 													httpOnly: true,
+													sameSite: "none",
+													secure: true,
 												});
 												userData.token = token;
 												return apiResponse.successResponseWithData(
@@ -431,5 +566,93 @@ exports.logout = [
 	(req, res) => {
 		res.cookie("token", { httpOnly: true, expires: Date.now() });
 		return apiResponse.successResponse(res, "Successfully logged out");
+	},
+];
+
+exports.numberAvailability = [
+	authenticate,
+	(req, res) => {
+		if (req.user.type !== privilegeEnum.admin)
+			return apiResponse(
+				res,
+				"You are not authorised to check number availability"
+			);
+		UserModel.find({ phone: req.params.phone }, (err, docs) => {
+			if (err)
+				return apiResponse.ErrorResponse(
+					res,
+					"Error in checking number availability"
+				);
+			return apiResponse.successResponseWithData(
+				res,
+				"Number availability",
+				!(docs && docs.length)
+			);
+		});
+	},
+];
+
+exports.salesmenList = [
+	authenticate,
+	(req, res) => {
+		UserModel.find({ worksUnder: req.user._id }, (err, docs) => {
+			if (err)
+				return apiResponse.ErrorResponse(
+					res,
+					"Cannot retreive the salesman list"
+				);
+			return apiResponse.successResponseWithData(
+				res,
+				"Salesman list successfull",
+				docs.length && docs.map((salesman) => new UserData(salesman))
+			);
+		});
+	},
+];
+
+exports.updateSalesmanPassword = [
+	authenticate,
+	body("password").escape().trim().isLength({ min: 6 }),
+	body("salesman").escape().trim().isMongoId(),
+	(req, res) => {
+		const validationError = validationResult(req);
+		if (!validationError.isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Not a valid password",
+				validationError.array()
+			);
+		UserModel.findById(req.body.salesman, (err, doc) => {
+			if (err)
+				return apiResponse.ErrorResponse(
+					res,
+					"Could not update salesman password"
+				);
+			if (!doc) {
+				return apiResponse.notFoundResponse(
+					res,
+					"Requested salesman not found"
+				);
+			} else if (doc.worksUnder.toString() !== req.user._id) {
+				return apiResponse.unauthorizedResponse(
+					res,
+					"You are not authorised to update this salesman details"
+				);
+			} else {
+				bcrypt.hash(req.body.password, 10, function (err, hash) {
+					doc.password = hash;
+					doc.save().then(
+						(doc) => {
+							if (doc)
+								return apiResponse.successResponse(
+									res,
+									"Password updated"
+								);
+						},
+						(err) => apiResponse.ErrorResponse(res, err.message)
+					);
+				});
+			}
+		});
 	},
 ];

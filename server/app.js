@@ -43,7 +43,7 @@ app.use(cookieParser());
 //To allow cross-origin requests
 app.use(
 	cors({
-		origin: "https://billswebclient.s3.ap-south-1.amazonaws.com/",
+		origin: "https://bills.sreejithofficial.in/",
 		optionsSuccessStatus: 200,
 		credentials: true,
 	})
@@ -60,7 +60,6 @@ app.use("/api", function (err, req, res, next) {
 app.use("/login", loginRouter);
 app.use("/", indexRouter);
 app.use("/*", indexRouter);
-// throw 404 if URL not found
 app.all("*", function (req, res) {
 	return apiResponse.notFoundResponse(res, "Page not found");
 });
