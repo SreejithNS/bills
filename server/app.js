@@ -43,7 +43,7 @@ app.use(cookieParser());
 //To allow cross-origin requests
 app.use(
 	cors({
-		origin: "https://bills.sreejithofficial.in/",
+		origin: "https://bills.sreejithofficial.in",
 		optionsSuccessStatus: 200,
 		credentials: true,
 	})
