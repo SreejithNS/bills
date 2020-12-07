@@ -9,7 +9,7 @@ export const fetchUserData = () => {
             .then(function (response) {
                 dispatch({
                     type: "USER_DATA",
-                    payload: response.data,
+                    payload: response.data.data,
                 });
             })
             .catch(function (error) {

@@ -10,7 +10,6 @@ const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
 const _ = require("lodash");
 const authenticate = require("../middlewares/jwt");
-const { salesman } = require("../helpers/privilegeEnum");
 const privilegeEnum = require("../helpers/privilegeEnum");
 
 function UserData(params) {
@@ -21,7 +20,7 @@ function UserData(params) {
 	this.phone = params.phone;
 	this.type = params.type;
 	this.settings = params.settings || { restrictedRoutes: [] };
-	this.worksUnder = params.worksUnder;
+	this.worksUnder = params.worksUnder && new UserData(params.worksUnder);
 }
 
 /**
@@ -399,7 +398,23 @@ exports.login = [
 exports.userData = [
 	authenticate,
 	(req, res) => {
-		res.send(_.omit(req.user, ["exp", "iat"]));
+		UserModel.findById(req.user._id)
+			.populate(["worksUnder"])
+			.then(
+				(doc) => {
+					if (doc === null)
+						return apiResponse.ErrorResponse(
+							res,
+							"Tampered Authentication"
+						);
+					return apiResponse.successResponseWithData(
+						res,
+						"User data",
+						new UserData(doc)
+					);
+				},
+				(err) => apiResponse.ErrorResponse(res, err.message)
+			);
 	},
 ];
 
