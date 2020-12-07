@@ -25,6 +25,7 @@ const mapStateToProps = (state: any) => {
         salesmenListError: state.app.salesmenListError,
         salesmenList: state.app.salesmenList,
         salesmenListLoading: state.app.salesmenListLoading,
+        userData: state.app.userData
     };
 };
 
@@ -79,7 +80,7 @@ class AccountPage extends React.Component<Props> {
     }
 
     render() {
-        const { classes, salesmenList, history, salesmenListLoading } = this.props;
+        const { classes, salesmenList, history, salesmenListLoading, userData } = this.props;
         const { openDialogForSalesman, handlePasswordUpdate } = this;
         const { dialogOpen } = this.state;
         return (
@@ -92,7 +93,8 @@ class AccountPage extends React.Component<Props> {
                         <Grid item xs={12} sm={6} className={classes.cardPadding}>
                             <ParagraphIconCard
                                 icon={<AccountCircleRoundedIcon fontSize="large" />}
-                                heading="Hi, Sreejith"
+                                heading={"Hi " + userData.firstName}
+                                content={userData.worksUnder && "You work under " + userData.worksUnder.firstName}
                             />
                         </Grid>
                         <Grid item xs={12} className={classes.cardPadding}>
@@ -108,17 +110,19 @@ class AccountPage extends React.Component<Props> {
                             ) : ""}
                         </Grid>
                     </Grid>
-                    <UpdateSalesmanPasswordDialog open={dialogOpen} handleClose={() => this.setState({ dialogOpen: false })} onSubmit={handlePasswordUpdate} />
+                    {userData.type === 1 && <UpdateSalesmanPasswordDialog open={dialogOpen} handleClose={() => this.setState({ dialogOpen: false })} onSubmit={handlePasswordUpdate} />}
                 </Container>
-                <Fab
-                    onClick={() => history.push(paths.account + accountPaths.addSalesman)}
-                    className={classes.fab}
-                    color="primary"
-                    variant="extended"
-                >
-                    <AddIcon className={classes.fabIcon} />
-          Add Salesman
-        </Fab>
+                {userData.type === 1 &&
+                    <Fab
+                        onClick={() => history.push(paths.account + accountPaths.addSalesman)}
+                        className={classes.fab}
+                        color="primary"
+                        variant="extended"
+                    >
+                        <AddIcon className={classes.fabIcon} />
+                    Add Salesman
+                    </Fab>
+                }
             </React.Fragment>
         );
     }
