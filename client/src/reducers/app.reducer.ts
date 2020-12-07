@@ -1,5 +1,7 @@
 const initialState = {
-	settings: {},
+	settings: {
+		restrictedRoutes: []
+	},
 	userData: {},
 	salesmenListError: false,
 	salesmenList: [],
@@ -12,7 +14,7 @@ const initialState = {
 	},
 };
 
-export default function appReducer(state = initialState, action) {
+export default function appReducer(state = initialState, action: { type: any; payload: any; }) {
 	switch (action.type) {
 		case "USER_DATA": {
 			const newState = { ...state };
