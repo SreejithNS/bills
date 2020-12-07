@@ -57,8 +57,11 @@ exports.getAllBills = [
 		try {
 			const query =
 				req.user.type === privilageEnum.admin
-					? { soldBy: req.user._id }
-					: { comesUnder: req.user._id };
+					? { comesUnder: req.user._id }
+					: { soldBy: req.user._id };
+			if (req.query.serial) {
+				query.serialNumber = req.query.serial;
+			}
 			const paginateOptions = {
 				offset:
 					req.query.offset &&
