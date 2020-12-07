@@ -43,7 +43,10 @@ app.use(cookieParser());
 //To allow cross-origin requests
 app.use(
 	cors({
-		origin: "https://bills.sreejithofficial.in",
+		origin:
+			process.env.NODE_ENV === "development"
+				? "http://localhost:3000"
+				: "https://bills.sreejithofficial.in",
 		optionsSuccessStatus: 200,
 		credentials: true,
 	})

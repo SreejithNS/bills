@@ -57,6 +57,11 @@ typings/
 # dotenv environment variables file
 .env
 
+#Ignore ssl local certificates
+security/
+*.pem
+*.key
+
 # next.js build output
 .next
 
