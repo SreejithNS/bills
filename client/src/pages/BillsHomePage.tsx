@@ -9,6 +9,7 @@ import { compose } from 'redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { billsPaths, paths } from '../routes/paths.enum';
 import { LineWeightRounded } from '@material-ui/icons';
+import BillSearch from '../components/BillSearch';
 const Fade = require('react-reveal/Fade');
 //import CustomerCard from '../components/CustomerCard';
 
@@ -52,6 +53,9 @@ class BillsHomePage extends React.Component<Props> {
                                  <Button onClick={() => history.push("/items")}>inventory</Button>
                             </Typography>
                         </Grid>
+                        <Grid item xs={12}>
+                            <BillSearch />
+                        </Grid>
                         {(billsList.length) ? billsList.map((bill: { customer: { name: String | undefined; }; billAmount: Number | undefined; createdAt: String | undefined; _id: string; }, key: any) =>
                             <React.Fragment key={key}>
                                 <Grid item xs={12} className={classes.cardPadding}>
@@ -85,8 +89,8 @@ class BillsHomePage extends React.Component<Props> {
                                     ? <Grid item xs>
                                         <ParagraphIconCard
                                             icon={<LineWeightRounded fontSize="large" />}
-                                            heading="Nothing Billed yet"
-                                            content={<>This is where you see all your bills, click on <strong>Add New Bill</strong> icon to start Billing.</>} />
+                                            heading="No bills yet"
+                                            content={<>Click on <strong>Add New Bill</strong> icon to add a new bill which you can see here.</>} />
                                     </Grid>
                                     : <></>}
                     </Grid>

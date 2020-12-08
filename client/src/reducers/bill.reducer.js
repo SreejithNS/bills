@@ -161,6 +161,13 @@ export default function billReducer(state = initialState, action) {
 				paidAmount: action.payload,
 			};
 		}
+		case "RESET_BILLS_LIST": {
+			return {
+				...state,
+				billsList: [],
+				billsListHasNextPage: false,
+			};
+		}
 		default:
 			return state;
 	}

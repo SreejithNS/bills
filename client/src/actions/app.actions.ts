@@ -6,7 +6,7 @@ export const fetchUserData = () => {
         dispatch({ type: "USER_DATA_LOAD", payload: true });
         axios
             .get(process.env.REACT_APP_API_URL + `/api/auth/`, { withCredentials: true })
-            .then(function (response) {
+            .then((response) => {
                 dispatch({
                     type: "USER_DATA",
                     payload: response.data.data,

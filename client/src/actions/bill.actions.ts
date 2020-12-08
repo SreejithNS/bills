@@ -72,23 +72,30 @@ export const putBillCredit = (id: string) => {
 
 
 
-export const fetchBillList = (extraBills?: boolean) => {
+export const fetchBillList = (extraBills?: boolean, queryParams?: any) => {
     return (dispatch: any, getState: any) => {
         if (getState().bill.billsList.length === 0 || extraBills) {
             dispatch({ type: "FETCH_BILLS_LIST_LOAD", payload: true });
 
             const queryString = new URL(process.env.REACT_APP_API_URL + "/api/bill/query/");
 
-            queryString.searchParams.append("offset", getState().bill.billsList.length);
-            queryString.searchParams.append("sort", "-createdAt");
+            if (queryParams)
+                for (const [key, value] of Object.entries<string>(queryParams)) {
+                    queryString.searchParams.append(key, value);
+                }
+            else {
+                queryString.searchParams.append("offset", getState().bill.billsList.length);
+                queryString.searchParams.append("sort", "-createdAt");
+            }
 
-            axios
+            return axios
                 .get(queryString.toString(), { withCredentials: true })
                 .then(function (response) {
                     dispatch({
                         type: "FETCH_BILLS_LIST",
                         payload: response.data.data,
                     });
+                    return response.data.data
                 })
                 .catch(function (error) {
                     dispatch({

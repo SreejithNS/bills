@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Container, createStyles, Fab, Grid, Theme, WithStyles, withStyles } from '@material-ui/core';
+import { CircularProgress, Container, createStyles, Fab, Grid, Theme, WithStyles, withStyles, Zoom } from '@material-ui/core';
 import { connect } from 'react-redux';
 import CustomerCard from '../components/CustomerCard';
 import { deleteCustomer, fetchCustomerList } from '../actions/customer.action';
@@ -8,6 +8,8 @@ import { compose } from 'redux';
 import { customersPaths, paths } from '../routes/paths.enum';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import AddIcon from '@material-ui/icons/Add';
+import ParagraphIconCard from '../components/ParagraphIconCard';
+import { LineWeightRounded } from '@material-ui/icons';
 
 interface DispatchProps {
     getCustomers(): void;
@@ -64,6 +66,20 @@ class CustomerHomePage extends Component<Props> {
                                 < CustomerCard customerName={name} phone={phone} delete={() => deleteCustomer(_id)} />
                             </Grid>
                         )}
+                        {listLoading && <Grid item xs={12} className={classes.cardPadding}>
+                            <ParagraphIconCard
+                                icon={<Zoom in={listLoading}><CircularProgress /></Zoom>}
+                                heading="Customers loading"
+                                content="Please wait while fetching the list of Customers you have so far."
+                            />
+                        </Grid>}
+                        {(!listLoading && customersList.length <= 0) && <Grid item xs={12} className={classes.cardPadding}>
+                            <ParagraphIconCard
+                                icon={<LineWeightRounded fontSize="large" />}
+                                heading="No Customers"
+                                content={<>Click on <strong>Add New Customer</strong> icon to add a new customer.</>}
+                            />
+                        </Grid>}
                     </Grid>
                 </Container>
                 <Fab onClick={() => this.props.history.push(paths.customer + customersPaths.createCustomer)} className={classes.fab} color="primary" variant="extended">
