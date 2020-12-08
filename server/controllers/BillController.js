@@ -60,7 +60,10 @@ exports.getAllBills = [
 					? { comesUnder: req.user._id }
 					: { soldBy: req.user._id };
 			if (req.query.serial) {
-				query.serialNumber = req.query.serial;
+				query.serialNumber = parseInt(req.query.serial);
+			}
+			if (req.query.customer) {
+				query.customer = req.query.customer;
 			}
 			const paginateOptions = {
 				offset:
