@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Container, Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography } from '@material-ui/core';
+import { Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { compose } from 'redux';
@@ -11,6 +11,7 @@ import { fetchItemsList } from '../actions/item.actions';
 import Axios from 'axios';
 import { toast } from 'react-toastify';
 import { Add, Refresh } from '@material-ui/icons';
+import PageContainer from '../components/PageContainer';
 
 type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles> & RouteComponentProps;
 
@@ -41,7 +42,7 @@ class ItemsHomePage extends React.Component<Props> {
         const { classes, history } = this.props;
         return (
             <React.Fragment>
-                <Container fixed>
+                <PageContainer>
                     <Grid
                         container
                         justify="center"
@@ -147,7 +148,7 @@ class ItemsHomePage extends React.Component<Props> {
                             </Grid>
                                 : ""} */}
                     </Grid>
-                </Container>
+                </PageContainer>
                 <Fab onClick={() => this.props.history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
                     <AddIcon className={classes.fabIcon} />
                         Add Item

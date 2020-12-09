@@ -1,6 +1,5 @@
 import * as React from "react";
 import {
-    Container,
     Fab,
     Grid,
     Theme,
@@ -19,6 +18,7 @@ import { RouteComponentProps, withRouter } from "react-router-dom";
 import { accountPaths, paths } from "../routes/paths.enum";
 import { connect } from "react-redux";
 import UpdateSalesmanPasswordDialog from "../components/UpdateSalesmanPasswordDialog";
+import PageContainer from "../components/PageContainer";
 
 const mapStateToProps = (state: any) => {
     return {
@@ -85,7 +85,7 @@ class AccountPage extends React.Component<Props> {
         const { dialogOpen } = this.state;
         return (
             <React.Fragment>
-                <Container fixed>
+                <PageContainer>
                     <Grid container justify="center" alignItems="flex-start" spacing={2}>
                         <Grid item xs={12}>
                             <Typography variant="h4">Your Account</Typography>
@@ -111,7 +111,7 @@ class AccountPage extends React.Component<Props> {
                         </Grid>
                     </Grid>
                     {userData.type === 1 && <UpdateSalesmanPasswordDialog open={dialogOpen} handleClose={() => this.setState({ dialogOpen: false })} onSubmit={handlePasswordUpdate} />}
-                </Container>
+                </PageContainer>
                 {userData.type === 1 &&
                     <Fab
                         onClick={() => history.push(paths.account + accountPaths.addSalesman)}

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { CircularProgress, Container, Fab, Grid, Theme, withStyles, Zoom, WithStyles, createStyles, Typography, Button } from '@material-ui/core';
+import { CircularProgress, Fab, Grid, Theme, withStyles, Zoom, WithStyles, createStyles, Typography, Button } from '@material-ui/core';
 import { connect } from 'react-redux';
 import { fetchBillList } from '../actions/bill.actions';
 import BillCard from '../components/BillCard';
@@ -10,8 +10,8 @@ import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { billsPaths, paths } from '../routes/paths.enum';
 import { LineWeightRounded } from '@material-ui/icons';
 import BillSearch from '../components/BillSearch';
+import PageContainer from '../components/PageContainer';
 const Fade = require('react-reveal/Fade');
-//import CustomerCard from '../components/CustomerCard';
 
 type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles> & RouteComponentProps;
 
@@ -40,7 +40,7 @@ class BillsHomePage extends React.Component<Props> {
         const { billsList, billsListLoad, classes, history, billsListHasNextPage, getBillsList } = this.props;
         return (
             <React.Fragment>
-                <Container fixed>
+                <PageContainer>
                     <Grid
                         container
                         justify="center"
@@ -94,7 +94,7 @@ class BillsHomePage extends React.Component<Props> {
                                     </Grid>
                                     : <></>}
                     </Grid>
-                </Container>
+                </PageContainer>
                 <Fab onClick={() => history.push(paths.billsHome + billsPaths.addBill)} className={classes.fab} color="primary" variant="extended">
                     <AddIcon className={classes.fabIcon} />
                         New Bill

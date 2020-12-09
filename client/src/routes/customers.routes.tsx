@@ -10,11 +10,9 @@ export default function CustomersRoutes() {
     return (
         <React.Fragment>
             <Route exact path={paths.customer + customersPaths.home} >
-                {"home"}
                 <CustomersHomePage />
             </Route>
             <Route path={paths.customer + customersPaths.createCustomer} >
-                {"create"}
                 <NewCustomerCreationModal />
             </Route>
         </React.Fragment>

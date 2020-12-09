@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { CircularProgress, Container, createStyles, Fab, Grid, Theme, WithStyles, withStyles, Zoom } from '@material-ui/core';
+import { CircularProgress, createStyles, Fab, Grid, Theme, Typography, WithStyles, withStyles, Zoom } from '@material-ui/core';
 import { connect } from 'react-redux';
 import CustomerCard from '../components/CustomerCard';
 import { deleteCustomer, fetchCustomerList } from '../actions/customer.action';
@@ -10,6 +10,7 @@ import { RouteComponentProps, withRouter } from 'react-router-dom';
 import AddIcon from '@material-ui/icons/Add';
 import ParagraphIconCard from '../components/ParagraphIconCard';
 import { LineWeightRounded } from '@material-ui/icons';
+import PageContainer from '../components/PageContainer';
 
 interface DispatchProps {
     getCustomers(): void;
@@ -53,14 +54,19 @@ class CustomerHomePage extends Component<Props> {
         const { customersList, listLoading, classes, deleteCustomer } = this.props;
         return (
             <>
-                <Container fixed>
+                <PageContainer>
                     <Grid
                         container
-                        direction="column"
+                        direction="row"
                         justify="flex-start"
-                        alignItems="stretch"
-                        spacing={1}
+                        alignItems="center"
+                        spacing={2}
                     >
+                        <Grid item xs={12}>
+                            <Typography variant="h4">
+                                Your Customers
+                            </Typography>
+                        </Grid>
                         {!listLoading && customersList.map(({ name, phone, _id }, key) =>
                             <Grid item xs={12} key={key} className={classes.cardPadding}>
                                 < CustomerCard customerName={name} phone={phone} delete={() => deleteCustomer(_id)} />
@@ -81,7 +87,7 @@ class CustomerHomePage extends Component<Props> {
                             />
                         </Grid>}
                     </Grid>
-                </Container>
+                </PageContainer>
                 <Fab onClick={() => this.props.history.push(paths.customer + customersPaths.createCustomer)} className={classes.fab} color="primary" variant="extended">
                     <AddIcon className={classes.fabIcon} />
                     Add Customer

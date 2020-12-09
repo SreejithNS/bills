@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import { Container, Grid/*, Typography*/ } from '@material-ui/core';
+import { Grid, Typography } from '@material-ui/core';
 import HomeCard from '../components/HomeCard';
 import { compose } from 'redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { paths, billsPaths, itemPaths, customersPaths } from '../routes/paths.enum';
 import { connect } from 'react-redux';
 import { RootState } from '../reducers/rootReducer';
+import PageContainer from '../components/PageContainer';
 
 const mapStateToProps = (state: RootState) => ({
     forbiddenRoutes: state.app.settings.restrictedRoutes
@@ -25,7 +26,7 @@ class HomePage extends Component<Props> {
     render() {
         const { checkAccessibility, openLink } = this;
         return (
-            <Container fixed>
+            <PageContainer>
                 <Grid
                     container
                     direction="row"
@@ -33,6 +34,11 @@ class HomePage extends Component<Props> {
                     alignItems="stretch"
                     spacing={2}
                 >
+                    <Grid item xs={12}>
+                        <Typography variant="h4">
+                            Good Day!
+                            </Typography>
+                    </Grid>
                     {checkAccessibility(paths.billsHome)
                         && <Grid item xs={12} sm={6} md={4}>
                             <HomeCard
@@ -74,7 +80,7 @@ class HomePage extends Component<Props> {
                     }
 
                 </Grid>
-            </Container>
+            </PageContainer>
         )
     }
 }

@@ -10,11 +10,9 @@ export default function ItemsRoutes() {
     return (
         <React.Fragment>
             <Route exact path={paths.items + itemPaths.home} >
-                {"home for items route"}
                 <ItemsHomePage />
             </Route>
             <Route path={paths.items + itemPaths.addItem} >
-                {"create"}
                 <NewItemModal />
             </Route>
         </React.Fragment>
