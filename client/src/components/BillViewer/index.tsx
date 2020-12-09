@@ -16,6 +16,7 @@ import MaterialTable from "material-table";
 import * as React from "react";
 import { tableIcons } from "../MaterialTableIcons";
 import PaymentsList from "../PaymentsList";
+import moment from "moment";
 interface Customer {
     name: string;
     phone: number;
@@ -107,7 +108,7 @@ export default function BillViewer(props: BillProps & AdditionalProps) {
                         Place: {props.customer?.place || "Tirupattur"}
                     </Typography> : ""}
                     <Typography variant="subtitle2" display="block">
-                        Date: {new Date(props?.createdAt).toString() || new Date().toString()}
+                        Date: {moment(props?.createdAt).format('MMM D YYYY, h:mm a') || moment().format('MMM D YYYY, h:mm a')}
                     </Typography>
                 </Grid>
                 <Grid item className={classes.itemPadding} xs={12}>

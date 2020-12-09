@@ -6,6 +6,7 @@ import ListItemText from "@material-ui/core/ListItemText";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
 import AddCircleOutlineRoundedIcon from "@material-ui/icons/AddCircleOutlineRounded";
+import moment from "moment";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -35,7 +36,7 @@ export default function PaymentListItem(props: { payments: any[] }) {
                                 </ListItemAvatar>
                                 <ListItemText
                                     primary={`₹${paidAmount}`}
-                                    secondary={`${"Received by " + paymentReceivedBy?.firstName.toLocaleUpperCase()} at ${updatedAt.toString()}`}
+                                    secondary={`${"Received by " + paymentReceivedBy?.firstName.toLocaleUpperCase()} at ${moment(updatedAt.toString()).format('MMM D YYYY, h:mm a')}`}
                                 />
                             </ListItem>
                         )

@@ -7,6 +7,7 @@ import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import { CardActionArea, Grid } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
+import moment from "moment";
 
 export interface BillCardProps {
   customerName?: String;
@@ -51,7 +52,7 @@ export default function BillCard(props: BillCardProps) {
                 {props.customerName || "Customer Name"}
               </Typography>
               <Typography variant="subtitle1">
-                {props.timestamp || "Timestamp"}
+                {moment(props.timestamp?.toString()).format('MMM D YYYY, h:mm a') || "Timestamp"}
               </Typography>
             </CardActionArea>
           </Grid>

@@ -7,6 +7,7 @@ import { paths, billsPaths, itemPaths, customersPaths } from '../routes/paths.en
 import { connect } from 'react-redux';
 import { RootState } from '../reducers/rootReducer';
 import PageContainer from '../components/PageContainer';
+import { version as appVersion } from '../../package.json';
 
 const mapStateToProps = (state: RootState) => ({
     forbiddenRoutes: state.app.settings.restrictedRoutes
@@ -78,6 +79,12 @@ class HomePage extends Component<Props> {
                             />
                         </Grid>
                     }
+                    <Grid item xs={12} sm={6} md={4}>
+                        <HomeCard
+                            onClick={() => console.log("Everything works fine.")}
+                            content={"Bills WebApp: v" + appVersion}
+                        />
+                    </Grid>
 
                 </Grid>
             </PageContainer>
