@@ -7,8 +7,20 @@ const ProductSchema = new Schema(
 	{
 		code: { type: String, required: true, index: { unique: true } },
 		name: { type: String, required: true },
-		weight: { type: Number },
-		weightUnit: { type: String },
+		units: [
+			{
+				name: String,
+				rate: {
+					type: Number,
+					default: 0,
+				},
+				mrp: {
+					type: Number,
+					default: 0,
+				},
+			},
+		],
+		category: { type: String, index: true, default: "general" },
 		rate: { type: Number, default: 0 },
 		mrp: { type: Number, default: 0 },
 	},

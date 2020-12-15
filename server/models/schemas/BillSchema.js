@@ -20,8 +20,8 @@ const BillSchema = new Schema(
 			{
 				code: { type: String, required: true },
 				name: { type: String, required: true },
-				weight: { type: Number },
-				weightUnit: { type: String },
+				unit: { type: String },
+				category: { type: String },
 				quantity: { type: Number, required: true },
 				rate: { type: Number, default: 0 },
 				mrp: { type: Number, default: 0 },
@@ -192,6 +192,12 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 		const document = await Product.findById(item.id).lean().exec();
 		if (document) {
 			document.quantity = item.quantity;
+			if (item.unit >= 0) {
+				const unit = document.units[item.unit];
+				document.unit = unit.name;
+				document.mrp = unit.mrp;
+				document.rate = unit.rate;
+			}
 			populatedItems.push(document);
 		} else {
 			// apiResponse.ErrorResponse(res,`Product not found:${item.id}`);

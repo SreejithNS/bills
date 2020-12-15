@@ -1,11 +1,11 @@
 const { body, param, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
-const { sanitizeBody } = require("express-validator");
 const auth = require("../middlewares/jwt");
 const _ = require("lodash");
 const apiResponse = require("../helpers/apiResponse");
 const Product = require("../models/ProductModel");
 const privilegeEnum = require("../helpers/privilegeEnum.js");
+const unitSchemaValidation = require("./validators/unitsSchemaValidation");
 
 function ProductData(data) {
 	this.id = data._id;
@@ -74,13 +74,17 @@ exports.delete = [
  */
 exports.create = [
 	auth,
+	body("category", "Invalid category name").optional().escape().trim(),
 	body("code")
 		.escape()
 		.isLength()
 		.trim()
 		.isAlphanumeric()
-		.custom((value) => {
-			return Product.findOne({ code: value }).then((doc) => {
+		.custom((value, { req }) => {
+			return Product.findOne({
+				code: value,
+				category: req.body.category,
+			}).then((doc) => {
 				if (doc)
 					return Promise.reject(
 						"Item with this code already exists."
@@ -90,34 +94,44 @@ exports.create = [
 	body("name").escape().isLength().trim(),
 	body("rate").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
-	body("weight").optional().escape().trim().isNumeric(),
-	body("weightUnit")
-		.optional()
-		.escape()
-		.trim()
-		.custom((value) => {
-			return /\b(?:administrator|editor|contributor|user)\b/.exec(value)
-				? true
-				: Promise.reject("Please enter weight");
-		}),
-	sanitizeBody("*").escape(),
+	body("units").optional().isArray(),
 	(req, res) => {
 		try {
 			const errors = validationResult(req);
+			if (!/^[a-z0-9 ]+$/i.test(req.body.name))
+				return apiResponse.validationErrorWithData(
+					res,
+					"Validation Error",
+					"name is not alphanumeric"
+				);
 			if (!errors.isEmpty()) {
 				return apiResponse.validationErrorWithData(
 					res,
-					"Validation Error.",
+					"Validation Error",
 					errors.array()
 				);
 			} else {
+				try {
+					if (req.body.units)
+						req.body.units = unitSchemaValidation(
+							req.body.rate,
+							req.body.mrp,
+							req.body.units
+						);
+				} catch (e) {
+					return apiResponse.validationErrorWithData(
+						res,
+						"Validation error",
+						e.message
+					);
+				}
 				let newProduct = new Product(
 					_.pickBy(
 						{
 							code: req.body.code,
 							name: req.body.name,
-							weight: req.body.weight || undefined,
-							weightUnit: req.body.weight || undefined,
+							units: req.body.units || [],
+							category: req.body.category || "general",
 							rate: req.body.rate,
 							mrp: req.body.mrp,
 						},
