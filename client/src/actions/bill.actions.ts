@@ -36,7 +36,12 @@ export const saveBill = () => {
         const { customer, items, discountAmount, credit, paidAmount } = getState().bill;
         billData.customerId = customer.id;
         billData.discountAmount = discountAmount;
-        billData.items = items.map((item: { id: string; quantity: number; }, key: number) => ({ id: item.id, quantity: item.quantity }));
+        debugger;
+        billData.items = items.map((item: { id: string; quantity: number; unit?: number }, key: number) => {
+            const itemData = { id: item.id, quantity: item.quantity };
+            if (item.unit !== undefined && item.unit >= 0) Object.assign(itemData, { unit: item.unit });
+            return itemData;
+        });
         billData.credit = credit;
         billData.paidAmount = paidAmount;
         return axios
@@ -161,7 +166,7 @@ export const setCustomer = (id: string) => {
             });
     }
 }
-export const addItem = (id: string, quantity: number) => {
+export const addItem = (id: string, quantity: number, unit: number) => {
     return (dispatch: any) => {
         console.log("Action Initiated")
         dispatch({
@@ -173,6 +178,11 @@ export const addItem = (id: string, quantity: number) => {
             .then(function (response) {
                 const item = response.data.data;
                 item.quantity = quantity;
+                if (unit >= 0) {
+                    item.mrp = item.units[unit].mrp;
+                    item.rate = item.units[unit].rate;
+                    item.unit = unit;
+                }
                 dispatch({
                     type: "BILL_ADD_ITEM",
                     payload: item,

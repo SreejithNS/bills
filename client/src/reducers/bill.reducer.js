@@ -88,7 +88,9 @@ export default function billReducer(state = initialState, action) {
 		case "BILL_ADD_ITEM": {
 			const items = [...state.items];
 			const index = items.findIndex(
-				(item) => item.id === action.payload.id
+				(item) =>
+					item.id === action.payload.id &&
+					item.unit === action.payload.unit
 			);
 			if (index >= 0) {
 				items[index].quantity += Math.abs(action.payload.quantity);
@@ -100,6 +102,7 @@ export default function billReducer(state = initialState, action) {
 				items,
 			});
 		}
+
 		case "BILL_ADD_ITEM_LOAD": {
 			return {
 				...state,
@@ -108,8 +111,10 @@ export default function billReducer(state = initialState, action) {
 		}
 		case "BILL_ITEM_QUANTITY_UPDATE": {
 			const items = [...state.items];
-			const [id, quantity] = action.payload;
-			const item = items.find((item) => item.id === id);
+			const [id, quantity, unit] = action.payload;
+			const item = items.find(
+				(item) => item.id === id && item.unit === unit
+			);
 			item.quantity = quantity;
 			return calculateItemAmounts({
 				...state,

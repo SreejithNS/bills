@@ -16,6 +16,7 @@ function ProductData(data) {
 	this.quantity = data.quantity;
 	this.rate = data.rate;
 	this.mrp = data.mrp;
+	this.units = data.units || [];
 }
 
 /**

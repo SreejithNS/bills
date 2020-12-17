@@ -101,6 +101,7 @@ class BillViewerModal extends React.Component<Props> {
         );
     }
 }
+
 const mapStatetoProps = (state: { bill: { billData: any; billDataLoad: any; }; }) => ({
     bill: state.bill.billData,
     billDataLoad: state.bill.billDataLoad

@@ -1,6 +1,6 @@
 import React from "react";
 import TextField from "@material-ui/core/TextField";
-import { Button, Checkbox, CircularProgress, FormControlLabel, Grid, Zoom } from "@material-ui/core";
+import { Button, Checkbox, CircularProgress, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Select, Zoom } from "@material-ui/core";
 import { Autocomplete } from "@material-ui/lab";
 import MaterialTable from "material-table";
 import { connect } from "react-redux";
@@ -20,8 +20,8 @@ interface DispatchProps {
     setCustomer(id: string): void;
     setDiscountAmount(amount: number): void;
     setDiscountPercentage(percentage: number): void;
-    addItem(id: string, quantity: number): void;
-    updateQuantity(id: string, newQuantity: number): void;
+    addItem(id: string, quantity: number, unit: number): void;
+    updateQuantity(id: string, newQuantity: number, unit: number): void;
     setCredit(isCredit: boolean): void;
     setPaidAmount(paidAmount: number): void;
     saveBill(): Promise<any> | any;
@@ -57,7 +57,9 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
             id: "",
             code: "",
             name: "",
-            quantity: 0
+            quantity: 0,
+            units: [],
+            unit: -1,
         }
     };
     openCustomerModal = (name: string) => {
@@ -105,7 +107,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
     }
 
     handleItemQuantityChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const value = parseInt(event.target.value);
+        const value = parseFloat(event.target.value);
         this.setState(prevState => {
             const newState: any = { ...prevState };
             newState.item.quantity = value;
@@ -114,20 +116,34 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
     }
 
     handleAddItem = (event: any) => {
-        const { id, quantity } = this.state.item;
+        const { id, quantity, unit } = this.state.item;
         if (id === "") {
             toast.error("Please select and Item");
         } else if (quantity <= 0) {
             toast.error("Please enter a valid quantity");
         } else {
-            this.props.addItem(id, quantity);
+            this.props.addItem(id, quantity, unit);
         }
     }
+
+    handleItemUnitChange = (event: any) => {
+        const index = event.target.value;
+        if (index >= 0) this.setState((prevState: { item: { unit: number } }) => {
+            const newState = { ...prevState };
+            newState.item.unit = index;
+            return prevState;
+        })
+        else this.setState((prevState: { item: { unit: number } }) => {
+            const newState = { ...prevState };
+            newState.item.unit = -1;
+            return prevState;
+        })
+    };
 
     render() {
         const { customer, customerSuggestions, itemSuggestions, items, billAmount, discountAmount, itemsLoad, discountPercentage, billSaveLoad, credit, paidAmount, closeModal, setCredit, setPaidAmount, saveBill, setDiscountPercentage, updateQuantity, setDiscountAmount, getCustomerSuggestions, getItemSuggestions } = this.props;
         const { customerModal, item } = this.state;
-        const { openCustomerModal, closeCustomerModal, handleCustomerChange, handleItemCodeChange, handleItemQuantityChange, handleAddItem } = this;
+        const { openCustomerModal, closeCustomerModal, handleItemUnitChange, handleCustomerChange, handleItemCodeChange, handleItemQuantityChange, handleAddItem } = this;
 
         return (
             <form>
@@ -135,7 +151,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
                     container
                     direction="row"
                     justify="space-between"
-                    alignItems="flex-start"
+                    alignItems="center"
                     spacing={3}
                 >
                     <Grid item xs={12}>
@@ -174,7 +190,7 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
                             )}
                         />
                     </Grid>
-                    <Grid item xs={5}>
+                    <Grid item xs={12} sm={4}>
                         <Autocomplete
                             value={item.name.length ? item : null}
                             options={itemSuggestions}
@@ -191,12 +207,38 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
                             )}
                         />
                     </Grid>
-                    <Grid item xs={4}>
-                        <TextField label="Quantity" type="number" fullWidth onFocus={(event) => { event.target.select() }} value={item.quantity || 0} onChange={handleItemQuantityChange} variant="outlined" />
+                    <Grid item xs={4} sm={3}>
+                        <TextField
+                            label="Quantity"
+                            type="number"
+                            fullWidth
+                            onFocus={(event) => { event.target.select() }} value={item.quantity || 0}
+                            onChange={handleItemQuantityChange}
+                            variant="outlined"
+                        />
                     </Grid>
-                    <Grid item xs={3}>
-                        <Button variant="contained" color="primary" onClick={handleAddItem}>
-                            Add Item
+                    <Grid item xs={4} sm>
+                        <FormControl variant="outlined" fullWidth>
+                            <InputLabel>Unit</InputLabel>
+                            <Select
+                                value={item.unit !== undefined ? item.unit : -1}
+                                onChange={handleItemUnitChange}
+                                label="Unit"
+                            >
+                                <MenuItem value={-1}>
+                                    <em>General</em>
+                                </MenuItem>
+                                {item.units?.length && item.units.map((unit: { name: string, mrp: number; rate: number; }, key) =>
+                                    <MenuItem key={key} value={key}>
+                                        {unit.name.toUpperCase()}
+                                    </MenuItem>
+                                )}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={4} sm>
+                        <Button variant="contained" color="primary" fullWidth onClick={handleAddItem} disableElevation>
+                            Add
                         </Button>
                     </Grid>
                     <Grid item xs={12}>
@@ -205,20 +247,24 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
                             isLoading={itemsLoad}
                             columns={[
                                 { title: "Item Name", field: "name", editable: "never" },
-                                { title: "Quantity", field: "quantity", type: "numeric", editable: "always" },
+                                {
+                                    title: "Quantity", field: "quantity", type: "numeric", editable: "always",
+                                    render: (rowData) => <><strong>{rowData.quantity}</strong> {rowData.unit >= 0 ? rowData.units[rowData.unit].name.split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""}</>
+                                },
+                                { title: "Amount", field: "amount", type: "numeric", editable: "never" },
                                 { title: "Rate", field: "rate", type: "numeric", editable: "never" },
-                                { title: "Amount", field: "amount", type: "numeric", editable: "never" }
                             ]}
                             data={items}
                             options={{
                                 search: false,
                                 paging: false,
                                 toolbar: false,
+                                actionsColumnIndex: -1,
                                 padding: "dense"
                             }}
                             editable={{
-                                onRowUpdate: (newData, oldData) => new Promise((res, rej) => {
-                                    updateQuantity(newData.id, newData.quantity)
+                                onRowUpdate: (newData, oldData) => new Promise<void>((res, rej) => {
+                                    updateQuantity(newData.id, newData.quantity, newData.unit)
                                     res();
                                 })
                             }}
@@ -269,15 +315,6 @@ class NewBillForm extends React.Component<StateProps & DispatchProps & Component
                             }
                             label="Credit Amount"
                         />
-                        {/* <TextField
-                            value={billAmount}
-                            label="Total Amount"
-                            InputProps={{
-                                readOnly: true
-                            }}
-                            type="radio"
-                            variant="outlined"
-                        /> */}
                     </Grid>
                     <Grid item xs={4}>
                         <TextField
@@ -323,10 +360,10 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>): DispatchProps
     getCustomerSuggestions: (phrase: string) => dispatch(fetchCustomerSuggestions(phrase)),
     getItemSuggestions: (code: string) => dispatch(fetchItemSuggesions(code)),
     setCustomer: (id: string) => dispatch(setCustomerAction(id)),
-    addItem: (id: string, quantity: number) => dispatch(addItem(id, quantity)),
+    addItem: (id: string, quantity: number, unit: number) => dispatch(addItem(id, quantity, unit)),
     setDiscountAmount: (amount) => dispatch({ type: "BILL_SET_DISCOUNT", payload: amount }),
     setDiscountPercentage: (percentage) => dispatch({ type: "BILL_SET_DISCOUNT_PERCENTAGE", payload: percentage }),
-    updateQuantity: (id, newQuantity) => dispatch({ type: "BILL_ITEM_QUANTITY_UPDATE", payload: [id, newQuantity] }),
+    updateQuantity: (id, newQuantity, unit) => dispatch({ type: "BILL_ITEM_QUANTITY_UPDATE", payload: [id, newQuantity, unit] }),
     setCredit: (isCredit: boolean) => dispatch({ type: "BILL_SET_CREDIT", payload: isCredit }),
     setPaidAmount: (paidAmount: number) => dispatch({ type: "BILL_PAID_AMOUNT", payload: paidAmount }),
     saveBill: () => dispatch(saveBill())

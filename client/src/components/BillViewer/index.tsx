@@ -135,7 +135,8 @@ export default function BillViewer(props: BillProps & AdditionalProps) {
                                 title: "Quantity",
                                 field: "quantity",
                                 type: "numeric",
-                                editable: "always"
+                                editable: "always",
+                                render: (rowData: any) => <><strong>{rowData.quantity}</strong> {rowData.unit?.length ? rowData.unit.split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""}</>
                             },
                             {
                                 title: "Rate",

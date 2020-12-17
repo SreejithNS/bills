@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography } from '@material-ui/core';
+import { Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography, List, ListItem, ListItemText } from '@material-ui/core';
 import { connect } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { compose } from 'redux';
@@ -10,8 +10,9 @@ import { tableIcons } from '../components/MaterialTableIcons';
 import { fetchItemsList } from '../actions/item.actions';
 import Axios from 'axios';
 import { toast } from 'react-toastify';
-import { Add, Refresh } from '@material-ui/icons';
+import { Add, LineStyleTwoTone, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
+import LineStyleIcon from '@material-ui/icons/LineStyle';
 
 type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles> & RouteComponentProps;
 
@@ -115,38 +116,27 @@ class ItemsHomePage extends React.Component<Props> {
                                     toolbarButtonAlignment: "left",
                                     showTitle: false
                                 }}
+                                detailPanel={[{
+                                    icon: LineStyleIcon,
+                                    openIcon: LineStyleTwoTone,
+                                    tooltip: 'Show Units',
+                                    render: (rowData: { units?: any[] }) => {
+                                        return (rowData.units && rowData.units.length) ? (
+                                            <List dense>
+                                                {rowData.units.map((unit: { name: string; rate: number; mrp: number; }, key) =>
+                                                    <ListItem key={key}>
+                                                        <ListItemText
+                                                            primary={unit.name.toUpperCase()}
+                                                            secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate}`}
+                                                        />
+                                                    </ListItem>,
+                                                )}
+                                            </List>
+                                        ) : <></>
+                                    }
+                                }]}
                             />
                         </Grid>
-                        {/* {(itemsList.length) ?
-                            <Grid item xs={12} className={classes.cardPadding}>
-                                <MaterialTable
-                                    icons={tableIcons}
-                                    isLoading={itemsListLoad}
-                                    columns={[
-                                        { title: "Item Name", field: "name", editable: "never" },
-                                        { title: "Code", field: "code", editable: "never" },
-                                        { title: "Rate", field: "rate", type: "numeric", editable: "never" },
-                                        { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
-                                    ]}
-                                    data={itemsList}
-                                // options={{
-                                // search: false,
-                                // paging: false,
-                                // toolbar: false,
-                                // padding: "dense"
-                                // }}
-                                // editable={{
-                                //     onRowUpdate: (newData, oldData) => new Promise((res, rej) => {
-                                //         updateQuantity(newData.id, newData.quantity)
-                                //         res();
-                                //     })
-                                // }}
-                                />
-                            </Grid>
-                            : itemsList.length === 0 && itemsListLoad ? <Grid item xs container alignItems="center" justify="center">
-                                <Typography variant="h6" align="center"><Zoom in={itemsListLoad}><CircularProgress /></Zoom><br />Please wait while fetching items</Typography>
-                            </Grid>
-                                : ""} */}
                     </Grid>
                 </PageContainer>
                 <Fab onClick={() => this.props.history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
