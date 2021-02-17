@@ -13,6 +13,7 @@ import { Container } from '@material-ui/core';
 import NewItemForm from "../NewItemForm";
 import { useHistory } from 'react-router-dom';
 import { addItem } from '../../actions/item.actions';
+import { useSelector } from 'react-redux';
 // import { useDispatch } from 'react-redux';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -41,9 +42,10 @@ export default function NewItemModal(props: any) {
     const [open, setOpen] = useState(true);
     const classes = useStyles();
     const history = useHistory();
+    const itemCategory = useSelector((state: any) => state.item.itemCategory)
 
     const handleSubmit = (values: any) => {
-        return addItem(values).then(() => {
+        return addItem(values, itemCategory).then(() => {
             if ("onCreate" in props) props.onCreate()
             else history.goBack();
         });
@@ -64,7 +66,7 @@ export default function NewItemModal(props: any) {
                 </Toolbar>
             </AppBar>
             <Container fixed className={classes.containerPadding}>
-                <NewItemForm onSubmit={handleSubmit} />
+                <NewItemForm onSubmit={handleSubmit} category={itemCategory} />
             </Container>
         </Dialog>
     );

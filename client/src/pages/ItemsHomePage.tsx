@@ -71,20 +71,19 @@ class ItemsHomePage extends React.Component<Props> {
                                 data={query =>
                                     new Promise((resolve, reject) => {
                                         // prepare your data and then call resolve like this:
-                                        const queryString = new URL(process.env.REACT_APP_API_URL + "/api/product/query/");
+                                        const queryString = new URL(process.env.REACT_APP_API_URL + `/api/product/query/${this.props.itemCategory}`);
                                         queryString.searchParams.append("page", (query.page + 1).toString());
-                                        queryString.searchParams.append("limit", query.pageSize.toString());
+                                        queryString.searchParams.append("pageSize", query.pageSize.toString());
                                         queryString.searchParams.append("search", query.search);
                                         queryString.searchParams.append("sort", `${query.orderDirection === 'desc' ? "-" : ""}${query.orderBy?.field || ""}`);
                                         Axios
                                             .get(queryString.toString(), { withCredentials: true })
                                             .then(function (response) {
                                                 const responseData = response.data.data
-
                                                 resolve({
-                                                    data: responseData.docs,
+                                                    data: responseData.pageData,
                                                     page: responseData.page - 1,
-                                                    totalCount: responseData.totalDocs
+                                                    totalCount: responseData.totalCount
                                                 });
                                             })
                                             .catch(function (error) {
@@ -152,7 +151,8 @@ const mapStateToProps = (state: any) => {
     return {
         itemsList: state.item.itemsList,
         itemsListHasNextPage: state.item.itemsListHasNextPage,
-        itemsListLoad: state.item.itemsListLoad
+        itemsListLoad: state.item.itemsListLoad,
+        itemCategory: state.item.itemCategory
     }
 };
 

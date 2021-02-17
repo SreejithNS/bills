@@ -4,8 +4,11 @@ module.exports = new Schema({
 	restrictedRoutes: [
 		{
 			type: String,
-			required: false,
-			default: [],
+		},
+	],
+	itemCategories: [
+		{
+			type: String,
 		},
 	],
 });

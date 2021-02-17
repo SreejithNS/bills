@@ -18,7 +18,10 @@ var UserSchema = new mongoose.Schema(
 		settings: {
 			type: UserSettingsSchema,
 			required: false,
-			default: { restrictedRoutes: [] },
+			default: {
+				restrictedRoutes: [],
+				itemCategories: [],
+			},
 		},
 	},
 	{ timestamps: true }

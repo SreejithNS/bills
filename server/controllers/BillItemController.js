@@ -1,4 +1,4 @@
-const { body, param, validationResult } = require("express-validator");
+const { body, param, query, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 const auth = require("../middlewares/jwt");
 const _ = require("lodash");
@@ -6,6 +6,8 @@ const apiResponse = require("../helpers/apiResponse");
 const Product = require("../models/ProductModel");
 const privilegeEnum = require("../helpers/privilegeEnum.js");
 const unitSchemaValidation = require("./validators/unitsSchemaValidation");
+const UserModel = require("../models/UserModel");
+const paginationLabels = require("../helpers/paginationLabels");
 
 function ProductData(data) {
 	this.id = data._id;
@@ -75,7 +77,7 @@ exports.delete = [
  */
 exports.create = [
 	auth,
-	body("category", "Invalid category name").optional().escape().trim(),
+	param("category", "Invalid category name").optional().escape().trim(),
 	body("code")
 		.escape()
 		.isLength()
@@ -84,7 +86,7 @@ exports.create = [
 		.custom((value, { req }) => {
 			return Product.findOne({
 				code: value,
-				category: req.body.category,
+				category: req.params.category,
 			}).then((doc) => {
 				if (doc)
 					return Promise.reject(
@@ -132,7 +134,7 @@ exports.create = [
 							code: req.body.code,
 							name: req.body.name,
 							units: req.body.units || [],
-							category: req.body.category || "general",
+							category: req.params.category || "general",
 							rate: req.body.rate,
 							mrp: req.body.mrp,
 						},
@@ -188,7 +190,6 @@ exports.update = [
 				"Validation Error.",
 				validationResult(req).array()
 			);
-
 		try {
 			//Schema doesn't have phone?
 			//Do we need updatedAt?
@@ -232,6 +233,21 @@ exports.update = [
  */
 exports.getSuggestions = [
 	auth,
+	param("category")
+		.escape()
+		.trim()
+		.custom((value, { req }) => {
+			return UserModel.findById(req.user._id).then((doc) => {
+				if (
+					!(
+						doc.settings.itemCategories &&
+						Array.isArray(doc.settings.itemCategories) &&
+						doc.settings.itemCategories.includes(value)
+					)
+				)
+					return Promise.reject("You don't have this category");
+			});
+		}),
 	param("code").escape().trim(),
 	(req, res) => {
 		const validation = validationResult(req);
@@ -247,6 +263,7 @@ exports.getSuggestions = [
 				code: {
 					$regex: new RegExp(`${req.params.code}`, "i"),
 				},
+				category: req.params.category,
 			},
 			(err, products) => {
 				if (err) return apiResponse.ErrorResponse(res, err);
@@ -273,6 +290,22 @@ exports.getSuggestions = [
  */
 exports.query = [
 	auth,
+	param("category", "Tampered category")
+		.escape()
+		.trim()
+		.custom((value, { req }) => {
+			if (!value) return Promise.reject("Category not found");
+			return UserModel.findById(req.user._id).then((doc) => {
+				if (
+					!(
+						doc.settings.itemCategories &&
+						Array.isArray(doc.settings.itemCategories) &&
+						doc.settings.itemCategories.includes(value)
+					)
+				)
+					return Promise.reject("You don't have this category");
+			});
+		}),
 	function (req, res) {
 		try {
 			if (req.user.type !== privilegeEnum.admin)
@@ -281,27 +314,20 @@ exports.query = [
 					"You are not authorised to do this operation"
 				);
 			const query = {
-				name: {
-					$regex: new RegExp(`${req.query.search}`, "i"),
-				},
+				...(req.query.search && {
+					name: {
+						$regex: new RegExp(`${req.query.search}`, "i"),
+					},
+				}),
+				category: req.params.category,
 			}; // comesUnder: req.user._id };
-
 			const paginateOptions = {
-				page:
-					req.query.page &&
-					!!Math.abs(req.query.page) &&
-					Math.abs(req.query.page) > 0
-						? Math.abs(req.query.page)
-						: 1,
-				limit:
-					req.query.limit &&
-					!!Math.abs(req.query.limit) &&
-					Math.abs(req.query.limit) > 0
-						? Math.abs(req.query.limit)
-						: 5,
-				sort: req.query.sort || "",
+				page: req.query.page,
+				limit: req.query.pageSize,
 				lean: true,
+				customLabels: paginationLabels,
 			};
+			console.log(query, paginateOptions);
 			Product.paginate(query, paginateOptions).then(
 				(items) => {
 					if (items !== null) {
@@ -336,6 +362,21 @@ exports.query = [
 exports.productAvailability = [
 	auth,
 	param("code").escape().trim(),
+	param("category")
+		.escape()
+		.trim()
+		.custom((value, { req }) => {
+			return UserModel.findById(req.user._id).then((doc) => {
+				if (
+					!(
+						doc.settings.itemCategories &&
+						Array.isArray(doc.settings.itemCategories) &&
+						doc.settings.itemCategories.includes(value)
+					)
+				)
+					return Promise.reject("You don't have this category");
+			});
+		}),
 	(req, res) => {
 		if (req.user.type !== privilegeEnum.admin)
 			return apiResponse.unauthorizedResponse(
@@ -345,6 +386,7 @@ exports.productAvailability = [
 		Product.find(
 			{
 				code: req.params.code,
+				category: req.params.category,
 			},
 			(err, products) => {
 				if (err) return apiResponse.ErrorResponse(res, err);

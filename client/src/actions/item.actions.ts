@@ -3,9 +3,10 @@ import axios from "axios";
 import { toast } from "react-toastify"
 
 export const fetchItemSuggesions = (code: string) => {
-    return (dispatch: any) => {
+    return (dispatch: any, getState: any) => {
+        const { itemCategory } = getState().item;
         if (code.length > 0) axios
-            .get(process.env.REACT_APP_API_URL + `/api/product/suggestions/${code}`, { withCredentials: true })
+            .get(process.env.REACT_APP_API_URL + `/api/product/suggestions/${itemCategory}.${code}`, { withCredentials: true })
             .then(function (response) {
                 dispatch({
                     type: "ITEM_SUGGESTIONS",
@@ -19,8 +20,8 @@ export const fetchItemSuggesions = (code: string) => {
 };
 
 
-export const itemCodeExists = (code: string) => code.length ? axios
-    .get(process.env.REACT_APP_API_URL + `/api/product/availability/${code}`, { withCredentials: true })
+export const itemCodeExists = (category: string, code: string) => code.length ? axios
+    .get(process.env.REACT_APP_API_URL + `/api/product/availability/${category}.${code}`, { withCredentials: true })
     .then(function (response) {
         return response.data.data
     })
@@ -28,9 +29,9 @@ export const itemCodeExists = (code: string) => code.length ? axios
         toast.error("Couldn't get item code validation:" + error.message);
     }) : false
 
-export const addItem = (details: any) => {
+export const addItem = (details: any, itemCategory: string) => {
     return axios
-        .post(process.env.REACT_APP_API_URL + `/api/product/`, details, { withCredentials: true })
+        .post(process.env.REACT_APP_API_URL + `/api/product/${itemCategory}`, details, { withCredentials: true })
         .catch(function (error) {
             toast.error("Couldn't add item:" + error.message);
             throw new SubmissionError({});
@@ -42,10 +43,11 @@ export const fetchItemsList = (extraItems?: boolean) => {
         if (getState().item.itemsList.length === 0 || extraItems) {
             dispatch({ type: "FETCH_ITEMS_LIST_LOAD", payload: true });
 
-            const queryString = new URL(process.env.REACT_APP_API_URL + "/api/product/query/");
+            const queryString = new URL(process.env.REACT_APP_API_URL + "/api/product/query");
 
             queryString.searchParams.append("offset", getState().item.itemsList.length);
             queryString.searchParams.append("sort", "-createdAt");
+            queryString.searchParams.append("category", getState().item.itemCategory);
 
             axios
                 .get(queryString.toString(), { withCredentials: true })
@@ -143,7 +145,7 @@ export const itemsArrayToCsvArray = (items: any[]) => items.map(
  * @param filename {string} - Filename without extension
  * @param rows {any[][]} - 2D Flat array without objects
  */
-export const exportToCsv = (filename: string, rows:any[][]) => {
+export const exportToCsv = (filename: string, rows: any[][]) => {
     var processRow = function (row: any[][]) {
         var finalVal = '';
         for (var j = 0; j < row.length; j++) {
@@ -168,14 +170,14 @@ export const exportToCsv = (filename: string, rows:any[][]) => {
 
     var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
     if (navigator.msSaveBlob) { // IE 10+
-        navigator.msSaveBlob(blob, filename+".csv");
+        navigator.msSaveBlob(blob, filename + ".csv");
     } else {
         var link = document.createElement("a");
         if (link.download !== undefined) { // feature detection
             // Browsers that support HTML5 download attribute
             var url = URL.createObjectURL(blob);
             link.setAttribute("href", url);
-            link.setAttribute("download", filename+".csv");
+            link.setAttribute("download", filename + ".csv");
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();

@@ -5,7 +5,7 @@ var Schema = mongoose.Schema;
 
 const ProductSchema = new Schema(
 	{
-		code: { type: String, required: true, index: { unique: true } },
+		code: { type: String, required: true, index: true },
 		name: { type: String, required: true },
 		units: [
 			{
@@ -28,5 +28,6 @@ const ProductSchema = new Schema(
 );
 
 ProductSchema.plugin(mongoosePaginate);
+ProductSchema.index({ code: 1, category: 1 }, { unique: true });
 
 module.exports = ProductSchema;

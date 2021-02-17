@@ -35,8 +35,8 @@ function validate(values: { [x: string]: any; }) {
     return errors;
 }
 
-async function asyncValidate(values: { code: string; } /*, dispatch */) {
-    if (await itemCodeExists(values.code)) {
+async function asyncValidate(values: { code: string; }, _:any, props:any) {
+    if (await itemCodeExists(props.category, values.code)) {
         return Promise.reject({ code: 'Item Code already used' });
     }
 };

@@ -1,4 +1,5 @@
 const initialState = {
+	itemCategory: "general",
 	itemSuggestions: [],
 	itemsList: [],
 	itemsListHasNextPage: false,
@@ -7,6 +8,12 @@ const initialState = {
 
 export default function itemReducer(state = initialState, action) {
 	switch (action.type) {
+		case "SET_ITEM_CATEGORY": {
+			return {
+				...state,
+				itemCategory: action.payload,
+			};
+		}
 		case "ITEM_SUGGESTIONS": {
 			return {
 				...state,
