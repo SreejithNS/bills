@@ -1,6 +1,7 @@
 const initialState = {
 	settings: {
-		restrictedRoutes: []
+		restrictedRoutes: [],
+		itemCategories: []
 	},
 	userData: {},
 	salesmenListError: false,
