@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography, List, ListItem, ListItemText } from '@material-ui/core';
-import { connect } from 'react-redux';
+import { Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button } from '@material-ui/core';
+import { connect, useDispatch, useSelector } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { compose } from 'redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
@@ -13,6 +13,9 @@ import { toast } from 'react-toastify';
 import { Add, LineStyleTwoTone, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
 import LineStyleIcon from '@material-ui/icons/LineStyle';
+import { RootState } from '../reducers/rootReducer';
+import ImportModal from '../components/ImportModal';
+import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
 
 type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles> & RouteComponentProps;
 
@@ -34,6 +37,46 @@ const styles = (theme: Theme) => createStyles({
     }
 })
 
+const useStyles = makeStyles((theme: Theme) => ({
+    cardPadding: {
+        padding: theme.spacing(1)
+    }
+}))
+
+const ItemToolbar = () => {
+    const { itemCategory } = useSelector((state: RootState) => state.item);
+    const [importModalOpen, toggleImportModal] = React.useState<boolean>(false);
+    const classes = useStyles();
+    const itemCategories = useSelector((state: RootState) => state.app.settings.itemCategories);
+    const dispatch = useDispatch();
+    const handleCategoryChange = (event: { target: { value: any; }; }) => {
+        const value = event.target.value;
+        return dispatch({ type: "SET_ITEM_CATEGORY", payload: value });
+    }
+    return (
+        <Paper elevation={2} className={classes.cardPadding}>
+            <FormControl variant="outlined">
+                <InputLabel id="category-selection-label">Category</InputLabel>
+                <Select
+                    labelId="category-selection-label"
+                    value={itemCategory}
+                    onChange={handleCategoryChange}
+                    label="Category"
+                >
+                    <MenuItem value="">
+                        <em>None</em>
+                    </MenuItem>
+                    {itemCategories.map(
+                        (category: string, key: any) => <MenuItem key={key} value={category}>{category}</MenuItem>
+                    )}
+                </Select>
+            </FormControl>
+            <Button startIcon={<SystemUpdateAltIcon />} onClick={() => toggleImportModal(!importModalOpen)}>Import</Button>
+            <ImportModal open={importModalOpen} onClose={() => toggleImportModal(false)} />
+        </Paper>
+    )
+}
+
 class ItemsHomePage extends React.Component<Props> {
     componentDidMount() {
         //this.props.getItemsList();
@@ -54,6 +97,9 @@ class ItemsHomePage extends React.Component<Props> {
                             <Typography variant="h4">
                                 Inventory
                             </Typography>
+                        </Grid>
+                        <Grid item xs={12} className={classes.cardPadding}>
+                            <ItemToolbar />
                         </Grid>
                         <Grid item xs={12} className={classes.cardPadding}>
                             <MaterialTable

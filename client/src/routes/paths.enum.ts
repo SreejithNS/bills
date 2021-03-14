@@ -19,7 +19,8 @@ export enum customersPaths {
 
 export enum itemPaths {
     home = '/',
-    addItem = '/create'
+    addItem = '/create',
+    import = '/import'
 }
 
 export enum accountPaths {
