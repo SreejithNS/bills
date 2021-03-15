@@ -1,5 +1,5 @@
-const UserModel = require("../models/UserModel");
-const { body, validationResult } = require("express-validator");
+const { User } = require("../models/UserModel");
+const { body, validationResult, param } = require("express-validator");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const utility = require("../helpers/utility");
@@ -9,34 +9,170 @@ const mailer = require("../helpers/mailer");
 const { constants } = require("../helpers/constants");
 const _ = require("lodash");
 const authenticate = require("../middlewares/jwt");
-const privilegeEnum = require("../helpers/privilegeEnum");
+const { privilegeEnum, defaultSalesmanPermissions } = require("../helpers/privilegeEnum");
+const { UserSettings } = require("../models/UserSettingsModel");
+const e = require("express");
+
+// Types
+
+/**
+ * @typedef Permissions
+ * @type {object}
+ * @property {privilegeEnum} type - Type Number of User.
+ * @property {[string]} permissions - List of permissions of User.
+ * @property {User._id=} belongsTo - Admin User Id if this user is not admin.
+ */
+
+/**
+ * Creates a user in User Model.
+ * @param {string} name - Name of user
+ * @param {number} phone - Phone Number of user
+ * @param {string} password - Password for the account
+ * @param {Permissions=} permissions - Permission for the user if applicable
+ * @returns {User} Newly created user
+ */
+
+// Functions 
 
 function UserData(params) {
-	this._id = params.id;
-	this.firstName = params.firstName;
-	this.lastName = params.lastName;
-	this.email = params.email;
+	this._id = params._id;
+	this.name = params.name;
 	this.phone = params.phone;
 	this.type = params.type;
-	this.settings = params.settings || {
-		restrictedRoutes: [],
-		itemCategories: [],
-	};
-	this.worksUnder = params.worksUnder && new UserData(params.worksUnder);
+	this.settings = params.settings;
+	this.belongsTo = params.belongsTo && new UserData(params.belongsTo);
 }
 
 /**
- * User registration.
- *
- * @param {string}      firstName
- * @param {string=}      lastName
- * @param {string=}      email
- * @param {number}		phone
- * @param {string}      password
- *
- * @returns {Object}
+ * Create User Account with Password Encryption.
+ * 
+ * @param {string} name - User Name
+ * @param {number} phone - User Phone Number
+ * @param {string} password - User Account Password
+ * @param {Permissions=} permissions - Permissions and Account type Details if any.
+ * @returns {User}
  */
-function register(req, res) {
+async function createUser(name, phone, password, permissions) {
+	bcrypt.hash(password, 10, function (err, hash) {
+		const userData = {
+			name,
+			phone,
+			password: hash,
+			type: permissions ? permissions.type : privilegeEnum.admin
+		};
+
+		// Create a UserSettings for the permissions given.
+		if (permissions) {
+			const settings = new UserSettings({ permissions: permissions.permissions });
+			await settings.save();
+			userData.settings = settings._id;
+		}
+
+		var newUser = new User(userData);
+
+		return await newUser.save();
+	});
+}
+
+/**
+ * Authenticate the user with phone number and password;
+ * 
+ * @param {number} phone - User Phone
+ * @param {string} password - User Account Password
+ * @returns {{_id:string;token:string}}
+ */
+async function userAuthentication(phone, password) {
+	User.findOne({ phone }).then(
+		(user) => {
+			if (user) {
+				user.populate("settings");
+
+				bcrypt.compare(
+					password,
+					user.password,
+					(err, same) => {
+						if (err) throw new Error(err);
+						if (same) {
+							// Check User's account active or not.
+							if (user.status) {
+								//Prepare JWT token for authentication
+								const jwtPayload = { _id: user._id.toString() }
+								const jwtData = {
+									expiresIn:
+										process.env
+											.JWT_TIMEOUT_DURATION,
+								};
+								const secret =
+									process.env.JWT_SECRET;
+
+								//Generated JWT token with Payload and secret.
+								const token = jwt.sign(
+									jwtPayload,
+									secret,
+									jwtData
+								);
+
+								return { ...jwtPayload, token };
+
+							} else {
+								throw new Error("Account is not active. Please contact admin.");
+							}
+						} else {
+							throw new Error("Phone or Password wrong");
+						}
+					}
+				);
+			} else {
+				throw new Error("User not found");
+			}
+		}
+	);
+}
+/**
+ * Get User Data
+ * @param {User._id} _id - User Account _id
+ * @returns {UserData}
+ */
+async function userData(_id) {
+	return User.findById(_id, (err, res) => {
+		if (err) return new Error(err);
+		if (res) {
+			await res.populate("belongsTo");
+			await res.populate("settings");
+
+			return new UserData(res);
+		} else {
+			return new Error("Authentication Details Tampered")
+		}
+	})
+}
+
+async function userAccountDetailsUpdate(userId, param, value) {
+	switch (param) {
+		case "password":
+			param = await new Promise((resolve, reject) => {
+				bcrypt.hash(param, 10, async (err, hash) => {
+					if (err) reject(err)
+					resolve(hash)
+				});
+			})
+			break;
+		case "settings":
+			throw new Error("You cannot update Settings explicitly");
+		default:
+			break;
+	}
+	let updatedAccountDetails = await User.findByIdAndUpdate(userId, { [param]: value }, { new: true });
+	if (updatedAccountDetails[param] === value) {
+		return new UserData(updatedAccountDetails);
+	} else {
+		throw new Error("User Details Update did not apply");
+	}
+}
+
+// Middlewares
+
+async function adminRegistrationMiddleware(req, res) {
 	try {
 		// Extract the validation errors from a request.
 		const errors = validationResult(req);
@@ -48,51 +184,45 @@ function register(req, res) {
 				errors.array()
 			);
 		} else {
-			//hash input password
-			bcrypt.hash(req.body.password, 10, function (err, hash) {
-				// generate OTP for confirmation
-				//let otp = utility.randomNumber(4);
-				// Create User object with escaped and trimmed data
-				const undefinedOmitter = {
-					firstName: req.body.firstName,
-					lastName: req.body.lastName,
-					email: req.body.email,
-					phone: parseInt(req.body.phone),
-					password: hash,
-					settings: {
-						itemCategories: ["general"],
-					},
-					//confirmOTP: otp
-				};
+			const newUser = await createUser(req.body.name, req.body.phone, req.body.password);
+			return apiResponse.successResponseWithData(
+				res,
+				"Registration Success",
+				newUser._id
+			);
+		}
+	} catch (err) {
+		//throw error in json response with status 500.
+		return apiResponse.ErrorResponse(res, err);
+	}
+}
 
-				var user = new UserModel(undefinedOmitter);
+async function salesmanRegisterMiddleware(req, res) {
+	try {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
+		} else {
+			/**
+			 * @type {Permissions}
+			 */
+			const permissions = {
+				type: privilegeEnum.salesman,
+				permissions: req.body.permissions || defaultSalesmanPermissions,
+				belongsTo: req.user._id
+			}
 
-				// Html email body
-				//let html = "<p>Please Confirm your Account.</p><p>OTP: "+otp+"</p>";
-				// Send confirmation email
-				/*mailer.send(
-					constants.confirmEmails.from, 
-					req.body.email,
-					"Confirm Account",
-					html
-				).then(function(){*/
-				// Save user.
-				user.save(function (err) {
-					if (err) {
-						return apiResponse.ErrorResponse(res, err);
-					}
-					let userData = new UserData(user);
-					return apiResponse.successResponseWithData(
-						res,
-						"Registration Success.",
-						userData
-					);
-				});
-				/*}).catch(err => {
-					console.log(err);
-					return apiResponse.ErrorResponse(res,err);
-				}) ;*/
-			});
+			const newUser = await createUser(req.body.name, req.body.phone, req.body.password, permissions);
+
+			return apiResponse.successResponseWithData(
+				res,
+				"Registration Success",
+				newUser._id
+			);
 		}
 	} catch (err) {
 		//throw error in json response with status 500.
@@ -101,170 +231,46 @@ function register(req, res) {
 }
 
 /**
- * Salesman registration.
+ * User registration.
  *
- * @param {string}      firstName
- * @param {string=}      lastName
- * @param {string=}      email
- * @param {number}		phone
- * @param {string}      password
+ * @param {string} name - User Name
+ * @param {number} phone - User Phone number
+ * @param {string} password - User Password
  *
  * @returns {Object}
  */
 
-exports.register = [
+exports.userRegistration = [
 	// Validate fields.
-	body("firstName")
+	body("name")
+		.trim()
 		.isLength({ min: 1 })
-		.trim()
-		.withMessage("First name must be specified.")
-		.isAlphanumeric()
-		.withMessage("First name has non-alphanumeric characters."),
-	body("lastName")
-		.trim()
-		.optional()
-		.isAlphanumeric()
-		.withMessage("Last name has non-alphanumeric characters."),
+		.withMessage("Name must be specified.")
+		.matches(/^[a-z0-9 ]+$/i)
+		.withMessage("Name must contain only alphanumeric and spaces"),
 	body("phone")
-		.isLength({ min: 10, max: 10 })
 		.trim()
+		.isLength({ min: 10, max: 10 })
+		.isNumeric()
 		.withMessage("Phone must be 10 digits.")
 		.custom((value) => {
-			return UserModel.findOne({ phone: parseInt(value) }).then(
+			return User.findOne({ phone: value }).then(
 				(user) => {
 					if (user) {
-						return Promise.reject("Phone already in use");
+						return Promise.reject("Phone Number already taken");
 					}
 				}
 			);
-		}),
-	body("email")
-		.trim()
-		.optional()
-		.isEmail()
-		.withMessage("Email must be a valid email address.")
-		.custom((value) => {
-			return UserModel.findOne({ email: value }).then((user) => {
-				if (user) {
-					return Promise.reject("E-mail already in use");
-				}
-			});
 		}),
 	body("password")
 		.isLength({ min: 6 })
 		.trim()
 		.withMessage("Password must be 6 characters or greater."),
-	// Sanitize fields.
-	sanitizeBody("firstName").escape(),
-	sanitizeBody("lastName").escape(),
-	sanitizeBody("phone").escape(),
-	sanitizeBody("email").escape(),
-	sanitizeBody("password").escape(),
-	// Process request after validation and sanitization.
-	register,
-];
-
-exports.registerSalesman = [
-	authenticate,
-	// Validate fields.
-	body("firstName")
-		.isLength({ min: 1 })
-		.trim()
-		.withMessage("First name must be specified.")
-		.isAlphanumeric()
-		.withMessage("First name has non-alphanumeric characters."),
-	body("lastName")
-		.trim()
-		.optional()
-		.isAlphanumeric()
-		.withMessage("Last name has non-alphanumeric characters."),
-	body("phone")
-		.isLength({ min: 10, max: 10 })
-		.trim()
-		.withMessage("Phone must be 10 digits.")
-		.custom((value) => {
-			return UserModel.findOne({ phone: parseInt(value) }).then(
-				(user) => {
-					if (user) {
-						return Promise.reject("Phone already in use");
-					}
-				}
-			);
-		}),
-	body("email")
-		.trim()
-		.optional()
-		.isEmail()
-		.withMessage("Email must be a valid email address.")
-		.custom((value) => {
-			return UserModel.findOne({ email: value }).then((user) => {
-				if (user) {
-					return Promise.reject("E-mail already in use");
-				}
-			});
-		}),
-	body("password")
-		.isLength({ min: 6 })
-		.trim()
-		.withMessage("Password must be 6 characters or greater."),
-	// Sanitize fields.
-	sanitizeBody("firstName").escape(),
-	sanitizeBody("lastName").escape(),
-	sanitizeBody("phone").escape(),
-	sanitizeBody("email").escape(),
-	sanitizeBody("password").escape(),
-	// Process request after validation and sanitization.
-	(req, res) => {
-		try {
-			if (req.user.type !== privilegeEnum.admin)
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised to create a salesman"
-				);
-			// Extract the validation errors from a request.
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				// Display sanitized values/errors messages.
-				return apiResponse.validationErrorWithData(
-					res,
-					"Validation Error.",
-					errors.array()
-				);
-			} else {
-				//hash input password
-				bcrypt.hash(req.body.password, 10, function (err, hash) {
-					// generate OTP for confirmation
-					//let otp = utility.randomNumber(4);
-					// Create User object with escaped and trimmed data
-					const undefinedOmitter = {
-						firstName: req.body.firstName,
-						lastName: req.body.lastName,
-						email: req.body.email,
-						phone: parseInt(req.body.phone),
-						password: hash,
-						worksUnder: req.user._id,
-						//confirmOTP: otp
-					};
-
-					var user = new UserModel(undefinedOmitter);
-
-					// Save user.
-					user.save(function (err) {
-						if (err) {
-							return apiResponse.ErrorResponse(res, err);
-						}
-						let userData = new UserData(user);
-						return apiResponse.successResponseWithData(
-							res,
-							"Salesman Registration Success.",
-							userData
-						);
-					});
-				});
-			}
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+	async (req, res) => {
+		if (req.user.type === privilegeEnum.admin) {
+			return await salesmanRegisterMiddleware(req, res);
+		} else {
+			return await adminRegistrationMiddleware(req, res);
 		}
 	},
 ];
@@ -272,8 +278,8 @@ exports.registerSalesman = [
 /**
  * User login.
  *
- * @param {string}      phone
- * @param {string}      password
+ * @param {string} phone
+ * @param {string} password
  *
  * @returns {Object}
  */
@@ -281,14 +287,22 @@ exports.registerSalesman = [
 exports.login = [
 	body("phone")
 		.trim()
+		.isLength({ min: 10, max: 10 })
 		.isNumeric()
-		.withMessage("Valid Phone Number must be specified."),
+		.withMessage("Phone must be 10 digits.")
+		.custom((value) => {
+			return User.findOne({ phone: value }).then(
+				(user) => {
+					if (!user) {
+						return Promise.reject("Phone Number does not exist");
+					}
+				}
+			);
+		}),
 	body("password")
-		.isLength({ min: 1 })
+		.isLength({ min: 6 })
 		.trim()
-		.withMessage("Password must be specified."),
-	sanitizeBody("phone").escape(),
-	sanitizeBody("password").escape(),
+		.withMessage("Password must be 6 characters or greater."),
 	(req, res) => {
 		try {
 			const errors = validationResult(req);
@@ -299,87 +313,18 @@ exports.login = [
 					errors.array()
 				);
 			} else {
-				UserModel.findOne({ phone: parseInt(req.body.phone) }).then(
-					(user) => {
-						if (user) {
-							//Compare given password with db's hash.
-							bcrypt.compare(
-								req.body.password,
-								user.password,
-								function (err, same) {
-									if (same) {
-										//Check account confirmation.
-										if (user.isConfirmed) {
-											// Check User's account active or not.
-											if (user.status) {
-												let userData = new UserData(
-													user
-												);
+				try {
+					const authenticationData = await userAuthentication(req.body.user, req.body.password);
+					res.cookie("auth-token", authenticationData.token, {
+						httpOnly: true,
+						sameSite: "none",
+						secure: true,
+					});
+					return apiResponse.successResponseWithData(res, "User Authenticated", authenticationData);
+				} catch (e) {
+					return apiResponse.unauthorizedResponse(res, "Authentication Failed", e);
+				}
 
-												//Prepare JWT token for authentication
-												const jwtPayload = _.pick(
-													userData,
-													[
-														"_id",
-														"phone",
-														"type",
-														"firstName",
-														"worksUnder",
-														"settings",
-													]
-												);
-												const jwtData = {
-													expiresIn:
-														process.env
-															.JWT_TIMEOUT_DURATION,
-												};
-												const secret =
-													process.env.JWT_SECRET;
-												//Generated JWT token with Payload and secret.
-												const token = jwt.sign(
-													jwtPayload,
-													secret,
-													jwtData
-												);
-												res.cookie("token", token, {
-													httpOnly: true,
-													sameSite: "none",
-													secure: true,
-												});
-												userData.token = token;
-												return apiResponse.successResponseWithData(
-													res,
-													"Login Success.",
-													userData
-												);
-											} else {
-												return apiResponse.unauthorizedResponse(
-													res,
-													"Account is not active. Please contact admin."
-												);
-											}
-										} else {
-											return apiResponse.unauthorizedResponse(
-												res,
-												"Account is not confirmed. Please confirm your account."
-											);
-										}
-									} else {
-										return apiResponse.unauthorizedResponse(
-											res,
-											"Phone or Password wrong."
-										);
-									}
-								}
-							);
-						} else {
-							return apiResponse.unauthorizedResponse(
-								res,
-								"User not found"
-							);
-						}
-					}
-				);
 			}
 		} catch (err) {
 			return apiResponse.ErrorResponse(res, err);
@@ -389,201 +334,37 @@ exports.login = [
 
 exports.userData = [
 	authenticate,
-	(req, res) => {
-		UserModel.findById(req.user._id)
-			.populate(["worksUnder"])
-			.then(
-				(doc) => {
-					if (doc === null)
-						return apiResponse.ErrorResponse(
-							res,
-							"Tampered Authentication"
-						);
-					return apiResponse.successResponseWithData(
-						res,
-						"User data",
-						new UserData(doc)
-					);
-				},
-				(err) => apiResponse.ErrorResponse(res, err.message)
+	async (req, res) => {
+		try {
+			const authenticatedUserData = userData(req.user._id);
+			return apiResponse.successResponseWithData(
+				res,
+				"User Data fetched",
+				authenticatedUserData
 			);
-	},
-];
-
-/**
- * Verify Confirm otp.
- *
- * @param {string}      email
- * @param {string}      otp
- *
- * @returns {Object}
- */
-exports.verifyConfirm = [
-	body("email")
-		.isLength({ min: 1 })
-		.trim()
-		.withMessage("Email must be specified.")
-		.isEmail()
-		.withMessage("Email must be a valid email address."),
-	body("otp")
-		.isLength({ min: 1 })
-		.trim()
-		.withMessage("OTP must be specified."),
-	sanitizeBody("email").escape(),
-	sanitizeBody("otp").escape(),
-	(req, res) => {
-		try {
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				return apiResponse.validationErrorWithData(
-					res,
-					"Validation Error.",
-					errors.array()
-				);
-			} else {
-				var query = { email: req.body.email };
-				UserModel.findOne(query).then((user) => {
-					if (user) {
-						//Check already confirm or not.
-						if (!user.isConfirmed) {
-							//Check account confirmation.
-							if (user.confirmOTP == req.body.otp) {
-								//Update user as confirmed
-								UserModel.findOneAndUpdate(query, {
-									isConfirmed: 1,
-									confirmOTP: null,
-								}).catch((err) => {
-									return apiResponse.ErrorResponse(res, err);
-								});
-								return apiResponse.successResponse(
-									res,
-									"Account confirmed success."
-								);
-							} else {
-								return apiResponse.unauthorizedResponse(
-									res,
-									"Otp does not match"
-								);
-							}
-						} else {
-							return apiResponse.unauthorizedResponse(
-								res,
-								"Account already confirmed."
-							);
-						}
-					} else {
-						return apiResponse.unauthorizedResponse(
-							res,
-							"Specified email not found."
-						);
-					}
-				});
-			}
-		} catch (err) {
-			return apiResponse.ErrorResponse(res, err);
+		} catch (e) {
+			return apiResponse.ErrorResponse(
+				res,
+				e.message || e
+			);
 		}
 	},
 ];
 
-/**
- * Resend Confirm otp.
- *
- * @param {string}      email
- *
- * @returns {Object}
- */
-exports.resendConfirmOtp = [
-	body("email")
-		.isLength({ min: 1 })
-		.trim()
-		.withMessage("Email must be specified.")
-		.isEmail()
-		.withMessage("Email must be a valid email address."),
-	sanitizeBody("email").escape(),
-	(req, res) => {
-		try {
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				return apiResponse.validationErrorWithData(
-					res,
-					"Validation Error.",
-					errors.array()
-				);
-			} else {
-				var query = { email: req.body.email };
-				UserModel.findOne(query).then((user) => {
-					if (user) {
-						//Check already confirm or not.
-						if (!user.isConfirmed) {
-							// Generate otp
-							let otp = utility.randomNumber(4);
-							// Html email body
-							let html =
-								"<p>Please Confirm your Account.</p><p>OTP: " +
-								otp +
-								"</p>";
-							// Send confirmation email
-							mailer
-								.send(
-									constants.confirmEmails.from,
-									req.body.email,
-									"Confirm Account",
-									html
-								)
-								.then(function () {
-									user.isConfirmed = 0;
-									user.confirmOTP = otp;
-									// Save user.
-									user.save(function (err) {
-										if (err) {
-											return apiResponse.ErrorResponse(
-												res,
-												err
-											);
-										}
-										return apiResponse.successResponse(
-											res,
-											"Confirm otp sent."
-										);
-									});
-								});
-						} else {
-							return apiResponse.unauthorizedResponse(
-								res,
-								"Account already confirmed."
-							);
-						}
-					} else {
-						return apiResponse.unauthorizedResponse(
-							res,
-							"Specified email not found."
-						);
-					}
-				});
-			}
-		} catch (err) {
-			return apiResponse.ErrorResponse(res, err);
-		}
-	},
-];
-
-exports.logout = [
-	authenticate,
-	(req, res) => {
-		res.cookie("token", { httpOnly: true, expires: Date.now() });
-		return apiResponse.successResponse(res, "Successfully logged out");
-	},
-];
+exports.logout = (req, res) => {
+	res.cookie("token", { httpOnly: true, expires: Date.now() });
+	return apiResponse.successResponse(res, "Successfully logged out");
+}
 
 exports.numberAvailability = [
 	authenticate,
 	(req, res) => {
 		if (req.user.type !== privilegeEnum.admin)
-			return apiResponse(
+			return apiResponse.unauthorizedResponse(
 				res,
 				"You are not authorised to check number availability"
 			);
-		UserModel.find({ phone: req.params.phone }, (err, docs) => {
+		User.find({ phone: req.params.phone }, (err, docs) => {
 			if (err)
 				return apiResponse.ErrorResponse(
 					res,
@@ -600,65 +381,66 @@ exports.numberAvailability = [
 
 exports.salesmenList = [
 	authenticate,
-	(req, res) => {
-		UserModel.find({ worksUnder: req.user._id }, (err, docs) => {
-			if (err)
-				return apiResponse.ErrorResponse(
-					res,
-					"Cannot retreive the salesman list"
-				);
-			return apiResponse.successResponseWithData(
-				res,
-				"Salesman list successfull",
-				docs.length && docs.map((salesman) => new UserData(salesman))
-			);
-		});
-	},
-];
-
-exports.updateSalesmanPassword = [
-	authenticate,
-	body("password").escape().trim().isLength({ min: 6 }),
-	body("salesman").escape().trim().isMongoId(),
-	(req, res) => {
-		const validationError = validationResult(req);
-		if (!validationError.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Not a valid password",
-				validationError.array()
-			);
-		UserModel.findById(req.body.salesman, (err, doc) => {
-			if (err)
-				return apiResponse.ErrorResponse(
-					res,
-					"Could not update salesman password"
-				);
-			if (!doc) {
-				return apiResponse.notFoundResponse(
-					res,
-					"Requested salesman not found"
-				);
-			} else if (doc.worksUnder.toString() !== req.user._id) {
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised to update this salesman details"
-				);
-			} else {
-				bcrypt.hash(req.body.password, 10, function (err, hash) {
-					doc.password = hash;
-					doc.save().then(
-						(doc) => {
-							if (doc)
-								return apiResponse.successResponse(
-									res,
-									"Password updated"
-								);
-						},
-						(err) => apiResponse.ErrorResponse(res, err.message)
+	async (req, res) => {
+		try {
+			const authenticatedUserData = await userData(req.user._id);
+			if (
+				authenticatedUserData.type === privilegeEnum.root ||
+				authenticatedUserData.type === privilegeEnum.admin ||
+				(authenticatedUserData.settings && authenticatedUserData.settings.permissions.includes("ALLOW_USER_GET"))
+			) {
+				return User.find({ belongsTo: req.user._id }).populate("settings").populate("belongsTo").exec((err, docs) => {
+					if (err)
+						return apiResponse.ErrorResponse(
+							res,
+							"Cannot retreive the Salesmen list"
+						);
+					return apiResponse.successResponseWithData(
+						res,
+						"Salesmaen list",
+						docs.length && docs.map((salesman) => new UserData(salesman))
 					);
 				});
-			}
-		});
-	},
+			} else return apiResponse.unauthorizedResponse(
+				res,
+				"You are not authorised to retreive salesmen list."
+			);
+		} catch (e) {
+			return apiResponse.ErrorResponse(res, e.message || e);
+		}
+	}
+];
+
+exports.updateUserDetails = [
+	authenticate,
+	param("userId").escape().trim().isMongoId(),
+	async (req, res) => {
+		try {
+			const authenticatedUser = userData(req.user._id);
+			const paramUser = userData(req.param.userId);
+			const param = req.param.param;
+			const value = req.param.value;
+			if (
+				( // Self account updation with permission or being an admin
+					authenticatedUser._id === paramUser._id &&
+					(
+						(authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_USER_PUT_SELF")) ||
+						authenticatedUser.type === privilegeEnum.admin
+					)
+				) || ( // Account belonging to the admin or someone with permissions to update who belongs to the same admin
+					(paramUser.belongsTo._id === authenticatedUser._id && authenticatedUser.type === privilegeEnum.admin) ||
+					(paramUser.belongsTo._id === authenticatedUser.belongsTo._id &&
+						(authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_USER_PUT"))
+					)
+				) || (
+					authenticatedUser._id === paramUser._id && authenticated
+				)
+			) {
+				const updatedDetails = await userAccountDetailsUpdate(req.param.userId, param, value);
+				return apiResponse.successResponseWithData(res, "User Details Updated", updatedDetails);
+			} else return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
+		} catch (e) {
+			return apiResponse.ErrorResponse(res, e.message || e);
+		}
+	}
 ];
