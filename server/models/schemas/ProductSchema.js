@@ -20,9 +20,11 @@ const ProductSchema = new Schema(
 				},
 			},
 		],
-		category: { type: String, index: true, default: "general" },
+		quantity: { type: Number, default: 0 },
+		category: { type: Schema.Types.ObjectId, ref: "Category" },
 		rate: { type: Number, default: 0 },
 		mrp: { type: Number, default: 0 },
+		belongsTo: { type: Schema.Types.ObjectId, ref: "User" }
 	},
 	{ timestamps: true }
 );

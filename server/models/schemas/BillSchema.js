@@ -9,7 +9,7 @@ autoIncrement.initialize(mongoose.connection);
 
 const BillSchema = new Schema(
 	{
-		serialNumber: {
+		serialNumber: { //Incremental Serial Number Right from 0
 			type: Number,
 			required: true,
 			index: {
@@ -34,7 +34,7 @@ const BillSchema = new Schema(
 		soldBy: { type: Schema.Types.ObjectId, ref: "User" },
 		credit: { type: Boolean, default: true },
 		paidAmount: { type: Number, default: 0 },
-		comesUnder: { type: Schema.Types.ObjectId, ref: "User" },
+		belongsTo: { type: Schema.Types.ObjectId, ref: "User" },
 		payments: {
 			type: [
 				{
@@ -212,6 +212,7 @@ BillSchema.plugin(mongoosePaginate);
 BillSchema.plugin(autoIncrement.plugin, {
 	model: "Bill",
 	field: "serialNumber",
+	startAt: 1,
 });
 
 module.exports = BillSchema;

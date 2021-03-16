@@ -4,14 +4,14 @@ const LocationSchema = require("./LocationSchema");
 
 const CustomerSchema = new Schema(
 	{
-		name: { type: String, required: true, index:true },
-		phone:{ type:Number,required:true, index:{unique:true} },
-        place: String,
+		name: { type: String, required: true, index: true },
+		phone: { type: Number, required: true, index: { unique: true } },
+		place: String,
 		location: {
-			type:LocationSchema,
-			required:false
+			type: LocationSchema,
+			required: false
 		},
-		comesUnder:{type:Schema.Types.ObjectId , ref:"User"}
+		belongsTo: { type: Schema.Types.ObjectId, ref: "User" }
 	},
 	{ timestamps: true }
 );
