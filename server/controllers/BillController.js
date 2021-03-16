@@ -1,49 +1,115 @@
 const Bill = require("../models/BillModel");
-const { body, validationResult } = require("express-validator");
+const { body, validationResult, query, param } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
-const privilageEnum = require("../helpers/privilegeEnum.js");
+const { privilegeEnum } = require("../helpers/privilegeEnum.js");
 var mongoose = require("mongoose");
 const CustomerModel = require("../models/CustomerModel");
 const _ = require("lodash");
+const { userData, UserData } = require("./AuthController");
 mongoose.set("useFindAndModify", false);
+
+//Types
+/**
+ * Bill Data from bill document
+ * @param {Bill} doc - Bill Document
+ */
+function BillData(doc) {
+	this._id = doc._id;
+	this.serialNumber = doc.serialNumber;
+	this.customer = doc.customer;
+	this.soldBy = new UserData(doc.soldBy);
+	this.belongsTo = new UserData(doc.belongsTo);
+	this.item = doc.items;
+	this.discountAmount = doc.discountAmount;
+	this.itemsTotalAmount = doc.itemsTotalAmount;
+	this.billAmount = doc.billAmount;
+	this.credit = doc.credit;
+	this.paidAmount = doc.paidAmount;
+	this.payments = doc.payments.map((payment) => {
+		payment.paymentReceivedBy = new UserData(payment.paymentReceivedBy);
+		return payment;
+	});
+	this.createdAt = doc.createdAt;
+}
+
+function QueryParser(query) {
+	this.serialNumber = Math.abs(parseInt(query.serialNumber))
+	this.serialNumber = this.serialNumber === 0 ? undefined : this.serialNumber;
+	this.customer = query.customerId;
+	this.offset = Math.abs(parseInt(query.offset));
+	this.page = Math.abs(parseInt(query.page));
+	this.limit = Math.abs(parseInt(query.limit));
+	this.soldBy = query.soldBy;
+	this.sort = query.sort;
+	this.lean = true;
+	this.populate = ["belongsTo", "soldBy", "customer"]
+}
+
+// Function
+/**
+ * Get a single bill by its id
+ * @param {Bill._id} _id 
+ * @returns {Bill}
+ */
+async function getBillById(_id) {
+	const bill = await Bill
+		.findById(_id)
+		.populate("customer")
+		.populate("soldBy")
+		.populate("belongsTo")
+		.exec();
+	return bill;
+}
+/**
+ * Check whether the authenticated user has access to the bill
+ * @param {User} authenticatedUser 
+ * @param {Bill} paramBill 
+ * @param {string|string[]} explicitPermission 
+ * @returns {boolean} 
+ */
+function hasAccessPermission(authenticatedUser, paramBill, explicitPermission) {
+	var flag = false;
+	if (authenticatedUser._id === paramBill.belongsTo._id || authenticatedUser._id === paramBill.soldBy._id) { //Belongs to User or soldBy user
+		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
+			flag = true;
+		} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission)) {
+			flag = true;
+		} // user has right to access the bill
+	} else if (authenticatedUser._id === paramBill.belongsTo._id) {
+
+	} else if (authenticatedUser.type === privilegeEnum.root) {
+		flag = true;
+	}
+	if (!flag) throw new Error("User is not authorised to access this data");
+	return flag;
+}
+
+// Middlewares
 
 /**
  * Get the bill data from id
  *
- * @returns [object] {Object}
  */
 exports.getBill = [
 	auth,
-	function (req, res) {
-		Bill.findById(req.params.id)
-			.populate("customer")
-			.populate("soldBy")
-			.populate("payments.paymentReceivedBy")
-			.exec()
-			.then(
-				(doc) => {
-					if (
-						(doc.comesUnder &&
-							doc.comesUnder.toString() === req.user._id) ||
-						(doc.comesUnder &&
-							doc.comesUnder.toString() === req.user.worksUnder)
-					) {
-						return apiResponse.successResponseWithData(
-							res,
-							"Bill found",
-							doc
-						);
-					} else {
-						return apiResponse.unauthorizedResponse(
-							res,
-							"You are not authorised to access this bill"
-						);
-					}
-				},
-				() => apiResponse.ErrorResponse(res, "Bill fetch error")
-			);
-	},
+	async function (req, res) {
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			const bill = await getBillById(req.param._id);
+			if (bill) {
+				if (hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_GET")) {
+					return apiResponse.successResponseWithData(
+						res,
+						"Bill Data",
+						new BillData(bill)
+					)
+				}
+			}
+		} catch (e) {
+			return apiResponse.ErrorResponse(res, e.message || e);
+		}
+	}
 ];
 
 /**
@@ -53,109 +119,53 @@ exports.getBill = [
  */
 exports.getAllBills = [
 	auth,
-	function (req, res) {
+	query("serialNumber")
+		.isOptional()
+		.isInt({ min: 1 }),
+	query(["page", "limit", "offset"])
+		.isOptional()
+		.isInt(),
+	query(["customer", "soldBy"])
+		.isOptional()
+		.isMongoId(),
+	async function (req, res) {
 		try {
-			const query =
-				req.user.type === privilageEnum.admin
-					? { comesUnder: req.user._id }
-					: { soldBy: req.user._id };
-			if (req.query.serial) {
-				query.serialNumber = parseInt(req.query.serial);
+			const validationError = validationResult(req);
+			if (!validationError.isEmpty())
+				return apiResponse.validationErrorWithData(
+					res,
+					"Query Validation Error",
+					validationError.array()
+				);
+
+			const authenticatedUser = await userData(req.user._id);
+
+			const query = {};
+			if (authenticatedUser.type === privilegeEnum.root) {
+				Object.assign(query, {});
+			} else if (authenticatedUser.type === privilegeEnum.admin) {
+				if (authenticatedUser.belongsTo) {
+					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+				} else {
+					Object.assign(query, { belongsTo: authenticatedUser._id })
+				}
+			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_BILL_GET")) {
+				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
 			}
-			if (req.query.customer) {
-				query.customer = req.query.customer;
-			}
-			const paginateOptions = {
-				offset:
-					req.query.offset &&
-					!!Math.abs(req.query.offset) &&
-					Math.abs(req.query.offset) > 0
-						? Math.abs(req.query.offset)
-						: undefined,
-				page:
-					req.query.page &&
-					!!Math.abs(req.query.page) &&
-					Math.abs(req.query.page) > 0
-						? Math.abs(req.query.page)
-						: undefined,
-				limit:
-					req.query.limit &&
-					!!Math.abs(req.query.limit) &&
-					Math.abs(req.query.limit) > 0
-						? Math.abs(req.query.limit)
-						: 10,
-				populate: [
-					"customer",
-					"soldBy",
-					"payments.paymentReceivedBy firstName",
-				],
-				sort: req.query.sort || "",
-				lean: true,
-			};
-			Bill.paginate(query, paginateOptions).then(
+
+			const paginateOptions = new QueryParser(req.query);
+
+			return Bill.paginate(query, paginateOptions).then(
 				(bills) => {
-					if (bills !== null) {
-						bills.docs = _.reject(bills.docs, ["customer", null]);
-						bills.docs = bills.docs.map((doc) => {
-							if (doc.payments && doc.payments.length)
-								doc.payments = doc.payments.map((payment) => {
-									payment.paymentReceivedBy = _.pick(
-										payment.paymentReceivedBy,
-										"firstName"
-									);
-									return payment;
-								});
-							return doc;
-						});
-						return apiResponse.successResponseWithData(
-							res,
-							"Operation success",
-							bills
-						);
-					} else {
-						return apiResponse.successResponseWithData(
-							res,
-							"Operation success",
-							[]
-						);
-					}
-				},
-				(err) => apiResponse.ErrorResponse(res, err)
-			);
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
-		}
-	},
-];
-
-/**
- * Get all Bills List created by salesmen under the admin.
- *
- * @returns [Object] {Object}
- */
-exports.getBillsFromSalesmen = [
-	auth,
-	function (req, res) {
-		try {
-			//TODO: Aggregate to lookup to the salesmen of the admin.
-			Bill.find({ soldBy: req.user._id }, (err, bills) => {
-				if (err) return apiResponse.ErrorResponse(res, err);
-
-				if (bills.length > 0) {
+					bills.docs = bills.docs.map((doc) => new BillData(doc));
 					return apiResponse.successResponseWithData(
 						res,
 						"Operation success",
 						bills
 					);
-				} else {
-					return apiResponse.successResponseWithData(
-						res,
-						"Operation success",
-						[]
-					);
-				}
-			});
+				},
+				(err) => apiResponse.ErrorResponse(res, err)
+			);
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);
@@ -215,46 +225,54 @@ exports.saveBill = [
 					)
 			)
 			.then(
-				(populatedItems) => {
-					req.body.items = populatedItems;
-					const comesUnder =
-						req.user.type === privilageEnum.admin
-							? req.user._id
-							: req.user.worksUnder;
-					var newBill = new Bill({
-						customer: req.body.customerId,
-						items: req.body.items,
-						discountAmount: req.body.discountAmount,
-						soldBy: req.user._id,
-						credit:
-							req.body.credit === undefined ||
-							req.body.credit === null
-								? true
-								: req.body.credit,
-						paidAmount:
-							req.body.paidAmount === undefined ||
-							req.body.paidAmount === null
-								? 0
-								: req.body.paidAmount,
-						comesUnder,
-					});
-					newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();
-					newBill.billAmount = newBill.calculateBillAmount();
+				async (populatedItems) => {
+					try {
+						req.body.items = populatedItems;
+						const authenticatedUser = await userData(req.user._id);
+						const belongsTo =
+							(authenticatedUser.type === privilageEnum.admin || authenticatedUser.type === privilageEnum.root)
+								? authenticatedUser._id
+								: authenticatedUser.belongsTo._id;
 
-					if (newBill.paidAmount > 0)
-						newBill.payments.push({
-							paidAmount: newBill.paidAmount,
-							paymentReceivedBy: req.user._id,
+						var newBill = new Bill({
+							customer: req.body.customerId,
+							items: req.body.items,
+							discountAmount: req.body.discountAmount,
+							soldBy: req.user._id,
+							credit:
+								req.body.credit === undefined ||
+									req.body.credit === null
+									? true
+									: req.body.credit,
+							paidAmount:
+								req.body.paidAmount === undefined ||
+									req.body.paidAmount === null
+									? 0
+									: req.body.paidAmount,
+							belongsTo,
 						});
 
-					return newBill.save();
+						newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();
+						newBill.billAmount = newBill.calculateBillAmount();
+
+						if (newBill.paidAmount > 0)
+							newBill.payments.push({
+								paidAmount: newBill.paidAmount,
+								paymentReceivedBy: req.user._id,
+							});
+
+						return newBill.save();
+					} catch (e) {
+						return apiResponse.ErrorResponse(req, e.message);
+					}
 				},
 				(err) => apiResponse.ErrorResponse(res, err.message)
 			)
 			.then(
 				(bill) =>
 					apiResponse.successResponseWithData(res, "Bill created", {
-						id: bill.id,
+						_id: bill._id,
+						serialNumber: bill.serialNumber
 					}),
 				(err) =>
 					apiResponse.ErrorResponse(
@@ -267,9 +285,9 @@ exports.saveBill = [
 
 exports.receivePayment = [
 	auth,
-	body("paidAmount").escape().trim().isNumeric(),
-	body("bill").escape().trim().isMongoId(),
-	function (req, res) {
+	body("paidAmount", "Invalid Payment Amount").escape().trim().isFloat({ min: 1 }),
+	body("billId", "Invalid Bill ID").escape().trim().isMongoId(),
+	async (req, res) => {
 		const errors = validationResult(req);
 		if (!errors.isEmpty()) {
 			return apiResponse.validationErrorWithData(
@@ -278,46 +296,43 @@ exports.receivePayment = [
 				errors.array()
 			);
 		}
-		if (req.body.paidAmount <= 0) {
-			return apiResponse.ErrorResponse(res, "Invalid payment amount");
-		}
-		Bill.findById(req.body.bill, (err, doc) => {
-			if (err) return apiResponse.ErrorResponse(res, "Bill not found");
-			if (doc.credit) {
-				if (
-					!(
-						(doc.comesUnder &&
-							doc.comesUnder.toString() === req.user._id) ||
-						(doc.comesUnder &&
-							doc.comesUnder.toString() === req.user.worksUnder)
-					)
-				)
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			const bill = await getBillById(req.body.billId);
+			if (!bill) {
+				return apiResponse.notFoundResponse(res, "Bill Not Found");
+			} else {
+				if (!hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_PUT"))
 					return apiResponse.unauthorizedResponse(
 						res,
-						"You are not allowed to receive payment for this bill"
+						"You are not allowed to receive payment for this bill."
 					);
-				doc.payments.push({
+
+				const paymentInfo = {
 					paidAmount: req.body.paidAmount,
 					paymentReceivedBy: req.user._id,
-				});
-				doc.paidAmount += parseInt(req.body.paidAmount);
-				doc.save().then(() =>
-					apiResponse.successResponse(res, "Bill payment received!")
-				);
-			} else {
-				return apiResponse.ErrorResponse(
-					res,
-					"This Bill will not accept payments anymore"
+				}
+
+				bill.payments.push(paymentInfo);
+
+				bill.paidAmount += parseFloat(req.body.paidAmount);
+				return bill.save().then(() =>
+					apiResponse.successResponse(res, "Bill payment received")
 				);
 			}
-		});
+		} catch (e) {
+			return apiResponse.ErrorResponse(
+				res,
+				e.message || e
+			);
+		}
 	},
 ];
 
 exports.toggleBillCredit = [
 	auth,
-	body("bill").escape().trim().isMongoId(),
-	function (req, res) {
+	param("billId").escape().trim().isMongoId(),
+	async function (req, res) {
 		const errors = validationResult(req);
 		if (!errors.isEmpty()) {
 			return apiResponse.validationErrorWithData(
@@ -326,146 +341,178 @@ exports.toggleBillCredit = [
 				errors.array()
 			);
 		}
-		if (req.body.paidAmount <= 0) {
-			return apiResponse.ErrorResponse(res, "Invalid payment amount");
-		}
-		Bill.findById(req.body.bill, (err, doc) => {
-			if (err) return apiResponse.ErrorResponse(res, "Bill not found");
-			if (
-				!(
-					(doc.comesUnder &&
-						doc.comesUnder.toString() === req.user._id) ||
-					(doc.comesUnder &&
-						doc.comesUnder.toString() === req.user.worksUnder)
-				)
-			)
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not allowed to update this bill"
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			const bill = await getBillById(req.param.billId);
+
+			if (!bill) {
+				return apiResponse.notFoundResponse(res, "Bill not found");
+			}
+			if (hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_PUT")) {
+				bill.credit = !bill.credit;
+				return bill.save().then(() =>
+					apiResponse.successResponse(res, "Bill credit toggled")
 				);
-			doc.credit = !doc.credit;
-			doc.save().then(() =>
-				apiResponse.successResponse(res, "Bill credit toggled!")
-			);
-		});
-	},
+			} else {
+				return apiResponse.unauthorizedResponse(res, "Not authorised to access this bill")
+			}
+		} catch (e) {
+			return apiResponse.ErrorResponse(
+				res,
+				e.message || e
+			)
+		}
+	}
 ];
 
-//For data analys
-exports.itemsAndQuantities = [
-	auth,
-	function (req, res) {
-		Bill.aggregate([
-			{
-				$unwind: {
-					path: "$items",
-				},
-			},
-			{
-				$project: {
-					_id: "$_id",
-					itemName: "$items.name",
-					itemRate: "$items.rate",
-					itemMrp: "$items.mrp",
-					itemCode: "$items.code",
-					quantity: "$items.quantity",
-					createdAt: "$createdAt",
-				},
-			},
-			{
-				$group: {
-					_id: "$itemCode",
-					itemCode: {
-						$first: "$itemCode",
-					},
-					itemName: {
-						$first: "$itemName",
-					},
-					itemRate: {
-						$first: "$itemRate",
-					},
-					itemMrp: {
-						$first: "$itemMrp",
-					},
-					quantity: {
-						$sum: "$quantity",
-					},
-					billedAt: {
-						$first: "$createdAt",
-					},
-				},
-			},
-			{
-				$project: {
-					name: "$itemName",
-					code: "$itemCode",
-					quantity: "$quantity",
-					totalAmount: {
-						$multiply: ["$quantity", "$itemRate"],
-					},
-					profit: {
-						$subtract: [
-							{
-								$multiply: ["$quantity", "$itemMrp"],
-							},
-							{
-								$multiply: ["$quantity", "$itemRate"],
-							},
-						],
-					},
-				},
-			},
-			{
-				$sort: {
-					profit: -1,
-				},
-			},
-		]).exec((err, data) => {
-			if (err) return apiResponse.ErrorResponse(res, err);
-			return apiResponse.successResponseWithData(res, "Values of", data);
-		});
-	},
-];
+/**
+ * Get all Bills List created by salesmen under the admin.
+ *
+ * @returns [Object] {Object}
+ */
+// exports.getBillsFromSalesmen = [
+// 	auth,
+// 	function (req, res) {
+// 		try {
+// 			//TODO: Aggregate to lookup to the salesmen of the admin.
+// 			Bill.find({ soldBy: req.user._id }, (err, bills) => {
+// 				if (err) return apiResponse.ErrorResponse(res, err);
 
-exports.customerAndPurchases = [
-	auth,
-	function (req, res) {
-		Bill.aggregate([
-			{
-				$group: {
-					_id: "$customer",
-					totalAmount: {
-						$sum: "$billAmount",
-					},
-				},
-			},
-			{
-				$lookup: {
-					from: "customers",
-					localField: "_id",
-					foreignField: "_id",
-					as: "customerDetails",
-				},
-			},
-			{
-				$unwind: {
-					path: "$customerDetails",
-					preserveNullAndEmptyArrays: false,
-				},
-			},
-			{
-				$set: {
-					customerName: "$customerDetails.name",
-				},
-			},
-			{
-				$sort: {
-					totalAmount: -1,
-				},
-			},
-		]).exec((err, data) => {
-			if (err) return apiResponse.ErrorResponse(res, err);
-			return apiResponse.successResponseWithData(res, "Values of", data);
-		});
-	},
-];
+// 				if (bills.length > 0) {
+// 					return apiResponse.successResponseWithData(
+// 						res,
+// 						"Operation success",
+// 						bills
+// 					);
+// 				} else {
+// 					return apiResponse.successResponseWithData(
+// 						res,
+// 						"Operation success",
+// 						[]
+// 					);
+// 				}
+// 			});
+// 		} catch (err) {
+// 			//throw error in json response with status 500.
+// 			return apiResponse.ErrorResponse(res, err);
+// 		}
+// 	},
+// ];
+// //For data analys
+// exports.itemsAndQuantities = [
+// 	auth,
+// 	function (req, res) {
+// 		Bill.aggregate([
+// 			{
+// 				$unwind: {
+// 					path: "$items",
+// 				},
+// 			},
+// 			{
+// 				$project: {
+// 					_id: "$_id",
+// 					itemName: "$items.name",
+// 					itemRate: "$items.rate",
+// 					itemMrp: "$items.mrp",
+// 					itemCode: "$items.code",
+// 					quantity: "$items.quantity",
+// 					createdAt: "$createdAt",
+// 				},
+// 			},
+// 			{
+// 				$group: {
+// 					_id: "$itemCode",
+// 					itemCode: {
+// 						$first: "$itemCode",
+// 					},
+// 					itemName: {
+// 						$first: "$itemName",
+// 					},
+// 					itemRate: {
+// 						$first: "$itemRate",
+// 					},
+// 					itemMrp: {
+// 						$first: "$itemMrp",
+// 					},
+// 					quantity: {
+// 						$sum: "$quantity",
+// 					},
+// 					billedAt: {
+// 						$first: "$createdAt",
+// 					},
+// 				},
+// 			},
+// 			{
+// 				$project: {
+// 					name: "$itemName",
+// 					code: "$itemCode",
+// 					quantity: "$quantity",
+// 					totalAmount: {
+// 						$multiply: ["$quantity", "$itemRate"],
+// 					},
+// 					profit: {
+// 						$subtract: [
+// 							{
+// 								$multiply: ["$quantity", "$itemMrp"],
+// 							},
+// 							{
+// 								$multiply: ["$quantity", "$itemRate"],
+// 							},
+// 						],
+// 					},
+// 				},
+// 			},
+// 			{
+// 				$sort: {
+// 					profit: -1,
+// 				},
+// 			},
+// 		]).exec((err, data) => {
+// 			if (err) return apiResponse.ErrorResponse(res, err);
+// 			return apiResponse.successResponseWithData(res, "Values of", data);
+// 		});
+// 	},
+// ];
+
+// exports.customerAndPurchases = [
+// 	auth,
+// 	function (req, res) {
+// 		Bill.aggregate([
+// 			{
+// 				$group: {
+// 					_id: "$customer",
+// 					totalAmount: {
+// 						$sum: "$billAmount",
+// 					},
+// 				},
+// 			},
+// 			{
+// 				$lookup: {
+// 					from: "customers",
+// 					localField: "_id",
+// 					foreignField: "_id",
+// 					as: "customerDetails",
+// 				},
+// 			},
+// 			{
+// 				$unwind: {
+// 					path: "$customerDetails",
+// 					preserveNullAndEmptyArrays: false,
+// 				},
+// 			},
+// 			{
+// 				$set: {
+// 					customerName: "$customerDetails.name",
+// 				},
+// 			},
+// 			{
+// 				$sort: {
+// 					totalAmount: -1,
+// 				},
+// 			},
+// 		]).exec((err, data) => {
+// 			if (err) return apiResponse.ErrorResponse(res, err);
+// 			return apiResponse.successResponseWithData(res, "Values of", data);
+// 		});
+// 	},
+// ];

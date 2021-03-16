@@ -162,6 +162,100 @@ exports.create = [
 	},
 ];
 
+
+/**
+ * Bulk Import Products.
+ *
+ */
+exports.import = [
+	auth,
+	param("category", "Invalid category name").optional().escape().trim(),
+	// body("code")
+	// 	.escape()
+	// 	.isLength()
+	// 	.trim()
+	// 	.isAlphanumeric()
+	// 	.custom((value, { req }) => {
+	// 		return Product.findOne({
+	// 			code: value,
+	// 			category: req.params.category,
+	// 		}).then((doc) => {
+	// 			if (doc)
+	// 				return Promise.reject(
+	// 					"Item with this code already exists."
+	// 				);
+	// 		});
+	// 	}),
+	// body("name").escape().isLength().trim(),
+	// body("rate").escape().trim().isNumeric(),
+	// body("mrp").escape().trim().isNumeric(),
+	body("items").isArray(),
+	async (req, res) => {
+		try {
+			const errors = validationResult(req);
+			if (!errors.isEmpty()) {
+				return apiResponse.validationErrorWithData(
+					res,
+					"Validation Error",
+					errors.array()
+				);
+			} else {
+				try {
+					for (let item of req.body.items) {
+						if (item.units)
+							item.units = unitSchemaValidation(
+								item.rate,
+								item.mrp,
+								item.units
+							);
+					}
+				} catch (e) {
+					return apiResponse.validationErrorWithData(
+						res,
+						"Validation error",
+						e.message
+					);
+				}
+
+				let newProducts = req.body.items.map((item) => {
+					return _.pickBy(
+						{
+							code: item.code,
+							name: item.name,
+							units: item.units || [],
+							category: req.params.category || "general",
+							rate: item.rate,
+							mrp: item.mrp,
+						},
+						_.identity
+					)
+				})
+
+				const session = await Product.startSession();
+				const count = await Product.countDocuments();
+
+				try {
+					await session.withTransaction(async () => {
+						await Product.create(newProducts, { session });
+					});
+					const newCount = await Product.countDocuments();
+					session.endSession();
+					return apiResponse.successResponseWithData(
+						res,
+						"Products Added",
+						{ count: newCount - count }
+					);
+				} catch (err) {
+					return apiResponse.ErrorResponse(res, err);
+				}
+			}
+		} catch (err) {
+			//throw error in json response with status 500.
+			return apiResponse.ErrorResponse(res, err);
+		}
+	},
+];
+
 /**
  * Update any fields of the product
  *

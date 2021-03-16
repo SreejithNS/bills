@@ -1,20 +1,13 @@
 const { User } = require("../models/UserModel");
 const { body, validationResult, param } = require("express-validator");
-const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
-const utility = require("../helpers/utility");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const mailer = require("../helpers/mailer");
-const { constants } = require("../helpers/constants");
-const _ = require("lodash");
 const authenticate = require("../middlewares/jwt");
 const { privilegeEnum, defaultSalesmanPermissions } = require("../helpers/privilegeEnum");
 const { UserSettings } = require("../models/UserSettingsModel");
-const e = require("express");
 
 // Types
-
 /**
  * @typedef Permissions
  * @type {object}
@@ -34,7 +27,7 @@ const e = require("express");
 
 // Functions 
 
-function UserData(params) {
+export function UserData(params) {
 	this._id = params._id;
 	this.name = params.name;
 	this.phone = params.phone;
@@ -133,7 +126,7 @@ async function userAuthentication(phone, password) {
  * @param {User._id} _id - User Account _id
  * @returns {UserData}
  */
-async function userData(_id) {
+export async function userData(_id) {
 	return User.findById(_id, (err, res) => {
 		if (err) return new Error(err);
 		if (res) {
