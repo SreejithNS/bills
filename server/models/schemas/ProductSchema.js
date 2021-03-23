@@ -7,21 +7,24 @@ const ProductSchema = new Schema(
 	{
 		code: { type: String, required: true, index: true },
 		name: { type: String, required: true },
-		units: [
-			{
-				name: String,
-				rate: {
-					type: Number,
-					default: 0,
+		units: {
+			type: [
+				{
+					name: String,
+					rate: {
+						type: Number,
+						default: 0,
+					},
+					mrp: {
+						type: Number,
+						default: 0,
+					},
 				},
-				mrp: {
-					type: Number,
-					default: 0,
-				},
-			},
-		],
+			],
+			default: []
+		},
 		quantity: { type: Number, default: 0 },
-		category: { type: Schema.Types.ObjectId, ref: "Category" },
+		category: { type: Schema.Types.ObjectId, ref: "ProductCategory" },
 		rate: { type: Number, default: 0 },
 		mrp: { type: Number, default: 0 },
 		belongsTo: { type: Schema.Types.ObjectId, ref: "User" }

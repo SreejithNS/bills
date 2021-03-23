@@ -1,10 +1,10 @@
-const Bill = require("../models/BillModel");
+const { Bill } = require("../models/BillModel");
 const { body, validationResult, query, param } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
 const { privilegeEnum } = require("../helpers/privilegeEnum.js");
 var mongoose = require("mongoose");
-const CustomerModel = require("../models/CustomerModel");
+const { Customer } = require("../models/CustomerModel");
 const _ = require("lodash");
 const { userData, UserData } = require("./AuthController");
 mongoose.set("useFindAndModify", false);
@@ -20,7 +20,7 @@ function BillData(doc) {
 	this.customer = doc.customer;
 	this.soldBy = new UserData(doc.soldBy);
 	this.belongsTo = new UserData(doc.belongsTo);
-	this.item = doc.items;
+	this.items = doc.items;
 	this.discountAmount = doc.discountAmount;
 	this.itemsTotalAmount = doc.itemsTotalAmount;
 	this.billAmount = doc.billAmount;
@@ -34,13 +34,13 @@ function BillData(doc) {
 }
 
 function QueryParser(query) {
-	this.serialNumber = Math.abs(parseInt(query.serialNumber))
-	this.serialNumber = this.serialNumber === 0 ? undefined : this.serialNumber;
-	this.customer = query.customerId;
-	this.offset = Math.abs(parseInt(query.offset));
-	this.page = Math.abs(parseInt(query.page));
-	this.limit = Math.abs(parseInt(query.limit));
-	this.soldBy = query.soldBy;
+	// this.serialNumber = Math.abs(parseInt(query.serialNumber))
+	// this.serialNumber = this.serialNumber === 0 || !this.serialNumber ? undefined : this.serialNumber;
+	// this.customer = query.customerId;
+	this.offset = Math.abs(parseInt(query.offset)) || 0;
+	this.page = Math.abs(parseInt(query.page)) || 1;
+	this.limit = Math.abs(parseInt(query.limit)) || 5;
+	// this.soldBy = query.soldBy;
 	this.sort = query.sort;
 	this.lean = true;
 	this.populate = ["belongsTo", "soldBy", "customer"]
@@ -96,7 +96,7 @@ exports.getBill = [
 	async function (req, res) {
 		try {
 			const authenticatedUser = await userData(req.user._id);
-			const bill = await getBillById(req.param._id);
+			const bill = await getBillById(req.params._id);
 			if (bill) {
 				if (hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_GET")) {
 					return apiResponse.successResponseWithData(
@@ -120,13 +120,13 @@ exports.getBill = [
 exports.getAllBills = [
 	auth,
 	query("serialNumber")
-		.isOptional()
+		.optional()
 		.isInt({ min: 1 }),
 	query(["page", "limit", "offset"])
-		.isOptional()
+		.optional()
 		.isInt(),
 	query(["customer", "soldBy"])
-		.isOptional()
+		.optional()
 		.isMongoId(),
 	async function (req, res) {
 		try {
@@ -153,9 +153,22 @@ exports.getAllBills = [
 				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
 			}
 
+			const queryWithSearch = {
+				...(req.query.serialNumber && {
+					"serialNumber": req.query.serialNumber
+				}),
+				...(req.query.customer && {
+					"customer": req.query.customer
+				}),
+				...(req.query.soldBy && {
+					"soldBy": req.query.soldBy
+				}),
+				...query
+			}
+
 			const paginateOptions = new QueryParser(req.query);
 
-			return Bill.paginate(query, paginateOptions).then(
+			return Bill.paginate(queryWithSearch, paginateOptions).then(
 				(bills) => {
 					bills.docs = bills.docs.map((doc) => new BillData(doc));
 					return apiResponse.successResponseWithData(
@@ -205,7 +218,7 @@ exports.saveBill = [
 				validationError.array()
 			);
 
-		await CustomerModel.countDocuments({ _id: req.body.customerId })
+		await Customer.countDocuments({ _id: req.body.customerId })
 			.exec()
 			.then(
 				(count) => {
@@ -230,7 +243,7 @@ exports.saveBill = [
 						req.body.items = populatedItems;
 						const authenticatedUser = await userData(req.user._id);
 						const belongsTo =
-							(authenticatedUser.type === privilageEnum.admin || authenticatedUser.type === privilageEnum.root)
+							(authenticatedUser.type === privilegeEnum.admin || authenticatedUser.type === privilegeEnum.root)
 								? authenticatedUser._id
 								: authenticatedUser.belongsTo._id;
 
@@ -263,7 +276,7 @@ exports.saveBill = [
 
 						return newBill.save();
 					} catch (e) {
-						return apiResponse.ErrorResponse(req, e.message);
+						return apiResponse.ErrorResponse(res, e.message);
 					}
 				},
 				(err) => apiResponse.ErrorResponse(res, err.message)
@@ -286,7 +299,7 @@ exports.saveBill = [
 exports.receivePayment = [
 	auth,
 	body("paidAmount", "Invalid Payment Amount").escape().trim().isFloat({ min: 1 }),
-	body("billId", "Invalid Bill ID").escape().trim().isMongoId(),
+	param("billId", "Invalid Bill ID").escape().trim().isMongoId(),
 	async (req, res) => {
 		const errors = validationResult(req);
 		if (!errors.isEmpty()) {
@@ -298,7 +311,7 @@ exports.receivePayment = [
 		}
 		try {
 			const authenticatedUser = await userData(req.user._id);
-			const bill = await getBillById(req.body.billId);
+			const bill = await getBillById(req.params.billId);
 			if (!bill) {
 				return apiResponse.notFoundResponse(res, "Bill Not Found");
 			} else {
@@ -343,7 +356,7 @@ exports.toggleBillCredit = [
 		}
 		try {
 			const authenticatedUser = await userData(req.user._id);
-			const bill = await getBillById(req.param.billId);
+			const bill = await getBillById(req.params.billId);
 
 			if (!bill) {
 				return apiResponse.notFoundResponse(res, "Bill not found");

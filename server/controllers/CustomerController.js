@@ -1,57 +1,168 @@
-const Customer = require("../models/CustomerModel");
-const { body, param, validationResult } = require("express-validator");
+const { Customer } = require("../models/CustomerModel");
+const { body, param, query, validationResult } = require("express-validator");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
 var mongoose = require("mongoose");
-const privilegeEnum = require("../helpers/privilegeEnum");
+const { privilegeEnum } = require("../helpers/privilegeEnum");
 mongoose.set("useFindAndModify", false);
 const _ = require("lodash");
+const { UserData, userData } = require("../controllers/AuthController");
 
-// Customer Schema
+//Types
+/**
+ * @typedef Location
+ * @type {object}
+ * @param {"Point"} type - Type of GeoData
+ * @param {number[]} coordinates - Lat and Lon of the location
+ */
+
+//Functions
+/**
+ * Abstract Customer Data from Customer Document
+ * @param {object} data 
+ */
 function CustomerData(data) {
-	this.id = data._id;
+	this._id = data._id;
 	this.name = data.name;
 	this.place = data.place;
 	this.phone = data.phone;
 	this.location = data.location;
-	this.comesUnder = data.comesUnder;
-	this.createdAt = data.createdAt;
+	this.belongsTo = new UserData(data.belongsTo);
 }
 
 /**
- * Get all Customers Created by user. Only for admins
- *
+ * Parse the query params from client
+ * @param {object} query 
+ */
+function QueryParser(query) {
+	this.offset = Math.abs(parseInt(query.offset)) || 0;
+	this.page = Math.abs(parseInt(query.page)) || 1;
+	this.limit = Math.abs(parseInt(query.limit)) || 5;
+	this.soldBy = query.soldBy;
+	this.sort = query.sort;
+	this.lean = true;
+	this.populate = ["belongsTo"]
+}
+
+/**
+ * Check whether the authenticated user has access to the customer
+ * @param {User} authenticatedUser 
+ * @param {Customer} paramCustomer 
+ * @param {string|string[]} explicitPermission 
+ * @returns {boolean} 
+ */
+function hasAccessPermission(authenticatedUser, paramCustomer, explicitPermission) {
+	var flag = false;
+
+	if (authenticatedUser.type === privilegeEnum.root) {
+		flag = true;
+	} else if (authenticatedUser && !paramCustomer) {
+		if (authenticatedUser.type === privilegeEnum.admin || (authenticatedUser.settings && authenticatedUser.settings.permissions.include(explicitPermission))) {
+			flag = true;
+		}
+	} else if (authenticatedUser._id === paramCustomer.belongsTo._id) { //Belongs to User 
+		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
+			flag = true;
+		}
+	} else if (authenticatedUser.belongsTo._id === paramCustomer.belongsTo._id) { //Customer and user belong to same admin
+		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
+			flag = true;
+		} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission)) {
+			// and user has explicit permission
+			flag = true;
+		}
+	}
+
+	if (!flag) throw new Error("User is not authorised to access this data");
+	return flag;
+}
+
+/**
+ * Creates customer entry to the database
+ * 
+ * @param {string} name - Name of the customer
+ * @param {number} phone - Phone number of the customer
+ * @param {User._id} belongsTo - AdminID of the user belonging to
+ * @param {string=} place - Place where customer is located
+ * @param {Location} location - GeoData of the customer
+ */
+async function createCustomer(name, phone, belongsTo, place, location) {
+	const newCustomer = new Customer({ name, phone, belongsTo });
+
+	place && Object.assign(newCustomer, { place });
+
+	location && Object.assign(newCustomer, {
+		type: "Point",
+		coordinates: [
+			location.lat,
+			location.lat,
+		].map(parseFloat),
+	});
+
+	return await newCustomer.save().populate("belongsTo").exec();
+}
+
+/**
+ * Get all Customers Created by user.
  * @returns {Object}
  */
 exports.getAll = [
 	auth,
-	function (req, res) {
+	query(["page", "limit", "offset"])
+		.optional()
+		.isInt(),
+	query("search")
+		.optional()
+		.trim()
+		.escape(),
+	async (req, res) => {
+		const validation = validationResult(req);
+		if (!validation.isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error",
+				validation.array()
+			);
+
 		try {
-			if (req.user.type === privilegeEnum.admin)
-				Customer.find(
-					{ comesUnder: req.user._id },
-					"_id name phone"
-				).then((customers) => {
-					if (customers.length > 0) {
-						return apiResponse.successResponseWithData(
-							res,
-							"Operation success",
-							customers
-						);
-					} else {
-						return apiResponse.successResponseWithData(
-							res,
-							"Operation success",
-							[]
-						);
-					}
-				});
-			else
-				apiResponse.unauthorizedResponse(
+			const authenticatedUser = await userData(req.user._id);
+			//Check product category access
+			if (!hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET"))
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation")
+
+			const query = {
+				...(req.query.search && {
+					$or: [
+						{
+							"name": {
+								$regex: new RegExp(`${req.query.search}`, "i"),
+							}
+						},
+						{
+							"place": {
+								$regex: new RegExp(`${req.query.search}`, "i"),
+							}
+						},
+					]
+				}),
+				belongsTo: authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id
+			};
+
+			const paginateOptions = {
+				...(new QueryParser(req.query)),
+				customLabels: paginationLabels,
+			};
+
+			return Customer.paginate(query, paginateOptions).then(
+				(items) => apiResponse.successResponseWithData(
 					res,
-					"Not authorised to get all customers"
-				);
+					"Operation success",
+					items
+				)
+				,
+				(err) => apiResponse.ErrorResponse(res, err)
+			);
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);
@@ -69,38 +180,45 @@ exports.getAll = [
  */
 exports.get = [
 	auth,
-	function (req, res) {
-		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+	param("customerId")
+		.escape()
+		.trim()
+		.isMongoId(),
+	async function (req, res) {
+		const validation = validationResult(req);
+		if (!validation.isEmpty())
 			return apiResponse.validationErrorWithData(
 				res,
-				"Invalid Customer ID",
-				{}
+				"Validation Error",
+				validation.array()
 			);
-		}
+
 		try {
-			Customer.findById(req.params.id).then((customer) => {
-				if (customer !== null) {
-					let customerData = new CustomerData(customer);
-					if (
-						customer.comesUnder.toString() ===
-							req.user.worksUnder ||
-						customer.comesUnder.toString() === req.user._id
-					)
+			const authenticatedUser = await userData(req.user._id);
+			//Check product category access
+			if (!(await hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET")))
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation")
+
+			return Customer.findOne({ _id: req.params.customerId, category: req.params.categoryId }).then((customer) => {
+				if (customer) {
+					if (hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_GET")) {
+						let customerData = new CustomerData(customer);
+
 						return apiResponse.successResponseWithData(
 							res,
 							"Operation success",
 							customerData
 						);
-					else
+					} else {
 						return apiResponse.unauthorizedResponse(
 							res,
-							"You are not authorised to access this data"
-						);
+							"Not authorised to access this customer"
+						)
+					}
 				} else {
-					return apiResponse.successResponseWithData(
+					return apiResponse.notFoundResponse(
 						res,
-						"Operation success: No Customer Found",
-						{}
+						"No customer Found"
 					);
 				}
 			});
@@ -112,71 +230,81 @@ exports.get = [
 ];
 
 /**
-
- * Create a customer.
- * 
- * @param {string}      [name]
- * @param {string=}      [place]
- * @param {string=}      [coordinates]
- * 
- * @returns {Object} 
+ * Create customer middlwares
  */
 exports.create = [
 	auth,
-	body("name", "Name must not be empty.").isLength({ min: 1 }).trim(),
-	body("phone", "Phone Number must not be empty").trim().escape().isNumeric(),
-	body("place").optional().trim(),
+	body("name", "Name must not be empty.")
+		.trim()
+		.isLength({ min: 1 })
+		.withMessage("Name must be specified.")
+		.matches(/^[a-z0-9 ]+$/i)
+		.withMessage("Name must contain only alphanumeric and spaces"),
+	body("phone", "Phone Number must not be empty")
+		.trim()
+		.isLength({ min: 10, max: 10 })
+		.isInt()
+		.withMessage("Phone must be 10 digits.")
+		.custom(async (value, { req }) => {
+			const authenticatedUser = await userData(req.user._id);
+			if (!hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET")) {
+				return Promise.reject("You dont have permission");
+			}
+			return Customer.findOne(
+				{
+					phone: value,
+					belongsTo: authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id
+				}
+			).then(
+				(customer) => {
+					if (customer) {
+						return Promise.reject("Phone Number already taken");
+					}
+				}
+			);
+		}),
+	body("place", "Invalid place name").optional().trim().escape().isAlphanumeric(),
 	body("coordinates", "Invalid coordinates")
 		.optional()
 		.custom(({ lat, lon }) => {
 			const reg = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/;
 			return reg.exec(lat) && reg.exec(lon);
 		}),
-	sanitizeBody("*").escape(),
-	(req, res) => {
+	async (req, res) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
+		}
 		try {
-			const errors = validationResult(req);
-			if (!errors.isEmpty()) {
-				return apiResponse.validationErrorWithData(
-					res,
-					"Validation Error.",
-					errors.array()
-				);
-			} else {
-				let newCustomer = new Customer(
-					_.pickBy(
-						{
-							name: req.body.name,
-							phone: req.body.phone,
-							place: req.body.place || undefined,
-							location: req.body.coordinates
-								? {
-										type: "Point",
-										coordinates: [
-											req.body.coordinates.lat,
-											req.body.coordinates.lat,
-										].map(parseFloat),
-								  }
-								: undefined,
-							comesUnder: req.user.worksUnder || req.user._id,
-						},
-						_.identity
-					)
-				);
-
-				//Save Customer.
-				newCustomer.save(function (err) {
-					if (err) {
-						return apiResponse.ErrorResponse(res, err);
-					}
-					let customerData = new CustomerData(newCustomer);
-					return apiResponse.successResponseWithData(
-						res,
-						"Customer add Success.",
-						customerData
-					);
-				});
+			const authenticatedUser = await userData(req.user._id);
+			if (!hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_POST")) {
+				return apiResponse.unauthorizedResponse(res, "Not authorised for this operation");
 			}
+
+			const newCustomer = await createCustomer(
+				req.body.name,
+				req.body.phone,
+				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id,
+				req.body.place,
+				req.body.location
+			)
+
+			//Save Customer.
+			return newCustomer.save(function (err) {
+				if (err) {
+					return apiResponse.ErrorResponse(res, err);
+				}
+				let customerData = new CustomerData(newCustomer);
+				return apiResponse.successResponseWithData(
+					res,
+					"Customer add Success.",
+					customerData
+				);
+			});
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);
@@ -190,62 +318,62 @@ exports.create = [
  * @returns {Object}
  *
 exports.bookUpdate = [
-    auth,
-    body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
-    body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
-    body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value, { req }) => {
-        return Book.findOne({ isbn: value, user: req.user._id, _id: { "$ne": req.params.id } }).then(book => {
-            if (book) {
-                return Promise.reject("Book already exist with this ISBN no.");
-            }
-        });
-    }),
-    sanitizeBody("*").escape(),
-    (req, res) => {
-        try {
-            const errors = validationResult(req);
-            var book = new Book(
-                {
-                    title: req.body.title,
-                    description: req.body.description,
-                    isbn: req.body.isbn,
-                    _id: req.params.id
-                });
+	auth,
+	body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
+	body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
+	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value, { req }) => {
+		return Book.findOne({ isbn: value, user: req.user._id, _id: { "$ne": req.params.id } }).then(book => {
+			if (book) {
+				return Promise.reject("Book already exist with this ISBN no.");
+			}
+		});
+	}),
+	sanitizeBody("*").escape(),
+	(req, res) => {
+		try {
+			const errors = validationResult(req);
+			var book = new Book(
+				{
+					title: req.body.title,
+					description: req.body.description,
+					isbn: req.body.isbn,
+					_id: req.params.id
+				});
 
-            if (!errors.isEmpty()) {
-                return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
-            }
-            else {
-                if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-                    return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
-                } else {
-                    Book.findById(req.params.id, function (err, foundBook) {
-                        if (foundBook === null) {
-                            return apiResponse.notFoundResponse(res, "Book not exists with this id");
-                        } else {
-                            //Check authorized user
-                            if (foundBook.user.toString() !== req.user._id) {
-                                return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
-                            } else {
-                                //update book.
-                                Book.findByIdAndUpdate(req.params.id, book, {}, function (err) {
-                                    if (err) {
-                                        return apiResponse.ErrorResponse(res, err);
-                                    } else {
-                                        let bookData = new BookData(book);
-                                        return apiResponse.successResponseWithData(res, "Book update Success.", bookData);
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-            }
-        } catch (err) {
-            //throw error in json response with status 500. 
-            return apiResponse.ErrorResponse(res, err);
-        }
-    }
+			if (!errors.isEmpty()) {
+				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
+			}
+			else {
+				if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+					return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
+				} else {
+					Book.findById(req.params.id, function (err, foundBook) {
+						if (foundBook === null) {
+							return apiResponse.notFoundResponse(res, "Book not exists with this id");
+						} else {
+							//Check authorized user
+							if (foundBook.user.toString() !== req.user._id) {
+								return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
+							} else {
+								//update book.
+								Book.findByIdAndUpdate(req.params.id, book, {}, function (err) {
+									if (err) {
+										return apiResponse.ErrorResponse(res, err);
+									} else {
+										let bookData = new BookData(book);
+										return apiResponse.successResponseWithData(res, "Book update Success.", bookData);
+									}
+								});
+							}
+						}
+					});
+				}
+			}
+		} catch (err) {
+			//throw error in json response with status 500. 
+			return apiResponse.ErrorResponse(res, err);
+		}
+	}
 ];
 //
 
@@ -258,44 +386,46 @@ exports.bookUpdate = [
  * @returns {Object}
  */
 
-exports.delete = [
+exports.deleteCustomer = [
 	auth,
-	function (req, res) {
-		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+	param("customerId", "Invalid Customer Id").escape().trim().isMongoId(),
+	async (req, res) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty())
 			return apiResponse.validationErrorWithData(
 				res,
-				"Invalid Error.",
-				"Invalid ID"
+				"Validation Error.",
+				errors.array()
 			);
-		}
 		try {
-			Customer.findById(req.params.id, function (err, foundCustomer) {
-				if (foundCustomer === null) {
-					return apiResponse.notFoundResponse(
-						res,
-						"Customer not exists with this id"
-					);
+			const authenticatedUser = await userData(req.user._id);
+			const customer = await Customer.findById(req.params.customerId);
+
+			if (!hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_DELETE")) {
+				return apiResponse.unauthorizedResponse(res, "Operation not allowed");
+			}
+
+			if (customer === null) {
+				return apiResponse.notFoundResponse(
+					res,
+					"Customer does not exist"
+				);
+			} else {
+				if (hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_DELETE")) {
+					return Customer.findByIdAndRemove(req.params.id, function (err) {
+						if (err) {
+							return apiResponse.ErrorResponse(res, err);
+						} else {
+							return apiResponse.successResponse(
+								res,
+								"Customer deleted"
+							);
+						}
+					});
 				} else {
-					if (foundCustomer.comesUnder.toString() === req.user._id)
-						Customer.findByIdAndRemove(req.params.id, function (
-							err
-						) {
-							if (err) {
-								return apiResponse.ErrorResponse(res, err);
-							} else {
-								return apiResponse.successResponse(
-									res,
-									"Customer delete Success."
-								);
-							}
-						});
-					else
-						return apiResponse.unauthorizedResponse(
-							res,
-							"You are not authorised to delete a customer"
-						);
+					return apiResponse.unauthorizedResponse(res, "Not authorised for this action");
 				}
-			});
+			}
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);
@@ -311,52 +441,75 @@ exports.delete = [
 
 exports.update = [
 	auth,
-	function (req, res) {
-		if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-			return apiResponse.validationErrorWithData(
-				res,
-				"Invalid Customer ID",
-				{}
+	param("customerId")
+		.escape()
+		.trim()
+		.isMongoId(),
+	body("name", "Name must not be empty.")
+		.optional()
+		.trim()
+		.isLength({ min: 1 })
+		.withMessage("Name must be specified.")
+		.matches(/^[a-z0-9 ]+$/i)
+		.withMessage("Name must contain only alphanumeric and spaces"),
+	body("phone", "Phone Number must not be empty")
+		.optional()
+		.trim()
+		.isLength({ min: 10, max: 10 })
+		.isInt()
+		.withMessage("Phone must be 10 digits.")
+		.custom(async (value, { req }) => {
+			const authenticatedUser = await userData(req.user._id);
+			if (!hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET")) {
+				return Promise.reject("You dont have permission");
+			}
+			return Customer.findOne(
+				{
+					phone: value,
+					belongsTo: authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id
+				}
+			).then(
+				(customer) => {
+					if (customer) {
+						return Promise.reject("Phone Number already taken");
+					}
+				}
 			);
-		}
+		}),
+	body("place", "Invalid place name").optional().trim().escape().isAlphanumeric(),
+	body("coordinates", "Invalid coordinates")
+		.optional()
+		.custom(({ lat, lon }) => {
+			const reg = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/;
+			return reg.exec(lat) && reg.exec(lon);
+		}),
+	async (req, res) => {
 		if (!validationResult(req).isEmpty())
 			return apiResponse.validationErrorWithData(
 				res,
 				"Validation Error.",
 				validationResult(req).array()
 			);
-
 		try {
-			Customer.findById(req.params.id).then((customer) => {
-				if (customer !== null) {
-					for (let key of Object.keys(req.body)) {
-						if (key === "_id" || key === "id")
-							return apiResponse.ErrorResponse(
-								res,
-								"Illegal update to data"
-							);
-						customer[key] = req.body[key];
-					}
-					customer.save(function (err) {
-						if (err) {
-							return apiResponse.ErrorResponse(res, err);
-						}
-						return apiResponse.successResponseWithData(
-							res,
-							"Customer update Success.",
-							JSON.parse(
-								JSON.stringify(new CustomerData(customer))
-							)
-						);
-					});
-				} else {
-					return apiResponse.successResponseWithData(
-						res,
-						"Operation success: No Customer Found",
-						{}
-					);
-				}
-			});
+			//Check for customer category access rights
+			const authenticatedUser = await userData(_id);
+			const customer = await Product.findById(req.params.customerId)
+
+			if (!hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_PUT"))
+				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
+
+			//Remove belongsTo from change request body
+			const execptBelonsTo = Object.keys(req.body).reduce((acc, elem) => {
+				if (elem !== "belongsTo") acc[elem] = obj[elem]
+				return acc
+			}, {})
+
+			const newCustomer = await Customer.findByIdAndUpdate(req.body.customerId, execptBelonsTo, { new: true }).populate("belongsTo").exec();
+			return apiResponse.successResponseWithData(
+				res,
+				"Customer Update Success",
+				new CustomerData(newCustomer)
+			)
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);
@@ -371,8 +524,14 @@ exports.update = [
  */
 exports.getSuggestions = [
 	auth,
-	param("name").escape().trim(),
-	(req, res) => {
+	param("name", "Name must not be empty.")
+		.optional()
+		.trim()
+		.isLength({ min: 1 })
+		.withMessage("Name must be specified.")
+		.matches(/^[a-z0-9 ]+$/i)
+		.withMessage("Name must contain only alphanumeric and spaces"),
+	async (req, res) => {
 		const validation = validationResult(req);
 		if (!validation.isEmpty())
 			return apiResponse.validationErrorWithData(
@@ -381,26 +540,37 @@ exports.getSuggestions = [
 				validation.array()
 			);
 
-		Customer.find(
-			{
-				name: {
-					$regex: new RegExp(`${req.params.name}`, "i"),
-				},
-			},
-			(err, customers) => {
-				if (err) return apiResponse.ErrorResponse(res, err);
-				if (customers.length === 0)
-					return apiResponse.successResponseWithData(
-						res,
-						`No suggestions for ${req.params.name}`,
-						[]
-					);
-				return apiResponse.successResponseWithData(
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			if (!(await hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET")))
+				return apiResponse.unauthorizedResponse(
 					res,
-					`Customers with name: ${req.params.name}`,
-					customers.map((customer) => new CustomerData(customer))
+					"You are not authorised to access this product category"
+				)
+
+			return Customer.find(
+				{
+					name: {
+						$regex: new RegExp(`${req.params.name}`, "i"),
+					},
+				}).limit(10).lean().exec(
+					(err, customers) => {
+						if (err) return apiResponse.ErrorResponse(res, err);
+						if (customers.length === 0)
+							return apiResponse.successResponseWithData(
+								res,
+								`No suggestions for ${req.params.name}`,
+								[]
+							);
+						return apiResponse.successResponseWithData(
+							res,
+							`Customers with name: ${req.params.name}`,
+							customers.map((customer) => new CustomerData(customer))
+						);
+					}
 				);
-			}
-		).lean();
+		} catch (e) {
+			return apiResponse.ErrorResponse(res, e.message || e);
+		}
 	},
 ];

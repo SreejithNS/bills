@@ -1,6 +1,6 @@
 var mongoose = require("mongoose");
 const mongoosePaginate = require("mongoose-paginate-v2");
-const Product = require("../ProductModel");
+const { Product } = require("../ProductModel");
 var Schema = mongoose.Schema;
 const Payment = require("./PaymentSchema");
 
@@ -189,14 +189,16 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 	var populatedItems = [];
 
 	for (let item of items) {
-		const document = await Product.findById(item.id).lean().exec();
+		const document = await Product.findOne({ _id: item._id }).lean().exec();
 		if (document) {
 			document.quantity = item.quantity;
-			if (item.unit >= 0) {
-				const unit = document.units[item.unit];
-				document.unit = unit.name;
-				document.mrp = unit.mrp;
-				document.rate = unit.rate;
+			if (item.unit) {
+				const unit = document.units.find(unit => unit.name === item.unit);
+				if (unit) {
+					document.unit = unit.name;
+					document.mrp = unit.mrp;
+					document.rate = unit.rate;
+				}
 			}
 			populatedItems.push(document);
 		} else {

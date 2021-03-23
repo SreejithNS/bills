@@ -16,18 +16,13 @@ const { UserSettings } = require("../models/UserSettingsModel");
  * @property {User._id=} belongsTo - Admin User Id if this user is not admin.
  */
 
-/**
- * Creates a user in User Model.
- * @param {string} name - Name of user
- * @param {number} phone - Phone Number of user
- * @param {string} password - Password for the account
- * @param {Permissions=} permissions - Permission for the user if applicable
- * @returns {User} Newly created user
- */
-
 // Functions 
 
-export function UserData(params) {
+/**
+ * Abstract User Data from User Document
+ * @param {object} params 
+ */
+function UserData(params) {
 	this._id = params._id;
 	this.name = params.name;
 	this.phone = params.phone;
@@ -46,8 +41,8 @@ export function UserData(params) {
  * @returns {User}
  */
 async function createUser(name, phone, password, permissions) {
-	bcrypt.hash(password, 10, function (err, hash) {
-		const userData = {
+	return bcrypt.hash(password, 10, async function (err, hash) {
+		const newUserData = {
 			name,
 			phone,
 			password: hash,
@@ -58,13 +53,21 @@ async function createUser(name, phone, password, permissions) {
 		if (permissions) {
 			const settings = new UserSettings({ permissions: permissions.permissions });
 			await settings.save();
-			userData.settings = settings._id;
+			newUserData.settings = settings._id;
 		}
 
-		var newUser = new User(userData);
+		var newUser = new User(newUserData);
 
 		return await newUser.save();
 	});
+}
+
+async function createCategory(name, belongsTo, hasAccess) {
+	const newCategory = new ProductCategory({
+		name, belongsTo, hasAccess
+	})
+
+	return await newCategory.save()
 }
 
 /**
@@ -75,59 +78,55 @@ async function createUser(name, phone, password, permissions) {
  * @returns {{_id:string;token:string}}
  */
 async function userAuthentication(phone, password) {
-	User.findOne({ phone }).then(
-		(user) => {
-			if (user) {
-				user.populate("settings");
+	const user = await User.findOne({ phone }).populate("settings").exec();
+	if (user) {
+		return await bcrypt.compare(
+			password,
+			user.password
+		).then(
+			(same) => {
+				if (same) {
+					// Check User's account active or not.
+					if (user.status) {
+						//Prepare JWT token for authentication
+						const jwtPayload = { _id: user._id.toString() }
+						const jwtData = {
+							expiresIn:
+								process.env
+									.JWT_TIMEOUT_DURATION,
+						};
+						const secret =
+							process.env.JWT_SECRET;
 
-				bcrypt.compare(
-					password,
-					user.password,
-					(err, same) => {
-						if (err) throw new Error(err);
-						if (same) {
-							// Check User's account active or not.
-							if (user.status) {
-								//Prepare JWT token for authentication
-								const jwtPayload = { _id: user._id.toString() }
-								const jwtData = {
-									expiresIn:
-										process.env
-											.JWT_TIMEOUT_DURATION,
-								};
-								const secret =
-									process.env.JWT_SECRET;
+						//Generated JWT token with Payload and secret.
+						const token = jwt.sign(
+							jwtPayload,
+							secret,
+							jwtData
+						);
 
-								//Generated JWT token with Payload and secret.
-								const token = jwt.sign(
-									jwtPayload,
-									secret,
-									jwtData
-								);
+						return { ...jwtPayload, token };
 
-								return { ...jwtPayload, token };
-
-							} else {
-								throw new Error("Account is not active. Please contact admin.");
-							}
-						} else {
-							throw new Error("Phone or Password wrong");
-						}
+					} else {
+						throw new Error("Account is not active. Please contact admin.");
 					}
-				);
-			} else {
-				throw new Error("User not found");
+				} else {
+					throw new Error("Phone or Password wrong");
+				}
 			}
-		}
-	);
+		);
+	} else {
+		throw new Error("User not found");
+	}
 }
+
 /**
  * Get User Data
  * @param {User._id} _id - User Account _id
  * @returns {UserData}
  */
-export async function userData(_id) {
-	return User.findById(_id, (err, res) => {
+async function userData(_id) {
+	return User.findById(_id, async (err, res) => {
 		if (err) return new Error(err);
 		if (res) {
 			await res.populate("belongsTo");
@@ -178,6 +177,8 @@ async function adminRegistrationMiddleware(req, res) {
 			);
 		} else {
 			const newUser = await createUser(req.body.name, req.body.phone, req.body.password);
+			await createCategory("General", newUser._id.toString(), []);
+
 			return apiResponse.successResponseWithData(
 				res,
 				"Registration Success",
@@ -233,7 +234,7 @@ async function salesmanRegisterMiddleware(req, res) {
  * @returns {Object}
  */
 
-exports.userRegistration = [
+const userRegistration = [
 	// Validate fields.
 	body("name")
 		.trim()
@@ -262,7 +263,7 @@ exports.userRegistration = [
 	async (req, res) => {
 		if (req.user.type === privilegeEnum.admin) {
 			return await salesmanRegisterMiddleware(req, res);
-		} else {
+		} else if (req.user.type === privilegeEnum.root) {
 			return await adminRegistrationMiddleware(req, res);
 		}
 	},
@@ -277,7 +278,7 @@ exports.userRegistration = [
  * @returns {Object}
  */
 
-exports.login = [
+const login = [
 	body("phone")
 		.trim()
 		.isLength({ min: 10, max: 10 })
@@ -296,7 +297,7 @@ exports.login = [
 		.isLength({ min: 6 })
 		.trim()
 		.withMessage("Password must be 6 characters or greater."),
-	(req, res) => {
+	async (req, res) => {
 		try {
 			const errors = validationResult(req);
 			if (!errors.isEmpty()) {
@@ -307,7 +308,7 @@ exports.login = [
 				);
 			} else {
 				try {
-					const authenticationData = await userAuthentication(req.body.user, req.body.password);
+					const authenticationData = await userAuthentication(req.body.phone, req.body.password);
 					res.cookie("auth-token", authenticationData.token, {
 						httpOnly: true,
 						sameSite: "none",
@@ -317,7 +318,6 @@ exports.login = [
 				} catch (e) {
 					return apiResponse.unauthorizedResponse(res, "Authentication Failed", e);
 				}
-
 			}
 		} catch (err) {
 			return apiResponse.ErrorResponse(res, err);
@@ -325,15 +325,15 @@ exports.login = [
 	},
 ];
 
-exports.userData = [
+const fetchUserData = [
 	authenticate,
 	async (req, res) => {
 		try {
-			const authenticatedUserData = userData(req.user._id);
+			const authenticatedUserData = await userData(req.user._id);
 			return apiResponse.successResponseWithData(
 				res,
 				"User Data fetched",
-				authenticatedUserData
+				new UserData(authenticatedUserData)
 			);
 		} catch (e) {
 			return apiResponse.ErrorResponse(
@@ -344,12 +344,12 @@ exports.userData = [
 	},
 ];
 
-exports.logout = (req, res) => {
+const logout = (req, res) => {
 	res.cookie("token", { httpOnly: true, expires: Date.now() });
 	return apiResponse.successResponse(res, "Successfully logged out");
 }
 
-exports.numberAvailability = [
+const numberAvailability = [
 	authenticate,
 	(req, res) => {
 		if (req.user.type !== privilegeEnum.admin)
@@ -372,7 +372,7 @@ exports.numberAvailability = [
 	},
 ];
 
-exports.salesmenList = [
+const salesmenList = [
 	authenticate,
 	async (req, res) => {
 		try {
@@ -404,15 +404,15 @@ exports.salesmenList = [
 	}
 ];
 
-exports.updateUserDetails = [
+const updateUserDetails = [
 	authenticate,
 	param("userId").escape().trim().isMongoId(),
 	async (req, res) => {
 		try {
-			const authenticatedUser = userData(req.user._id);
-			const paramUser = userData(req.param.userId);
-			const param = req.param.param;
-			const value = req.param.value;
+			const authenticatedUser = await userData(req.user._id);
+			const paramUser = await userData(req.params.userId);
+			const param = req.params.param;
+			const value = req.params.value;
 			if (
 				( // Self account updation with permission or being an admin
 					authenticatedUser._id === paramUser._id &&
@@ -429,7 +429,7 @@ exports.updateUserDetails = [
 					authenticatedUser._id === paramUser._id && authenticated
 				)
 			) {
-				const updatedDetails = await userAccountDetailsUpdate(req.param.userId, param, value);
+				const updatedDetails = await userAccountDetailsUpdate(req.params.userId, param, value);
 				return apiResponse.successResponseWithData(res, "User Details Updated", updatedDetails);
 			} else return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
 		} catch (e) {
@@ -437,3 +437,15 @@ exports.updateUserDetails = [
 		}
 	}
 ];
+
+module.exports = {
+	UserData,
+	userData,
+	userRegistration,
+	login,
+	fetchUserData,
+	logout,
+	numberAvailability,
+	salesmenList,
+	updateUserDetails
+}

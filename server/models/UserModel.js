@@ -11,7 +11,7 @@ var UserSchema = new mongoose.Schema(
 		status: { type: Boolean, required: true, default: 1 },
 		settings: {
 			type: mongoose.Schema.Types.ObjectId,
-			ref: "Settings"
+			ref: "UserSetting"
 		},
 	},
 	{ timestamps: true }
