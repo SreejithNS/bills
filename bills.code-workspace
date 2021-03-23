@@ -1,10 +1,10 @@
 {
-  "folders": [
+	"folders": [
 		{
-			"path": "."
+			"path": "./server"
+		},
+		{
+			"path": "./client"
 		}
-	],
-	"settings": {
-		"deepscan.ignoreConfirmWarning": true
-	}
+	]
 }
