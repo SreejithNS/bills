@@ -1,6 +1,20 @@
+import { APIResponse, handleAxiosError } from './../components/Axios/index';
 import { SubmissionError } from 'redux-form';
-import axios from "axios";
 import { toast } from "react-toastify"
+import { ProductCategory } from '../reducers/product.reducer';
+import { axios } from '../components/Axios';
+import { UserData } from '../reducers/auth.reducer';
+
+export const createProductCategory = (name: ProductCategory["name"], hasAccess?: UserData["_id"][]): Promise<{ _id: ProductCategory["_id"] }> => {
+    return new Promise((res, rej) => {
+        axios
+            .post<APIResponse<{ _id: ProductCategory["_id"] }>>("/category", {
+                name, ...(hasAccess && { hasAccess })
+            })
+            .then(response => response.data.data ? res(response.data.data) : rej("New Product ID not returned"))
+            .catch(handleAxiosError);
+    })
+}
 
 export const fetchItemSuggesions = (code: string) => {
     return (dispatch: any, getState: any) => {

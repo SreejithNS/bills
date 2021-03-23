@@ -13,9 +13,8 @@ const useStyles = makeStyles((theme: Theme) => ({
     }
 }))
 
-export default function ErrorCard(props: { title: React.ReactNode | string; errors: { toString: () => React.ReactNode; } | any | any[]; }) {
+export default function ErrorCard(props: { title: React.ReactNode | string; errors: any; }) {
     const classes = useStyles();
-
     return (
         <Card className={classes.root}>
             <CardContent>
@@ -23,7 +22,8 @@ export default function ErrorCard(props: { title: React.ReactNode | string; erro
                     <ErrorOutlineIcon fontSize="small" /> {props.title}
                 </Typography>
                 <Typography color="textSecondary">
-                    {props.errors.toString()}
+                    {props.errors.toString()}<br />
+                    {props.errors.response?.data?.message ?? ""}
                 </Typography>
             </CardContent>
         </Card>

@@ -1,3 +1,19 @@
+import { UserData } from "./auth.reducer";
+
+export interface GeoLocation {
+	type: "Point";
+	coordinates: number[];
+}
+
+export interface Customer {
+	_id: string;
+	name: string;
+	place: string;
+	phone: number;
+	location?: GeoLocation;
+	belongsTo: UserData;
+}
+
 const initialState = {
 	customersList: [],
 	listLoading: false,
@@ -7,7 +23,7 @@ const initialState = {
 	customerSuggestions: [],
 };
 
-export default function customerReducer(state = initialState, action) {
+export default function customerReducer(state = initialState, action: { type: string; payload: any; }) {
 	switch (action.type) {
 		case "FETCH_CUSTOMERS_LIST": {
 			return {

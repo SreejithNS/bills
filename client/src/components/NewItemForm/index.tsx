@@ -4,6 +4,8 @@ import { Field, FieldArray, reduxForm } from 'redux-form';
 import { itemCodeExists } from '../../actions/item.actions';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import RemoveCircleOutlineRoundedIcon from '@material-ui/icons/RemoveCircleOutlineRounded';
+import { APIResponse, axios } from '../Axios';
+import { Unit } from '../../reducers/product.reducer';
 
 function validate(values: { [x: string]: any; }) {
     const errors: any = {};
@@ -21,11 +23,11 @@ function validate(values: { [x: string]: any; }) {
 
     if (values["units"] && values["units"].length) {
         const unitsErrors: any[] = [];
-        values["units"].forEach((unit: any, index: number) => {
+        values["units"].forEach((unit: Unit, index: number) => {
             const unitError = {};
             if (!unit.name) Object.assign(unitError, { name: "Required" });
-            if (!unit.rate || parseFloat(unit.rate) <= 0) Object.assign(unitError, { rate: "Must be greater than 0" });
-            if (!unit.mrp || parseFloat(unit.mrp) <= 0) Object.assign(unitError, { mrp: "Must be greater than 0" });
+            if (!unit.rate || parseFloat(unit.rate + "") <= 0) Object.assign(unitError, { rate: "Must be greater than 0" });
+            if (!unit.mrp || parseFloat(unit.mrp + "") <= 0) Object.assign(unitError, { mrp: "Must be greater than 0" });
 
             if (Object.entries(unitError).length) unitsErrors[index] = unitError;
         })
@@ -35,8 +37,8 @@ function validate(values: { [x: string]: any; }) {
     return errors;
 }
 
-async function asyncValidate(values: { code: string; }, _:any, props:any) {
-    if (await itemCodeExists(props.category, values.code)) {
+async function asyncValidate(values: { code?: string; }, _: any, props: any) {
+    if (values.code && !(await axios.get<APIResponse<boolean>>(`/product/${props.category._id}/availability/${values.code}`)).data.data) {
         return Promise.reject({ code: 'Item Code already used' });
     }
 };
@@ -82,7 +84,7 @@ const renderUnits = ({ fields }: { fields: any }) => (
     </>
 )
 
-const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; submitting: any; }) => {
+const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; submitting: boolean; }) => {
     const { handleSubmit, pristine, reset, submitting } = props;
     const classes = useStyles();
 

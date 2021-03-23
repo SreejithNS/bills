@@ -3,14 +3,16 @@ import { reducer as formReducer } from "redux-form";
 import customerReducer from "./customer.reducer";
 import billReducer from "./bill.reducer";
 import itemReducer from "./item.reducer";
-import appReducer from "./app.reducer";
+import authReducer from "./auth.reducer";
+import productReducer from "./product.reducer";
 
 const reducers = {
+	auth: authReducer,
 	customer: customerReducer,
 	bill: billReducer,
 	item: itemReducer,
 	form: formReducer,
-	app: appReducer
+	product: productReducer
 }
 
 const rootReducer = combineReducers(reducers);

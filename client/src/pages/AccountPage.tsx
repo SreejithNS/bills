@@ -3,129 +3,117 @@ import {
     Fab,
     Grid,
     Theme,
-    withStyles,
-    WithStyles,
-    createStyles,
-    Typography
+    Typography,
+    makeStyles
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import ParagraphIconCard from "../components/ParagraphIconCard";
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import SalesmenList from "../components/SalesmenList";
-import { getSalesmenList, putSalesmanPassword } from "../actions/app.actions";
-import { compose } from "redux";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { accountPaths, paths } from "../routes/paths.enum";
-import { connect } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import UpdateSalesmanPasswordDialog from "../components/UpdateSalesmanPasswordDialog";
 import PageContainer from "../components/PageContainer";
+import { useEffect, useState } from "react";
+import { RootState } from "../reducers/rootReducer";
+import { toast } from "react-toastify";
+import useAxios from "axios-hooks";
+import { useHasPermission } from "../actions/auth.actions";
 
-const mapStateToProps = (state: any) => {
-    return {
-        salesmenListError: state.app.salesmenListError,
-        salesmenList: state.app.salesmenList,
-        salesmenListLoading: state.app.salesmenListLoading,
-        userData: state.app.userData
-    };
-};
-
-const mapDispatchToProps = (dispatch: any) => {
-    return {
-        getSalesmanList: () => dispatch(getSalesmenList()),
-        updateSalesmanPassword: (newData: any) => dispatch(putSalesmanPassword(newData))
-    };
-};
-
-const styles = (theme: Theme) =>
-    createStyles({
-        fab: {
-            position: "fixed",
-            right: theme.spacing(2),
-            bottom:
-                parseInt(theme.mixins.toolbar.minHeight + "", 0) + theme.spacing(2),
-            transition: theme.transitions.easing.easeIn
-        },
-        fabIcon: {
-            marginRight: theme.spacing(1)
-        },
-        cardPadding: {
-            padding: theme.spacing(1),
-            "&:last-of-type": {
-                marginBottom:
-                    parseInt(theme.mixins.toolbar.minHeight + "", 0) + theme.spacing(8)
-            }
+const useStyles = makeStyles((theme: Theme) => ({
+    fab: {
+        position: "fixed",
+        right: theme.spacing(2),
+        bottom:
+            parseInt(theme.mixins.toolbar.minHeight + "", 0) + theme.spacing(2),
+        transition: theme.transitions.easing.easeIn
+    },
+    fabIcon: {
+        marginRight: theme.spacing(1)
+    },
+    cardPadding: {
+        padding: theme.spacing(1),
+        "&:last-of-type": {
+            marginBottom:
+                parseInt(theme.mixins.toolbar.minHeight + "", 0) + theme.spacing(8)
         }
-    });
-
-type Props = ReturnType<typeof mapDispatchToProps> &
-    ReturnType<typeof mapStateToProps> &
-    WithStyles<typeof styles> &
-    RouteComponentProps;
-
-class AccountPage extends React.Component<Props> {
-    componentDidMount() {
-        this.props.getSalesmanList();
     }
-    state = {
-        dialogOpen: false,
-        editSalesman: ""
-    }
-    openDialogForSalesman = (id: string) => () => {
-        this.setState({ dialogOpen: true, editSalesman: id });
-    }
+}));
 
-    handlePasswordUpdate = (values: { password: string }) => {
-        const withSalesman = { ...values, salesman: this.state.editSalesman };
-        this.props.updateSalesmanPassword(withSalesman);
-    }
+export default function AccountPage() {
+    const [dialogStatus, setDialogStatus] = useState<{ salesmanId: string; open: boolean }>({ salesmanId: "", open: false });
+    const { error, loading: authLoading, userData, usersUnderUser } = useSelector((state: RootState) => state.auth);
+    const classes = useStyles();
 
-    render() {
-        const { classes, salesmenList, history, salesmenListLoading, userData } = this.props;
-        const { openDialogForSalesman, handlePasswordUpdate } = this;
-        const { dialogOpen } = this.state;
-        return (
-            <React.Fragment>
-                <PageContainer>
-                    <Grid container justify="center" alignItems="flex-start" spacing={2}>
-                        <Grid item xs={12}>
-                            <Typography variant="h4">Your Account</Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} className={classes.cardPadding}>
-                            <ParagraphIconCard
-                                icon={<AccountCircleRoundedIcon fontSize="large" />}
-                                heading={"Hi " + userData.firstName}
-                                content={userData.worksUnder && "You work under " + userData.worksUnder.firstName}
-                            />
-                        </Grid>
-                        <Grid item xs={12} className={classes.cardPadding}>
-                            {(!salesmenListLoading && salesmenList.length) ? salesmenList.map(
-                                (salesman: { _id: string, firstName: string, phone: number }, key: string | number | null | undefined) => (
-                                    <SalesmenList
-                                        key={key}
-                                        firstName={salesman.firstName}
-                                        phoneNumber={salesman.phone}
-                                        onEdit={openDialogForSalesman(salesman._id)}
-                                    />
-                                )
-                            ) : ""}
-                        </Grid>
+    const [{ data, loading, error: fetchError }, fetchSalesmenList] = useAxios('/auth/salesmen', { manual: true });
+    const hasAdminPermissions = useHasPermission(undefined, !authLoading);
+    const dispatch = useDispatch();
+    const history = useHistory();
+
+    useEffect(() => {
+        if (!hasAdminPermissions && !usersUnderUser) {
+            fetchSalesmenList();
+        }
+
+        if (fetchError) {
+            toast.error("Cannot load salesmen list.")
+        }
+
+        if (data) {
+            dispatch({ type: "USERS_UNDER_USER", payload: data });
+        }
+
+        dispatch({ type: "USER_DATA_LOAD", payload: loading });
+
+    }, [error, dispatch, authLoading, userData, data, fetchError, fetchSalesmenList, hasAdminPermissions, loading]);
+
+    return (
+        <React.Fragment>
+            <PageContainer>
+                <Grid container justify="center" alignItems="flex-start" spacing={2}>
+                    <Grid item xs={12}>
+                        <Typography variant="h4">Your Account</Typography>
                     </Grid>
-                    {userData.type === 1 && <UpdateSalesmanPasswordDialog open={dialogOpen} handleClose={() => this.setState({ dialogOpen: false })} onSubmit={handlePasswordUpdate} />}
-                </PageContainer>
-                {userData.type === 1 &&
-                    <Fab
-                        onClick={() => history.push(paths.account + accountPaths.addSalesman)}
-                        className={classes.fab}
-                        color="primary"
-                        variant="extended"
-                    >
-                        <AddIcon className={classes.fabIcon} />
+                    <Grid item xs={12} sm={6} className={classes.cardPadding}>
+                        <ParagraphIconCard
+                            icon={<AccountCircleRoundedIcon fontSize="large" />}
+                            heading={"Hi " + userData?.name}
+                            content={userData?.belongsTo && "You work under " + userData?.belongsTo?.name}
+                        />
+                    </Grid>
+                    <Grid item xs={12} className={classes.cardPadding}>
+                        {(!(loading || authLoading) && usersUnderUser.length) ? usersUnderUser.map(
+                            (salesman, key) => (
+                                <SalesmenList
+                                    key={key}
+                                    firstName={salesman.name}
+                                    phoneNumber={salesman.phone}
+                                    onEdit={() => setDialogStatus({ salesmanId: salesman._id, open: true })}
+                                />
+                            )
+                        ) : ""}
+                    </Grid>
+                </Grid>
+                {userData?.type === 1 &&
+                    <UpdateSalesmanPasswordDialog
+                        open={dialogStatus.open}
+                        salesmanId={dialogStatus.salesmanId}
+                        handleClose={() => setDialogStatus({ salesmanId: "", open: false })}
+                    />
+                }
+            </PageContainer>
+            {hasAdminPermissions &&
+                <Fab
+                    onClick={() => history.push(paths.account + accountPaths.addSalesman)}
+                    className={classes.fab}
+                    color="primary"
+                    variant="extended"
+                >
+                    <AddIcon className={classes.fabIcon} />
                     Add Salesman
                     </Fab>
-                }
-            </React.Fragment>
-        );
-    }
+            }
+        </React.Fragment>
+    )
 }
-
-export default compose(withStyles(styles), withRouter, connect(mapStateToProps, mapDispatchToProps))(AccountPage) as React.ComponentType;

@@ -9,6 +9,7 @@ import rootReducer from './reducers/rootReducer';
 import thunk from 'redux-thunk';
 import { CssBaseline } from '@material-ui/core';
 import { createLogger } from 'redux-logger';
+import initAxios from './components/Axios';
 
 const logger = createLogger({
   // ...options
@@ -20,7 +21,9 @@ declare global {
 }
 
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-const store = createStore(rootReducer, composeEnhancers(applyMiddleware(thunk, logger)));
+export const store = createStore(rootReducer, composeEnhancers(applyMiddleware(thunk, logger)));
+
+initAxios();
 
 ReactDOM.render(
   <React.Fragment>

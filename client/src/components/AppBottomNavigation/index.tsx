@@ -8,6 +8,8 @@ import { paths } from '../../routes/paths.enum';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import { useSelector } from 'react-redux';
 import { RootState } from '../../reducers/rootReducer';
+import { useHasPermission } from '../../actions/auth.actions';
+import { UserPermissions } from '../../reducers/auth.reducer';
 
 const useStyles = makeStyles({
     root: {
@@ -19,7 +21,6 @@ const useStyles = makeStyles({
 
 export default function AppBottomNavigation() {
     const classes = useStyles();
-    const appSettings = useSelector((state: RootState) => state.app.settings);
     const history = useHistory();
     const [value, setValue] = React.useState<paths>(paths.home);
 
@@ -27,13 +28,11 @@ export default function AppBottomNavigation() {
         history.push(path);
     }
 
-    const isRestricted = (path: string) => {
-        if (appSettings.restrictedRoutes && Array.isArray(appSettings.restrictedRoutes)) {
-            return appSettings.restrictedRoutes.indexOf(path as never) >= 0;
-        } else {
-            return false;
-        }
-    }
+    const itemsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_ITEMS);
+    const homePageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_HOME);
+    const billsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_BILLS);
+    const customersPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_CUSTOMERS);
+    const accountsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_ACCOUNTS);
 
     return (
         <BottomNavigation
@@ -43,11 +42,11 @@ export default function AppBottomNavigation() {
             }}
             className={classes.root}
         >
-            {!isRestricted(paths.items) && <BottomNavigationAction onClick={openLink(paths.items)} value={paths.items} label="Inventory" icon={<CalendarViewDay />} />}
-            {!isRestricted(paths.billsHome) && <BottomNavigationAction onClick={openLink(paths.billsHome)} value={paths.billsHome} label="Bills" icon={<Receipt />} />}
-            {!isRestricted(paths.home) && <BottomNavigationAction onClick={openLink(paths.home)} value={paths.home} label="Home" icon={<Home />} />}
-            {!isRestricted(paths.customer) && <BottomNavigationAction onClick={openLink(paths.customer)} value={paths.customer} label="Customer" icon={<RecentActors />} />}
-            {!isRestricted(paths.account) && <BottomNavigationAction onClick={openLink(paths.account)} value={paths.account} label="Account" icon={<AccountCircleRoundedIcon />} />}
+            {itemsPageAccess && <BottomNavigationAction onClick={openLink(paths.items)} value={paths.items} label="Inventory" icon={<CalendarViewDay />} />}
+            {homePageAccess && <BottomNavigationAction onClick={openLink(paths.billsHome)} value={paths.billsHome} label="Bills" icon={<Receipt />} />}
+            {billsPageAccess && <BottomNavigationAction onClick={openLink(paths.home)} value={paths.home} label="Home" icon={<Home />} />}
+            {customersPageAccess && <BottomNavigationAction onClick={openLink(paths.customer)} value={paths.customer} label="Customer" icon={<RecentActors />} />}
+            {accountsPageAccess && <BottomNavigationAction onClick={openLink(paths.account)} value={paths.account} label="Account" icon={<AccountCircleRoundedIcon />} />}
         </BottomNavigation>
     );
 }

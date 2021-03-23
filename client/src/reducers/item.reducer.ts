@@ -6,7 +6,7 @@ const initialState = {
 	itemsListLoad: true,
 };
 
-export default function itemReducer(state = initialState, action) {
+export default function itemReducer(state = initialState, action: { type: string; payload: any; }) {
 	switch (action.type) {
 		case "SET_ITEM_CATEGORY": {
 			return {
