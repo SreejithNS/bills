@@ -36,10 +36,8 @@ function CustomerData(data) {
  * @param {object} query 
  */
 function QueryParser(query) {
-	this.offset = Math.abs(parseInt(query.offset)) || 0;
 	this.page = Math.abs(parseInt(query.page)) || 1;
 	this.limit = Math.abs(parseInt(query.limit)) || 5;
-	this.soldBy = query.soldBy;
 	this.sort = query.sort;
 	this.lean = true;
 	this.populate = ["belongsTo"]
@@ -100,7 +98,8 @@ async function createCustomer(name, phone, belongsTo, place, location) {
 		].map(parseFloat),
 	});
 
-	return await newCustomer.save().populate("belongsTo").exec();
+	await newCustomer.save()
+	return newCustomer.populate("belongsTo");
 }
 
 /**
@@ -143,15 +142,14 @@ exports.getAll = [
 							"place": {
 								$regex: new RegExp(`${req.query.search}`, "i"),
 							}
-						},
+						}
 					]
 				}),
 				belongsTo: authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id
 			};
 
 			const paginateOptions = {
-				...(new QueryParser(req.query)),
-				customLabels: paginationLabels,
+				...(new QueryParser(req.query))
 			};
 
 			return Customer.paginate(query, paginateOptions).then(
@@ -161,11 +159,11 @@ exports.getAll = [
 					items
 				)
 				,
-				(err) => apiResponse.ErrorResponse(res, err)
+				(err) => apiResponse.ErrorResponse(res, err.message)
 			);
 		} catch (err) {
 			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+			return apiResponse.ErrorResponse(res, err.message);
 		}
 	},
 ];
@@ -307,7 +305,7 @@ exports.create = [
 			});
 		} catch (err) {
 			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+			return apiResponse.ErrorResponse(res, err.message);
 		}
 	},
 ];

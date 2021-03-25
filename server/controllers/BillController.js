@@ -34,10 +34,6 @@ function BillData(doc) {
 }
 
 function QueryParser(query) {
-	// this.serialNumber = Math.abs(parseInt(query.serialNumber))
-	// this.serialNumber = this.serialNumber === 0 || !this.serialNumber ? undefined : this.serialNumber;
-	// this.customer = query.customerId;
-	this.offset = Math.abs(parseInt(query.offset)) || 0;
 	this.page = Math.abs(parseInt(query.page)) || 1;
 	this.limit = Math.abs(parseInt(query.limit)) || 5;
 	// this.soldBy = query.soldBy;
@@ -58,6 +54,7 @@ async function getBillById(_id) {
 		.populate("customer")
 		.populate("soldBy")
 		.populate("belongsTo")
+		.populate("payments.paymentReceivedBy")
 		.exec();
 	return bill;
 }
@@ -93,10 +90,18 @@ function hasAccessPermission(authenticatedUser, paramBill, explicitPermission) {
  */
 exports.getBill = [
 	auth,
+	param("billId").trim().isMongoId(),
 	async function (req, res) {
+		const validationError = validationResult(req);
+		if (!validationError.isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Query Validation Error",
+				validationError.array()
+			);
 		try {
 			const authenticatedUser = await userData(req.user._id);
-			const bill = await getBillById(req.params._id);
+			const bill = await getBillById(req.params.billId);
 			if (bill) {
 				if (hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_GET")) {
 					return apiResponse.successResponseWithData(
@@ -154,8 +159,8 @@ exports.getAllBills = [
 			}
 
 			const queryWithSearch = {
-				...(req.query.serialNumber && {
-					"serialNumber": req.query.serialNumber
+				...(req.query.serial && {
+					"serialNumber": parseInt(req.query.serial)
 				}),
 				...(req.query.customer && {
 					"customer": req.query.customer

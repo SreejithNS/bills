@@ -391,7 +391,7 @@ const salesmenList = [
 					return apiResponse.successResponseWithData(
 						res,
 						"Salesmaen list",
-						docs.length && docs.map((salesman) => new UserData(salesman))
+						docs.map((salesman) => new UserData(salesman))
 					);
 				});
 			} else return apiResponse.unauthorizedResponse(
