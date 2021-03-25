@@ -12,14 +12,13 @@ import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import SalesmenList from "../components/SalesmenList";
 import { useHistory } from "react-router-dom";
 import { accountPaths, paths } from "../routes/paths.enum";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import UpdateSalesmanPasswordDialog from "../components/UpdateSalesmanPasswordDialog";
 import PageContainer from "../components/PageContainer";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RootState } from "../reducers/rootReducer";
-import { toast } from "react-toastify";
-import useAxios from "axios-hooks";
 import { useHasPermission, useUsersUnderAdmin } from "../actions/auth.actions";
+import { UserTypes } from "../reducers/auth.reducer";
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -49,6 +48,28 @@ export default function AccountPage() {
     const hasAdminPermissions = useHasPermission(undefined, !loading);
     const history = useHistory();
 
+    const taglineUnderUsername = () => {
+        const texts = [];
+
+        switch (userData?.type) {
+            case UserTypes.admin:
+                texts.push("You are an Administrator");
+                break;
+            case UserTypes.root:
+                texts.push("You are Root User");
+                break;
+            case UserTypes.salesman:
+                texts.push("You are a Salesman");
+                break;
+        }
+
+        if (userData?.belongsTo?.name) {
+            texts.push("You work under " + userData.belongsTo.name);
+        }
+
+        return texts.join(" | ");
+    }
+
     return (
         <React.Fragment>
             <PageContainer>
@@ -60,7 +81,7 @@ export default function AccountPage() {
                         <ParagraphIconCard
                             icon={<AccountCircleRoundedIcon fontSize="large" />}
                             heading={"Hi " + userData?.name}
-                            content={userData?.belongsTo && "You work under " + userData?.belongsTo?.name}
+                            content={taglineUnderUsername()}
                         />
                     </Grid>
                     <Grid item xs={12} className={classes.cardPadding}>

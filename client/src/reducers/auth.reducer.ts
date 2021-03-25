@@ -21,6 +21,10 @@ export enum UserPermissions {
     "ALLOW_PRODUCT_PUT",
     "ALLOW_PRODUCT_DELETE",
     "ALLOW_PRODUCT_GET",
+    "ALLOW_PRODUCTCATEGORY_POST",
+    "ALLOW_PRODUCTCATEGORY_PUT",
+    "ALLOW_PRODUCTCATEGORY_DELETE",
+    "ALLOW_PRODUCTCATEGORY_GET",
     "ALLOW_BILL_POST",
     "ALLOW_BILL_PUT",
     "ALLOW_BILL_DELETE",
@@ -93,7 +97,8 @@ export default function authReducer(state: AuthState = initialState, action: { t
             }
             return {
                 ...state,
-                userData: payload
+                userData: payload,
+                ...(payload.type === UserTypes.salesman && { usersUnderUser: [] })
             };
         }
         case "USER_DATA_LOAD": {

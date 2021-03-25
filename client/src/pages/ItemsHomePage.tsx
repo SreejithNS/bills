@@ -20,9 +20,10 @@ import { Product, ProductCategory } from '../reducers/product.reducer';
 import { PaginateResult } from '../reducers/bill.reducer';
 import { useConfirm } from 'material-ui-confirm';
 import NewProductCategoryModal from '../components/NewProductCategoryModal';
-import { useProductCategoryActions } from '../actions/auth.actions';
+import { useHasPermission, useProductCategoryActions } from '../actions/auth.actions';
 import ParagraphIconCard from '../components/ParagraphIconCard';
 import { store } from '..';
+import { UserPermissions } from '../reducers/auth.reducer';
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -80,6 +81,11 @@ const ItemToolbar = () => {
     const { productCategory, productCategoryList } = useSelector((state: RootState) => state.product);
     const { fetchCategories } = useProductCategoryActions();
     const confirm = useConfirm();
+
+    const productCategoryDeletePermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_DELETE);
+    const productCategoryCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_POST);
+    const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
+
     const handleProductCategoryDelete = () => {
         confirm({
             title: "Are you sure?",
@@ -98,9 +104,23 @@ const ItemToolbar = () => {
     return (
         <Paper elevation={2} className={classes.cardPadding + " " + classes.flexContainer}>
             <ProductCategorySelection />
-            <Button startIcon={<AddIcon />} onClick={() => setProductCategoryCreationModalOpen(!productCategoryCreationModalOpen)}>Create</Button>
-            {productCategoryList.length > 1 && <Button startIcon={<DeleteOutlineRounded />} color="secondary" onClick={handleProductCategoryDelete}>Delete</Button>}
-            <Button startIcon={<SystemUpdateAltIcon />} onClick={() => toggleImportModal(!importModalOpen)}>Import Products</Button>
+            {productCategoryCreatePermission && <Button
+                startIcon={<AddIcon />}
+                onClick={() => setProductCategoryCreationModalOpen(!productCategoryCreationModalOpen)}
+            >Create</Button>}
+            {(productCategoryList.length > 1 && productCategoryDeletePermission)
+                && <Button
+                    startIcon={<DeleteOutlineRounded />}
+                    color="secondary"
+                    onClick={handleProductCategoryDelete}>
+                    Delete</Button>
+            }
+            {productCreatePermission &&
+                <Button
+                    startIcon={<SystemUpdateAltIcon />}
+                    onClick={() => toggleImportModal(!importModalOpen)}
+                >Import Products</Button>
+            }
             <ImportModal visible={importModalOpen} onClose={() => toggleImportModal(false)} />
             <NewProductCategoryModal visible={productCategoryCreationModalOpen} onClose={() => setProductCategoryCreationModalOpen(false)} />
         </Paper>
@@ -110,6 +130,7 @@ const ItemToolbar = () => {
 const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategoryId?: ProductCategory["_id"], productCategoryName?: ProductCategory["name"] }) => {
     const history = useHistory();
     const tableRef = useRef<any>(null);
+    const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
 
     if (!productCategoryId || !productCategoryName) return (
         <ParagraphIconCard
@@ -159,6 +180,7 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
                 },
                 {
                     icon: () => <Add />,
+                    disabled: !productCreatePermission,
                     tooltip: 'Add Item',
                     isFreeAction: true,
                     onClick: () => history.push(paths.items + itemPaths.addItem)
@@ -199,6 +221,7 @@ export default function ItemsHomePage() {
     const classes = useStyles();
     const history = useHistory();
     const { productCategory } = useSelector((state: RootState) => state.product);
+    const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
 
     return (
         <React.Fragment>
@@ -225,10 +248,10 @@ export default function ItemsHomePage() {
                     </Grid>
                 </Grid>
             </PageContainer>
-            <Fab onClick={() => history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
+            {productCreatePermission && <Fab onClick={() => history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
                 <AddIcon className={classes.fabIcon} />
                         Add Item
-                </Fab>
+                </Fab>}
         </React.Fragment >
     )
 }
