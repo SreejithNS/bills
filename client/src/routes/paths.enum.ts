@@ -25,5 +25,6 @@ export enum itemPaths {
 
 export enum accountPaths {
     home = '/',
-    addSalesman = '/salesman/add'
+    addSalesman = '/salesman/add',
+    editSalesman = '/salesman/edit/:id'
 }
