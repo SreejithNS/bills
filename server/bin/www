@@ -32,8 +32,8 @@ if (process.env.NODE_ENV !== "development") {
 	console.log(process.cwd());
 	server = https.createServer(
 		{
-			key: fs.readFileSync("./server/security/cert.key"),
-			cert: fs.readFileSync("./server/security/cert.pem"),
+			key: fs.readFileSync("./security/cert.key"),
+			cert: fs.readFileSync("./security/cert.pem"),
 		},
 		app
 	);
