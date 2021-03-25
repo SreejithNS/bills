@@ -1,5 +1,6 @@
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
+const mongoosePaginate = require("mongoose-paginate-v2");
 const LocationSchema = require("./LocationSchema");
 
 const CustomerSchema = new Schema(
@@ -15,5 +16,7 @@ const CustomerSchema = new Schema(
 	},
 	{ timestamps: true }
 );
+
+CustomerSchema.plugin(mongoosePaginate);
 
 module.exports = CustomerSchema;
