@@ -53,11 +53,11 @@ export function useProductCategoryActions() {
 export function useUsersUnderAdmin() {
     const [{ data, loading, error: fetchError }, fetchSalesmenList] = useAxios<APIResponse<UserData[]>>('/auth/salesmen', { manual: true });
     const usersUnderUser = useSelector((state: RootState) => state.auth.usersUnderUser);
-    const hasAdminPermissions = useHasPermission(undefined);
+    const hasAdminPermissions = useHasPermission(UserPermissions.ALLOW_USER_GET);
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (!hasAdminPermissions && !usersUnderUser && !fetchError) {
+        if (hasAdminPermissions && !usersUnderUser && !fetchError) {
             fetchSalesmenList();
         }
 
