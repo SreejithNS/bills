@@ -56,7 +56,7 @@ function hasAccessPermission(authenticatedUser, paramCustomer, explicitPermissio
 	if (authenticatedUser.type === privilegeEnum.root) {
 		flag = true;
 	} else if (authenticatedUser && !paramCustomer) {
-		if (authenticatedUser.type === privilegeEnum.admin || (authenticatedUser.settings && authenticatedUser.settings.permissions.include(explicitPermission))) {
+		if (authenticatedUser.type === privilegeEnum.admin || (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission))) {
 			flag = true;
 		}
 	} else if (authenticatedUser._id === paramCustomer.belongsTo._id) { //Belongs to User 

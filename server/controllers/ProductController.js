@@ -75,7 +75,7 @@ function hasAccessPermission(authenticatedUser, paramProduct, explicitPermission
 	if (authenticatedUser.type === privilegeEnum.root) {
 		flag = true;
 	} else if (authenticatedUser && !paramProduct) {
-		if (authenticatedUser.type === admin || (authenticatedUser.settings && authenticatedUser.settings.permissions.include(explicitPermission))) {
+		if (authenticatedUser.type === admin || (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission))) {
 			flag = true;
 		}
 	} else if (authenticatedUser._id === paramProduct.belongsTo._id) { //Belongs to User 
@@ -107,7 +107,7 @@ async function hasProductCategoryAccess(authenticatedUser, categoryId, explicitP
 	const productCategory = await ProductCategory.findById(categoryId);
 	if (productCategory.belongsTo === authenticatedUser._id && authenticatedUser.type === privilegeEnum.admin) {
 		flag = true;
-	} else if (productCategory.hasAccess.includes(authenticatedUser._id) && (authenticatedUser.settings && authenticatedUser.settings.permissions.include(explicitPermission))) {
+	} else if (productCategory.hasAccess.includes(authenticatedUser._id) && (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission))) {
 		flag = true;
 	} else if (authenticatedUser.type === privilegeEnum.root) {
 		flag = true;

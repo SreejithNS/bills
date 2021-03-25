@@ -1,5 +1,5 @@
 const { User } = require("../models/UserModel");
-const { body, validationResult, param } = require("express-validator");
+const { body, validationResult, param, query } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -23,7 +23,7 @@ const { UserSettings } = require("../models/UserSettingsModel");
  * @param {object} params 
  */
 function UserData(params) {
-	this._id = params._id;
+	this._id = params._id.toString();
 	this.name = params.name;
 	this.phone = params.phone;
 	this.type = params.type;
@@ -41,25 +41,31 @@ function UserData(params) {
  * @returns {User}
  */
 async function createUser(name, phone, password, permissions) {
-	return bcrypt.hash(password, 10, async function (err, hash) {
-		const newUserData = {
-			name,
-			phone,
-			password: hash,
-			type: permissions ? permissions.type : privilegeEnum.admin
-		};
+	const hashedPassword = await (new Promise((res, rej) => {
+		bcrypt.hash(password, 10, function (err, hash) {
+			if (err) rej(err);
+			res(hash);
+		})
+	}));
 
-		// Create a UserSettings for the permissions given.
-		if (permissions) {
-			const settings = new UserSettings({ permissions: permissions.permissions });
-			await settings.save();
-			newUserData.settings = settings._id;
-		}
+	const newUserData = {
+		name,
+		phone,
+		password: hashedPassword,
+		type: permissions ? permissions.type : privilegeEnum.admin,
+		...((permissions && permissions.type === privilegeEnum.salesman) && { belongsTo: permissions.belongsTo })
+	};
 
-		var newUser = new User(newUserData);
+	// Create a UserSettings for the permissions given.
+	if (permissions) {
+		const settings = new UserSettings({ permissions: permissions.permissions });
+		await settings.save();
+		newUserData.settings = settings._id;
+	}
 
-		return await newUser.save();
-	});
+	var newUser = new User(newUserData);
+
+	return await newUser.save();
 }
 
 async function createCategory(name, belongsTo, hasAccess) {
@@ -126,17 +132,23 @@ async function userAuthentication(phone, password) {
  * @returns {UserData}
  */
 async function userData(_id) {
-	return User.findById(_id, async (err, res) => {
-		if (err) return new Error(err);
-		if (res) {
-			await res.populate("belongsTo");
-			await res.populate("settings");
+	const user = await User.findById(_id).populate("belongsTo").populate("settings").exec();
+	if (user) {
+		return new UserData(user);
+	} else {
+		return new Error("Authentication Details Tampered")
+	}
+	// , async (err, res) => {
+	// if (err) return new Error(err);
+	// if (res) {
+	// 	await res.populate("belongsTo");
+	// 	await res.populate("settings");
 
-			return new UserData(res);
-		} else {
-			return new Error("Authentication Details Tampered")
-		}
-	})
+	return new UserData(res);
+	// 	} else {
+	// 		return new Error("Authentication Details Tampered")
+	// 	}
+	// })
 }
 
 async function userAccountDetailsUpdate(userId, param, value) {
@@ -187,7 +199,7 @@ async function adminRegistrationMiddleware(req, res) {
 		}
 	} catch (err) {
 		//throw error in json response with status 500.
-		return apiResponse.ErrorResponse(res, err);
+		return apiResponse.ErrorResponse(res, err.message);
 	}
 }
 
@@ -220,7 +232,7 @@ async function salesmanRegisterMiddleware(req, res) {
 		}
 	} catch (err) {
 		//throw error in json response with status 500.
-		return apiResponse.ErrorResponse(res, err);
+		return apiResponse.ErrorResponse(res, err.message);
 	}
 }
 
@@ -235,7 +247,8 @@ async function salesmanRegisterMiddleware(req, res) {
  */
 
 const userRegistration = [
-	// Validate fields.
+	authenticate,
+	query("type", "Not a valid user type").optional().isInt(),
 	body("name")
 		.trim()
 		.isLength({ min: 1 })
@@ -261,12 +274,24 @@ const userRegistration = [
 		.trim()
 		.withMessage("Password must be 6 characters or greater."),
 	async (req, res) => {
-		if (req.user.type === privilegeEnum.admin) {
+		const authenticatedUser = await userData(req.user._id);
+		if (authenticatedUser.type === privilegeEnum.admin) {
 			return await salesmanRegisterMiddleware(req, res);
-		} else if (req.user.type === privilegeEnum.root) {
-			return await adminRegistrationMiddleware(req, res);
+		} else if (authenticatedUser.type === privilegeEnum.root) {
+			if (req.params.type !== undefined) {
+				switch (req.params.type) {
+					case 0:
+					case 1:
+						return await adminRegistrationMiddleware(req, res);
+					case 2:
+					default:
+						return await salesmanRegisterMiddleware(req, res);
+				}
+			} else {
+				return await salesmanRegisterMiddleware(req, res);
+			}
 		}
-	},
+	}
 ];
 
 /**

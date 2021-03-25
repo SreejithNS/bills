@@ -66,6 +66,7 @@ async function getBillById(_id) {
  * @returns {boolean} 
  */
 function hasAccessPermission(authenticatedUser, paramBill, explicitPermission) {
+	paramBill = new BillData(paramBill);
 	var flag = false;
 	if (authenticatedUser._id === paramBill.belongsTo._id || authenticatedUser._id === paramBill.soldBy._id) { //Belongs to User or soldBy user
 		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
@@ -73,9 +74,12 @@ function hasAccessPermission(authenticatedUser, paramBill, explicitPermission) {
 		} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission)) {
 			flag = true;
 		} // user has right to access the bill
-	} else if (authenticatedUser._id === paramBill.belongsTo._id) {
-
-	} else if (authenticatedUser.type === privilegeEnum.root) {
+	} else if (authenticatedUser.belongsTo._id === paramBill.belongsTo._id) { // Bill and user belong to same admin
+		if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission)) {
+			flag = true;
+		}
+	}
+	if (authenticatedUser.type === privilegeEnum.root) {
 		flag = true;
 	}
 	if (!flag) throw new Error("User is not authorised to access this data");
