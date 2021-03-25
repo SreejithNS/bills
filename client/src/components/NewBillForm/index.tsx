@@ -195,10 +195,10 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 		}
 		if (data) {
 			dispatch({ type: "BILL_SAVE", payload: true });
-			toast.success(`Bill#${data.data?.serialNumber} added`);
+			if (billSaved) toast.success(`Bill#${data.data?.serialNumber} added`);
 			props.closeModal();
 		}
-	}, [error, data, dispatch, props]);
+	}, [error, data, dispatch, props, billSaved]);
 
 	const setValues = (
 		parameter: "credit" | "discountAmount" | "discountPercentage" | "paidAmount"
@@ -259,7 +259,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 	return (
 		<form>
 			<Grid container direction="row" justify="space-between" alignItems="center" spacing={3}>
-				<Grid item xs={8}>
+				<Grid item xs>
 					<CustomerSelection
 						addNewCustomer={(newCustomerName) => setNewCustomerModalOpen(true)}
 						customer={customer ?? undefined}
@@ -268,16 +268,16 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						}
 					/>
 				</Grid>
-				<Grid item xs={4}>
+				<Grid item>
 					<ProductCategorySelection />
 				</Grid>
-				<Grid item xs={12} sm>
+				<Grid item xs={12}>
 					<BillItemSelection
 						onChange={(newValue) => setSelectedProduct(newValue ?? undefined)}
 						product={selectedProduct}
 					/>
 				</Grid>
-				<Grid item xs={6} sm={4}>
+				<Grid item xs={6} sm>
 					<TextField
 						label="Quantity"
 						type="number"

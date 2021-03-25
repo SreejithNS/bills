@@ -13,6 +13,7 @@ import Divider from '@material-ui/core/Divider';
 import { UserData } from '../../reducers/auth.reducer';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../reducers/rootReducer';
+import { CircularProgress, Zoom } from '@material-ui/core';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -50,8 +51,12 @@ export default function UsersTransferList(props: { onListUpdate: (usersList: Use
     const classes = useStyles();
     const usersUnderAdmin = useSelector((state: RootState) => state.auth.usersUnderUser);
     const [checked, setChecked] = React.useState<UserData[]>([]);
-    const [left, setLeft] = React.useState<UserData[]>(usersUnderAdmin);
+    const [left, setLeft] = React.useState(usersUnderAdmin ?? []);
     const [right, setRight] = React.useState<UserData[]>([]);
+
+    if (usersUnderAdmin === null) {
+        return (<Zoom in={true}><CircularProgress /></Zoom>)
+    }
 
     const leftChecked = intersection(checked, left);
     const rightChecked = intersection(checked, right);

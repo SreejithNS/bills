@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import { List, ListItem, ListItemText } from '@material-ui/core';
-import { DropzoneArea } from "material-ui-dropzone";
-import Papa from "papaparse";
 import { parseCsvItemsArray } from '../../actions/item.actions';
 import { LineStyleTwoTone } from '@material-ui/icons';
 import MaterialTable from 'material-table';

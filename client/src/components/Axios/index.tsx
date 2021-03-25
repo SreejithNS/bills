@@ -11,6 +11,7 @@ export interface APIResponse<Data> {
 }
 
 export function handleAxiosError<T>(errorResponse: AxiosError<APIResponse<T>>, callback?: ((error: AxiosError<APIResponse<T>>) => void) | undefined): void {
+    if (process.env.NODE_ENV === "development") console.error(errorResponse);
     if (errorResponse.response) {
         // Request made and server responded
         toast.error(errorResponse.response.data.message);
@@ -22,9 +23,39 @@ export function handleAxiosError<T>(errorResponse: AxiosError<APIResponse<T>>, c
     if (callback) callback(errorResponse);
 }
 
+const MAX_REQUESTS_COUNT = 5
+const INTERVAL_MS = 10
+let PENDING_REQUESTS = 0
+
 const axios = Axios.create({
     baseURL: process.env.REACT_APP_API_URL + '/api',
     withCredentials: true,
+})
+
+/**
+ * Axios Request Interceptor
+ */
+axios.interceptors.request.use(function (config) {
+    return new Promise((resolve, reject) => {
+        let interval = setInterval(() => {
+            if (PENDING_REQUESTS < MAX_REQUESTS_COUNT) {
+                PENDING_REQUESTS++
+                clearInterval(interval)
+                resolve(config)
+            }
+        }, INTERVAL_MS)
+    })
+})
+
+/**
+ * Axios Response Interceptor
+ */
+axios.interceptors.response.use(function (response) {
+    PENDING_REQUESTS = Math.max(0, PENDING_REQUESTS - 1)
+    return Promise.resolve(response)
+}, function (error) {
+    PENDING_REQUESTS = Math.max(0, PENDING_REQUESTS - 1)
+    return Promise.reject(error)
 })
 
 const initAxios = () => configure({ axios });
@@ -37,9 +68,8 @@ const interpretMTQuery = <T extends object>(query: Query<T>): Record<string, str
         limit: query.pageSize,
         offset: 0,
         search: query.search,
-        ...(query.orderBy && { sort: orderDirection + query.orderBy })
+        ...(query.orderBy && { sort: orderDirection + query.orderBy.field })
     }
-
     return Object.fromEntries(Object.entries(interpreted).map(e => e.map(f => f.toString())))
 }
 

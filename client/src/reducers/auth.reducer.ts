@@ -71,7 +71,7 @@ export interface AuthState {
     userData: UserData | null,
     loading: boolean,
     error: ErrorState,
-    usersUnderUser: UserData[]
+    usersUnderUser: UserData[] | null;
 }
 
 const initialState: AuthState = {
@@ -81,7 +81,7 @@ const initialState: AuthState = {
         status: 0,
         message: ""
     },
-    usersUnderUser: []
+    usersUnderUser: null
 };
 
 export default function authReducer(state: AuthState = initialState, action: { type: any; payload: any; }): AuthState {
@@ -108,7 +108,7 @@ export default function authReducer(state: AuthState = initialState, action: { t
                 error: action.payload,
             };
         }
-        case "USERS_UNDER_USERS": {
+        case "USERS_UNDER_USER": {
             return {
                 ...state,
                 usersUnderUser: action.payload,

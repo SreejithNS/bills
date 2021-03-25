@@ -44,8 +44,10 @@ const useStyles = makeStyles((theme: Theme) => ({
         display: "flex",
         flexFlow: "row nowrap",
         alignContent: "center",
+        overflowX: "auto",
         "&>*": {
-            margin: theme.spacing(1)
+            margin: theme.spacing(1),
+            minWidth: "auto"
         }
     }
 }))

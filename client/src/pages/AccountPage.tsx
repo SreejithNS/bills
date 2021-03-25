@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { RootState } from "../reducers/rootReducer";
 import { toast } from "react-toastify";
 import useAxios from "axios-hooks";
-import { useHasPermission } from "../actions/auth.actions";
+import { useHasPermission, useUsersUnderAdmin } from "../actions/auth.actions";
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -43,30 +43,11 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 export default function AccountPage() {
     const [dialogStatus, setDialogStatus] = useState<{ salesmanId: string; open: boolean }>({ salesmanId: "", open: false });
-    const { error, loading: authLoading, userData, usersUnderUser } = useSelector((state: RootState) => state.auth);
+    const { userData, usersUnderUser } = useSelector((state: RootState) => state.auth);
+    const { loading } = useUsersUnderAdmin();
     const classes = useStyles();
-
-    const [{ data, loading, error: fetchError }, fetchSalesmenList] = useAxios('/auth/salesmen', { manual: true });
-    const hasAdminPermissions = useHasPermission(undefined, !authLoading);
-    const dispatch = useDispatch();
+    const hasAdminPermissions = useHasPermission(undefined, !loading);
     const history = useHistory();
-
-    useEffect(() => {
-        if (!hasAdminPermissions && !usersUnderUser) {
-            fetchSalesmenList();
-        }
-
-        if (fetchError) {
-            toast.error("Cannot load salesmen list.")
-        }
-
-        if (data) {
-            dispatch({ type: "USERS_UNDER_USER", payload: data });
-        }
-
-        dispatch({ type: "USER_DATA_LOAD", payload: loading });
-
-    }, [error, dispatch, authLoading, userData, data, fetchError, fetchSalesmenList, hasAdminPermissions, loading]);
 
     return (
         <React.Fragment>
@@ -83,7 +64,7 @@ export default function AccountPage() {
                         />
                     </Grid>
                     <Grid item xs={12} className={classes.cardPadding}>
-                        {(!(loading || authLoading) && usersUnderUser.length) ? usersUnderUser.map(
+                        {(!(loading) && usersUnderUser?.length) ? usersUnderUser.map(
                             (salesman, key) => (
                                 <SalesmenList
                                     key={key}
@@ -110,9 +91,8 @@ export default function AccountPage() {
                     color="primary"
                     variant="extended"
                 >
-                    <AddIcon className={classes.fabIcon} />
-                    Add Salesman
-                    </Fab>
+                    <AddIcon className={classes.fabIcon} /> Add Salesman
+                </Fab>
             }
         </React.Fragment>
     )

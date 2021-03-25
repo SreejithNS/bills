@@ -25,26 +25,26 @@ const useStyles = makeStyles((theme: Theme) => ({
         marginRight: theme.spacing(1)
     },
     cardPadding: {
-        padding: theme.spacing(1),
-        "&:last-of-type": {
-            marginBottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(8)
-        }
+        padding: theme.spacing(1)
     }
 }))
 
 export default function BillsHomePage() {
     const [pageNumber, setPageNumber] = useState(1);
-    const [limit/*, setLimit*/] = useState(10);
-    const [sort/*, setSort*/] = useState("createdAt");
+    const [limit, setLimit] = useState(10);
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+    const [sortParam, setSortParam] = useState<keyof BillData>("createdAt");
+    const [search, setSearch] = useState<Object | undefined>()
 
     type ResponseData = APIResponse<PaginateResult<BillData>>;
 
-    const [{ loading, error, data }, /*fetchAgain*/] = useAxios<ResponseData>({
+    const [{ loading, error, data }] = useAxios<ResponseData>({
         url: "/bill",
         params: {
             page: pageNumber,
             limit,
-            sort,
+            sort: (sortDirection === "desc" ? "-" : "") + sortParam,
+            ...(search && search),
         }
     })
 
@@ -52,6 +52,14 @@ export default function BillsHomePage() {
     const classes = useStyles();
 
     if (error) toast.error("Could get bills list");
+
+    const handleSearch = (param: string, value: string) => {
+        if (value === "") {
+            setSearch(undefined);
+        } else {
+            setSearch({ [param]: value })
+        }
+    }
 
     return (
         <React.Fragment>
@@ -69,10 +77,18 @@ export default function BillsHomePage() {
                         </Typography>
                     </Grid>
                     <Grid item xs={12}>
-                        <BillSearch />
+                        <BillSearch
+                            onPageSizeChange={setLimit}
+                            onSearch={handleSearch}
+                            onSortDirectionChange={setSortDirection}
+                            onSortParamChange={setSortParam}
+                            pageSize={limit}
+                            sortDirection={sortDirection}
+                            sortParam={sortParam}
+                        />
                     </Grid>
                     {
-                        (data?.data?.docs.length)
+                        (data?.data?.docs.length && !loading)
                             ? data.data.docs.map((bill: BillData, key: any) =>
                                 <React.Fragment key={key}>
                                     <Grid item xs={12} className={classes.cardPadding}>
@@ -86,12 +102,6 @@ export default function BillsHomePage() {
                                             />
                                         </Fade>
                                     </Grid>
-                                    {data?.data?.hasNextPage ?
-                                        <Grid item xs={12} className={classes.cardPadding} style={{ textAlign: "center" }}>
-                                            <Fade bottom>
-                                                <Button disabled={loading} onClick={() => setPageNumber(pageNumber + 1)}>Next Page</Button>
-                                            </Fade>
-                                        </Grid> : ""}
                                 </React.Fragment>
                             )
                             : loading
@@ -111,6 +121,18 @@ export default function BillsHomePage() {
                                     </Grid>
                                     : <></>
                     }
+                    {data?.data?.hasPrevPage &&
+                        <Grid item className={classes.cardPadding} style={{ textAlign: "center" }}>
+                            <Fade bottom>
+                                <Button disabled={loading} onClick={() => setPageNumber(data?.data?.prevPage ?? pageNumber - 1)}>Previous Page</Button>
+                            </Fade>
+                        </Grid>}
+                    {data?.data?.hasNextPage &&
+                        <Grid item className={classes.cardPadding} style={{ textAlign: "center" }}>
+                            <Fade bottom>
+                                <Button disabled={loading} onClick={() => setPageNumber(data?.data?.nextPage ?? pageNumber + 1)}>Next Page</Button>
+                            </Fade>
+                        </Grid>}
                 </Grid>
             </PageContainer>
             <Fab onClick={() => history.push(paths.billsHome + billsPaths.addBill)} className={classes.fab} color="primary" variant="extended">

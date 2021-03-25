@@ -48,6 +48,7 @@ export interface BillData {
 	discountAmount: number;
 	itemsTotalAmount: number;
 	billAmount: number;
+	credit: boolean;
 	paidAmount: number;
 	payments: BillPayments[];
 	createdAt: Date;

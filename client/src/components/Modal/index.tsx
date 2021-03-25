@@ -42,7 +42,7 @@ export type ModalProps = {
 interface PropTypes extends ModalProps {
     title: string;
     closeText?: string;
-    children: JSX.Element[] | JSX.Element;
+    children: any;
 }
 
 export default function Modal(props: PropTypes) {
