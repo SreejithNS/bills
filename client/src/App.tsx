@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router
   //Link
@@ -9,9 +9,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useDispatch } from 'react-redux';
 import FullScreenLoading from './components/FullScreenLoading';
 import useAxios from "axios-hooks";
-import { APIResponse } from './components/Axios';
+import { APIResponse, handleAxiosError } from './components/Axios';
 import { UserData } from './reducers/auth.reducer';
 import { ConfirmProvider } from 'material-ui-confirm';
+import { useAuthActions, useProductCategoryActions, useUsersUnderAdmin } from './actions/auth.actions';
 
 // type Props = ReturnType<typeof mapStateToProps> & ReturnType<typeof mapDispatchToProps>;
 
@@ -35,25 +36,22 @@ import { ConfirmProvider } from 'material-ui-confirm';
 // }
 
 export default function App() {
-  const [{ data, loading, error }] = useAxios<APIResponse<UserData>>('/auth/');
-  const dispatch = useDispatch();
+  const { initiated: init1 } = useAuthActions();
+  const { initiated: init2 } = useUsersUnderAdmin();
+  const { initiated: init3 } = useProductCategoryActions();
+  const [init, setInit] = useState(false);
 
   useEffect(() => {
-    if (error) {
-      toast.error("User Authentication Failed");
+    if (!init && (init1 && init2 && init3)) {
+      setInit(true);
     }
-    if (data) {
-      dispatch({ type: "USER_DATA", payload: data.data });
-    }
-    dispatch({ type: "USER_DATA_LOAD", payload: loading });
-  })
-
+  }, [init1, init2, init3, init]);
 
   return (
     <main style={{ height: "100vh" }}>
       <ToastContainer />
       <ConfirmProvider>
-        {!loading ? <Router>
+        {init ? <Router>
           <Routes />
         </Router> : <FullScreenLoading />}
       </ConfirmProvider>
