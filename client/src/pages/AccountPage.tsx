@@ -41,7 +41,6 @@ const useStyles = makeStyles((theme: Theme) => ({
 }));
 
 export default function AccountPage() {
-    const [dialogStatus, setDialogStatus] = useState<{ salesmanId: string; open: boolean }>({ salesmanId: "", open: false });
     const { userData, usersUnderUser } = useSelector((state: RootState) => state.auth);
     const { loading } = useUsersUnderAdmin();
     const classes = useStyles();
@@ -85,25 +84,18 @@ export default function AccountPage() {
                         />
                     </Grid>
                     <Grid item xs={12} className={classes.cardPadding}>
-                        {(!(loading) && usersUnderUser?.length) ? usersUnderUser.map(
+                        {(!(loading) && usersUnderUser?.length) && usersUnderUser.map(
                             (salesman, key) => (
                                 <SalesmenList
                                     key={key}
                                     firstName={salesman.name}
                                     phoneNumber={salesman.phone}
-                                    onEdit={() => setDialogStatus({ salesmanId: salesman._id, open: true })}
+                                    onEdit={() => history.push((paths.account + accountPaths.editSalesman).replace(":id", salesman._id))}
                                 />
                             )
-                        ) : ""}
+                        )}
                     </Grid>
                 </Grid>
-                {userData?.type === 1 &&
-                    <UpdateSalesmanPasswordDialog
-                        open={dialogStatus.open}
-                        salesmanId={dialogStatus.salesmanId}
-                        handleClose={() => setDialogStatus({ salesmanId: "", open: false })}
-                    />
-                }
             </PageContainer>
             {hasAdminPermissions &&
                 <Fab
