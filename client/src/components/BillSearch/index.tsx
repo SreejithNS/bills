@@ -195,7 +195,7 @@ export default function BillSearch(props: Props) {
                                     label="Sort By"
                                 >
                                     <MenuItem value={"asc"}>Lowest to Highest</MenuItem>
-                                    <MenuItem value={"desc"}>Lowest to Highes</MenuItem>
+                                    <MenuItem value={"desc"}>Highest to Lowest</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>
