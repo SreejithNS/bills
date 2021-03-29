@@ -1,4 +1,5 @@
 const { Customer } = require("../models/CustomerModel");
+const { Bill } = require("../models/BillModel");
 const { body, param, query, validationResult } = require("express-validator");
 const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
@@ -103,6 +104,57 @@ async function createCustomer(name, phone, belongsTo, place, location) {
 }
 
 /**
+ * Aggregate customer data
+ * @param {string} _id 
+ * @returns 
+ */
+async function aggregateCustomerData(_id) {
+	return await Bill.aggregate(
+		[
+			{
+				'$facet': {
+					'byCredit': [
+						{
+							'$match': {
+								'customer': mongoose.Types.ObjectId(_id)
+							}
+						}, {
+							'$group': {
+								'_id': '$credit',
+								'totalBillAmount': {
+									'$sum': '$billAmount'
+								},
+								'totalPaidAmount': {
+									'$sum': '$paidAmount'
+								},
+								'averageBillAmount': {
+									'$avg': '$billAmount'
+								},
+								'count': {
+									'$sum': 1
+								}
+							}
+						}
+					]
+				}
+			}, {
+				'$addFields': {
+					'totalBillAmount': {
+						'$sum': '$byCredit.totalBillAmount'
+					},
+					'totalPaidAmount': {
+						'$sum': '$byCredit.totalPaidAmount'
+					},
+					'averageBillAmount': {
+						'$avg': '$byCredit.averageBillAmount'
+					}
+				}
+			}
+		]
+	).exec();
+}
+
+/**
  * Get all Customers Created by user.
  * @returns {Object}
  */
@@ -190,39 +242,40 @@ exports.get = [
 				"Validation Error",
 				validation.array()
 			);
-
 		try {
 			const authenticatedUser = await userData(req.user._id);
 			//Check product category access
 			if (!(await hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation")
+				return apiResponse.unauthorizedResponse(
+					res,
+					"You are not authorised to do this operation"
+				)
 
-			return Customer.findOne({ _id: req.params.customerId, category: req.params.categoryId }).then((customer) => {
-				if (customer) {
-					if (hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_GET")) {
-						let customerData = new CustomerData(customer);
+			const customer = await Customer.findOne({ _id: req.params.customerId, category: req.params.categoryId }).exec();
 
-						return apiResponse.successResponseWithData(
-							res,
-							"Operation success",
-							customerData
-						);
-					} else {
-						return apiResponse.unauthorizedResponse(
-							res,
-							"Not authorised to access this customer"
-						)
-					}
-				} else {
-					return apiResponse.notFoundResponse(
+			if (customer) {
+				if (hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_GET")) {
+					let customerData = new CustomerData(customer);
+					let aggregateData = await aggregateCustomerData(customer._id);
+					return apiResponse.successResponseWithData(
 						res,
-						"No customer Found"
+						"Operation success",
+						Object.assign(customerData, aggregateData.pop())
 					);
+				} else {
+					return apiResponse.unauthorizedResponse(
+						res,
+						"Not authorised to access this customer"
+					)
 				}
-			});
+			} else {
+				return apiResponse.notFoundResponse(
+					res,
+					"No customer Found"
+				);
+			}
 		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+			return apiResponse.ErrorResponse(res, err.meesage);
 		}
 	},
 ];
