@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticate = require("../middlewares/jwt");
 const { privilegeEnum, defaultSalesmanPermissions } = require("../helpers/privilegeEnum");
-const { UserSettings } = require("../models/UserSettingsModel");
+const _ = require("lodash");
 
 // Types
 /**
@@ -58,9 +58,8 @@ async function createUser(name, phone, password, permissions) {
 
 	// Create a UserSettings for the permissions given.
 	if (permissions) {
-		const settings = new UserSettings({ permissions: permissions.permissions });
-		await settings.save();
-		newUserData.settings = settings._id;
+		const settings = { permissions: permissions.permissions };
+		newUserData.settings = settings;
 	}
 
 	var newUser = new User(newUserData);
@@ -84,7 +83,7 @@ async function createCategory(name, belongsTo, hasAccess) {
  * @returns {{_id:string;token:string}}
  */
 async function userAuthentication(phone, password) {
-	const user = await User.findOne({ phone }).populate("settings").exec();
+	const user = await User.findOne({ phone }).exec();
 	if (user) {
 		return await bcrypt.compare(
 			password,
@@ -132,7 +131,7 @@ async function userAuthentication(phone, password) {
  * @returns {UserData}
  */
 async function userData(_id) {
-	const user = await User.findById(_id).populate("belongsTo").populate("settings").exec();
+	const user = await User.findById(_id).populate("belongsTo").exec();
 	if (user) {
 		return new UserData(user);
 	} else {
@@ -142,7 +141,6 @@ async function userData(_id) {
 	// if (err) return new Error(err);
 	// if (res) {
 	// 	await res.populate("belongsTo");
-	// 	await res.populate("settings");
 
 	return new UserData(res);
 	// 	} else {
@@ -154,24 +152,18 @@ async function userData(_id) {
 async function userAccountDetailsUpdate(userId, param, value) {
 	switch (param) {
 		case "password":
-			param = await new Promise((resolve, reject) => {
+			value = await new Promise((resolve, reject) => {
 				bcrypt.hash(param, 10, async (err, hash) => {
 					if (err) reject(err)
 					resolve(hash)
 				});
 			})
 			break;
-		case "settings":
-			throw new Error("You cannot update Settings explicitly");
 		default:
 			break;
 	}
 	let updatedAccountDetails = await User.findByIdAndUpdate(userId, { [param]: value }, { new: true });
-	if (updatedAccountDetails[param] === value) {
-		return new UserData(updatedAccountDetails);
-	} else {
-		throw new Error("User Details Update did not apply");
-	}
+	return new UserData(updatedAccountDetails);
 }
 
 // Middlewares
@@ -407,7 +399,7 @@ const salesmenList = [
 				authenticatedUserData.type === privilegeEnum.admin ||
 				(authenticatedUserData.settings && authenticatedUserData.settings.permissions.includes("ALLOW_USER_GET"))
 			) {
-				return User.find({ belongsTo: req.user._id }).populate("settings").populate("belongsTo").exec((err, docs) => {
+				return User.find({ belongsTo: req.user._id }).populate("belongsTo").exec((err, docs) => {
 					if (err)
 						return apiResponse.ErrorResponse(
 							res,
@@ -433,12 +425,20 @@ const updateUserDetails = [
 	authenticate,
 	param("userId").escape().trim().isMongoId(),
 	async (req, res) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
 		try {
 			const authenticatedUser = await userData(req.user._id);
 			const paramUser = await userData(req.params.userId);
 			const param = req.params.param;
-			const value = req.params.value;
+			const value = req.body.value;
 			if (
+				(authenticatedUser.type === privilegeEnum.root) ||
 				( // Self account updation with permission or being an admin
 					authenticatedUser._id === paramUser._id &&
 					(
@@ -450,8 +450,6 @@ const updateUserDetails = [
 					(paramUser.belongsTo._id === authenticatedUser.belongsTo._id &&
 						(authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_USER_PUT"))
 					)
-				) || (
-					authenticatedUser._id === paramUser._id && authenticated
 				)
 			) {
 				const updatedDetails = await userAccountDetailsUpdate(req.params.userId, param, value);

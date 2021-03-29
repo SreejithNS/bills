@@ -11,6 +11,6 @@ router.get("/register/:phone/availability", numberAvailability);
 router.get("/", fetchUserData);
 router.get("/salesmen", salesmenList);
 
-router.put("/:userId.:param/:value", updateUserDetails);
+router.put("/:userId.:param", updateUserDetails);
 
 module.exports = router;
