@@ -11,6 +11,7 @@ import Slide from '@material-ui/core/Slide';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
+import { paths } from '../../routes/paths.enum';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -42,6 +43,11 @@ export type ModalProps = {
 interface PropTypes extends ModalProps {
     title: string;
     closeText?: string;
+    onClose?: () => void;
+    extraButtons?: {
+        text: string;
+        onClick: () => void;
+    }[];
     children: any;
 }
 
@@ -53,7 +59,9 @@ export default function Modal(props: PropTypes) {
     const handleClose = (() => {
         setOpen(false);
         if (props.onClose) props.onClose();
-        else history.goBack()
+        else {
+            history.goBack();
+        }
     });
     return (
         <Dialog fullScreen open={props.visible ?? open} onClose={handleClose} TransitionComponent={Transition}>
@@ -68,6 +76,11 @@ export default function Modal(props: PropTypes) {
                     <Button autoFocus color="inherit" onClick={handleClose}>
                         {props.closeText ?? "Close"}
                     </Button>
+                    {props.extraButtons && props.extraButtons.map((buttonDetails, key) =>
+                        <Button key={key} color="inherit" onClick={buttonDetails.onClick}>
+                            {buttonDetails.text}
+                        </Button>
+                    )}
                 </Toolbar>
             </AppBar>
             <Container fixed className={classes.containerPadding}>
