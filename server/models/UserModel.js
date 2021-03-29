@@ -1,5 +1,6 @@
 var mongoose = require("mongoose");
 const privilegeEnum = require("../helpers/privilegeEnum");
+const UserSettingsSchema = require("./schemas/UserSettingsSchema");
 
 var UserSchema = new mongoose.Schema(
 	{
@@ -10,8 +11,7 @@ var UserSchema = new mongoose.Schema(
 		password: { type: String, required: true },
 		status: { type: Boolean, required: true, default: 1 },
 		settings: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "UserSetting"
+			type: UserSettingsSchema
 		},
 	},
 	{ timestamps: true }
