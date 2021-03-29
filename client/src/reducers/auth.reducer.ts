@@ -114,9 +114,15 @@ export default function authReducer(state: AuthState = initialState, action: { t
             };
         }
         case "USERS_UNDER_USER": {
+            const payload = action.payload as UserData[];
+            for (let user of payload) {
+                if (user.settings?.permissions?.length) {
+                    user.settings.permissions = user.settings.permissions.map((permission: UserPermissions) => UserPermissions[permission]) as unknown as UserPermissions[]
+                }
+            }
             return {
                 ...state,
-                usersUnderUser: action.payload,
+                usersUnderUser: payload,
             };
         }
         default:
