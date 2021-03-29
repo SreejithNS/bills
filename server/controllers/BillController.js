@@ -137,6 +137,9 @@ exports.getAllBills = [
 	query(["customer", "soldBy"])
 		.optional()
 		.isMongoId(),
+	query("credit")
+		.optional()
+		.isBoolean(),
 	async function (req, res) {
 		try {
 			const validationError = validationResult(req);
@@ -171,6 +174,9 @@ exports.getAllBills = [
 				}),
 				...(req.query.soldBy && {
 					"soldBy": req.query.soldBy
+				}),
+				...((req.query.credit !== undefined && req.query.credit !== null) && {
+					"credit": req.query.credit
 				}),
 				...query
 			}
