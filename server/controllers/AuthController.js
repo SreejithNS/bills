@@ -326,10 +326,12 @@ const login = [
 			} else {
 				try {
 					const authenticationData = await userAuthentication(req.body.phone, req.body.password);
+					const date = new Date();
 					res.cookie("auth-token", authenticationData.token, {
 						httpOnly: true,
 						sameSite: "none",
 						secure: true,
+						expire: date.setMonth(date.getMonth() + 1)
 					});
 					return apiResponse.successResponseWithData(res, "User Authenticated", authenticationData);
 				} catch (e) {
