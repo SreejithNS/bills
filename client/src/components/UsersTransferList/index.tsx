@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
 import List from '@material-ui/core/List';
@@ -47,19 +47,30 @@ function union(a: UserData[], b: UserData[]) {
     return [...a, ...not(b, a)];
 }
 
-export default function UsersTransferList(props: { onListUpdate: (usersList: UserData[]) => void; }) {
+export default function UsersTransferList(props: { onListUpdate: (usersList: UserData[]) => void; value?: UserData[] }) {
     const classes = useStyles();
     const usersUnderAdmin = useSelector((state: RootState) => state.auth.usersUnderUser);
     const [checked, setChecked] = React.useState<UserData[]>([]);
     const [left, setLeft] = React.useState(usersUnderAdmin ?? []);
     const [right, setRight] = React.useState<UserData[]>([]);
 
-    if (usersUnderAdmin === null) {
-        return (<Zoom in={true}><CircularProgress /></Zoom>)
-    }
+    useEffect(() => {
+        props.onListUpdate(right);
+    }, [right])
 
     const leftChecked = intersection(checked, left);
     const rightChecked = intersection(checked, right);
+
+    useEffect(() => {
+        if (props.value) {
+            setRight(props.value);
+            setLeft(left.filter((leftValue) => props.value?.findIndex(rightValue => leftValue._id === rightValue._id) === -1));
+        }
+    }, [])
+
+    if (usersUnderAdmin === null) {
+        return (<Zoom in={true}><CircularProgress /></Zoom>)
+    }
 
     const handleToggle = (value: UserData) => () => {
         const currentIndex = checked.indexOf(value);
@@ -89,7 +100,6 @@ export default function UsersTransferList(props: { onListUpdate: (usersList: Use
         setRight(newRight);
         setLeft(not(left, leftChecked));
         setChecked(not(checked, leftChecked));
-        props.onListUpdate(newRight);
     };
 
     const handleCheckedLeft = () => {
