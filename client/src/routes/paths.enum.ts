@@ -1,3 +1,4 @@
+import { ProductCategory } from './../reducers/product.reducer';
 export enum paths {
     home = '/',
     customer = '/customers',
@@ -21,6 +22,8 @@ export enum customersPaths {
 export enum itemPaths {
     home = '/',
     addItem = '/create',
+    editCategory = '/category/edit/:productCategoryId',
+    editProduct = '/product/edit/:productId',
     import = '/import'
 }
 
