@@ -11,6 +11,7 @@ import { toast } from 'react-toastify';
 import { Add, DeleteOutlineRounded, LineStyleTwoTone, Refresh, Store } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
 import LineStyleIcon from '@material-ui/icons/LineStyle';
+import EditRoundedIcon from '@material-ui/icons/EditRounded';
 import { RootState } from '../reducers/rootReducer';
 import ImportModal from '../components/ImportModal';
 import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
@@ -81,10 +82,12 @@ const ItemToolbar = () => {
     const { productCategory, productCategoryList } = useSelector((state: RootState) => state.product);
     const { fetchCategories } = useProductCategoryActions();
     const confirm = useConfirm();
+    const history = useHistory();
 
     const productCategoryDeletePermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_DELETE);
     const productCategoryCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_POST);
     const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
+    const productCategoryEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_PUT);
 
     const handleProductCategoryDelete = () => {
         confirm({
@@ -100,6 +103,9 @@ const ItemToolbar = () => {
                 }).catch(handleAxiosError);
         }, () => toast.warn("Didn't delete the product category"));
     }
+    const handleProductCategoryEdit = () => {
+        history.push((paths.items + itemPaths.editCategory).replace(":productCategoryId", productCategory?._id ?? ""))
+    }
     const classes = useStyles();
     return (
         <Paper elevation={2} className={classes.cardPadding + " " + classes.flexContainer}>
@@ -108,6 +114,12 @@ const ItemToolbar = () => {
                 startIcon={<AddIcon />}
                 onClick={() => setProductCategoryCreationModalOpen(!productCategoryCreationModalOpen)}
             >Create</Button>}
+            {productCategoryEditPermission
+                && <Button
+                    startIcon={<EditRoundedIcon />}
+                    onClick={handleProductCategoryEdit}>
+                    Edit</Button>
+            }
             {(productCategoryList.length > 1 && productCategoryDeletePermission)
                 && <Button
                     startIcon={<DeleteOutlineRounded />}
@@ -131,6 +143,8 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
     const history = useHistory();
     const tableRef = useRef<any>(null);
     const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
+    const productEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_PUT);
+    const confirm = useConfirm();
 
     if (!productCategoryId || !productCategoryName) return (
         <ParagraphIconCard
@@ -143,9 +157,7 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
         tableRef?.current?.onQueryChange();
     })
 
-    const fetchItems = (query: Query<{
-        units?: any[] | undefined;
-    }>): Promise<QueryResult<Product>> => new Promise((resolve) => {
+    const fetchItems = (query: Query<Product>): Promise<QueryResult<Product>> => new Promise((resolve) => {
         const url = `/product/${productCategoryId}/query?`;
         const search = (new URLSearchParams(interpretMTQuery(query))).toString();
         axios
@@ -181,9 +193,36 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
                 {
                     icon: () => <Add />,
                     disabled: !productCreatePermission,
-                    tooltip: 'Add Item',
+                    tooltip: 'Add Product',
                     isFreeAction: true,
                     onClick: () => history.push(paths.items + itemPaths.addItem)
+                },
+                {
+                    icon: () => <EditRoundedIcon />,
+                    tooltip: 'Edit Product',
+                    isFreeAction: false,
+                    onClick: (_, data) => {
+                        data = data as (Product);
+                        history.push((paths.items + itemPaths.editProduct).replace(":productId", data._id))
+                    }
+                },
+                {
+                    icon: () => <DeleteOutlineRounded />,
+                    tooltip: 'Delete Product',
+                    isFreeAction: false,
+                    onClick: (_, data: any) => {
+                        confirm({
+                            title: "Are you sure?",
+                            description: "Do you really want to delete this Product?",
+                            cancellationText: "No",
+                            confirmationText: "Yes"
+                        })
+                            .then(
+                                () => axios.delete(`/product/${productCategoryId}.${data._id}`)
+                                , () => toast.warn("Didn't delete the Product"))
+                            .then(() => tableRef?.current?.onQueryChange())
+                            .catch(handleAxiosError)
+                    }
                 }
             ]}
             options={{
@@ -198,7 +237,7 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
                 icon: LineStyleIcon,
                 openIcon: LineStyleTwoTone,
                 tooltip: 'Show Units',
-                render: (rowData: { units?: any[] }) => {
+                render: (rowData: Product) => {
                     return (rowData.units && rowData.units.length) ? (
                         <List dense>
                             {rowData.units.map((unit: { name: string; rate: number; mrp: number; }, key) =>
