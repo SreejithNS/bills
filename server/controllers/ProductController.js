@@ -8,6 +8,7 @@ const paginationLabels = require("../helpers/paginationLabels");
 const { userData } = require("./AuthController");
 const { ProductCategory } = require("../models/ProductCategoryModel");
 const mognoose = require("mongoose");
+const { User } = require("../models/UserModel");
 
 //Types
 function ProductData(data) {
@@ -606,6 +607,59 @@ exports.updateProduct = [
 				)
 			} else {
 				return apiResponse.notFoundResponse(res, "Product not found");
+			}
+		} catch (err) {
+			//throw error in json response with status 500.
+			return apiResponse.ErrorResponse(res, err);
+		}
+	},
+];
+
+/**
+ * Update any fields of the Product Category
+ *
+ * @param {Mongoose.Schema.Types.ObjectId} [id] - ID of the product category to be updated.
+ */
+exports.updateProductCategory = [
+	auth,
+	param("categoryId")
+		.escape()
+		.trim()
+		.isMongoId(),
+	body("name").optional().escape().trim().matches(/^[a-z0-9 ]+$/i),
+	body("hasAccess").optional().escape().trim().isArray(),
+	async (req, res) => {
+		if (!validationResult(req).isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				validationResult(req).array()
+			);
+		try {
+			//Check for product category access rights
+			const authenticatedUser = await userData(_id);
+			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_PUT")))
+				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
+
+			const productCategory = await ProductCategory.findById(req.params.categoryId)
+			if (productCategory) {
+				if (Array.isArray(req.body.hasAccess)) {
+					for (let userId in req.body.hasAccess) {
+						const user = await User.findOne({ belongsTo: productCategory.belongsTo, _id: userId }).exec();
+						if (!user) return apiResponse.unauthorizedResponse(res, "You cannot add this user");
+					}
+					productCategory.hasAccess = req.body.hasAccess;
+				}
+				if (req.body.name) {
+					product.name = req.body.name;
+				}
+				await productCategory.save();
+				return apiResponse.successResponse(
+					res,
+					"Product Category Update Success",
+				)
+			} else {
+				return apiResponse.notFoundResponse(res, "Product Category not found");
 			}
 		} catch (err) {
 			//throw error in json response with status 500.
