@@ -122,6 +122,39 @@ exports.getBill = [
 ];
 
 /**
+ * Delete the bill data by id
+ *
+ */
+exports.deleteBill = [
+	auth,
+	param("billId").trim().isMongoId(),
+	async function (req, res) {
+		const validationError = validationResult(req);
+		if (!validationError.isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Query Validation Error",
+				validationError.array()
+			);
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			const bill = await getBillById(req.params.billId);
+			if (bill) {
+				if (hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_DELETE")) {
+					await bill.remove();
+					return apiResponse.successResponse(
+						res,
+						"Bill Deleted"
+					)
+				}
+			}
+		} catch (e) {
+			return apiResponse.ErrorResponse(res, e.message || e);
+		}
+	}
+];
+
+/**
  * Get  Bills List created by the user based on query received.
  *
  * @returns [Object] {Object}
