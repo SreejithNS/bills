@@ -8,21 +8,32 @@ var apiRouter = require("./routes/api");
 var apiResponse = require("./helpers/apiResponse");
 var cors = require("cors");
 
+const APP_LOG = "[ APP ] ";
+const origin = process.env.NODE_ENV === "development"
+	? "http://localhost:3000"
+	: "https://bills.sreejithofficial.in";
+
 // DB connection
 var MONGODB_URL = process.env.MONGODB_URL;
 var mongoose = require("mongoose");
+
+// Overcome collection.ensureIndex deprecation warning.
+mongoose.set('useNewUrlParser', true);
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
+
 mongoose
 	.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
 	.then(() => {
 		//don't show the log when it is test
 		if (process.env.NODE_ENV !== "test") {
-			console.log("Connected to %s", MONGODB_URL);
-			console.log("App is running ... \n");
-			console.log("Press CTRL + C to stop the process. \n");
+			console.log(APP_LOG + "MONGODB AT: %s", MONGODB_URL);
+			console.log(APP_LOG + "STATUS: RUNNING\n");
 		}
 	})
 	.catch((err) => {
-		console.error("App starting error:", err.message);
+		console.log(APP_LOG + "STATUS: STARTING ERROR\n");
+		console.error(APP_LOG + "ERROR: ", err.message);
 		process.exit(1);
 	});
 
@@ -43,17 +54,13 @@ app.use(cookieParser());
 //To allow cross-origin requests
 app.use(
 	cors({
-		origin:
-			process.env.NODE_ENV === "development"
-				? "http://localhost:3000"
-				: "https://bills.sreejithofficial.in",
+		origin: origin,
 		optionsSuccessStatus: 200,
 		credentials: true,
 	})
 );
 
 //Route Prefixes
-
 app.use("/api", apiRouter);
 app.use("/api", function (err, req, res, next) {
 	if (err.name === "UnauthorizedError") {
