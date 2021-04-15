@@ -153,7 +153,7 @@ async function userAccountDetailsUpdate(userId, param, value) {
 	switch (param) {
 		case "password":
 			value = await new Promise((resolve, reject) => {
-				bcrypt.hash(param, 10, async (err, hash) => {
+				bcrypt.hash(value, 10, async (err, hash) => {
 					if (err) reject(err)
 					resolve(hash)
 				});
