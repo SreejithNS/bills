@@ -1,4 +1,4 @@
-import { Button, TextField } from "@material-ui/core";
+import { Button, TextField, Typography } from "@material-ui/core";
 import useAxios from "axios-hooks";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -43,17 +43,21 @@ export default function NewProductCategoryModal(props: ModalProps) {
 
     return (
         <Modal visible={props.visible} onClose={props.onClose} title="Create Product Category">
-            <form onSubmit={(e) => { e.preventDefault(); if (dataReady) createCategory() }}>
+            <form style={{ display: "flex", flexFlow: "column wrap", alignItems: "center" }} onSubmit={(e) => { e.preventDefault(); if (dataReady) createCategory() }}>
                 <TextField
+                    style={{ alignSelf: "stretch" }}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     label="Product Category Name"
                     variant="outlined"
                 /><br />
+                <Typography variant="caption">
+                    Who has access to this set of products?
+                </Typography>
                 <UsersTransferList
                     onListUpdate={handleUsersListUpdate}
                 />
-                <Button disabled={loading || !dataReady} onClick={() => createCategory()} color="primary">
+                <Button disabled={loading || !dataReady} onClick={() => createCategory()} variant="contained" color="primary">
                     Create
                 </Button>
             </form>
