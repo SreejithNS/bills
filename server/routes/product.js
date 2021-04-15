@@ -6,6 +6,7 @@ var router = express.Router();
 router.post("/category", createCategoryRequest);
 router.get("/category", getProductCategoriesList);
 router.put("/:categoryId", updateProductCategory);
+router.delete("/:categoryId.:productId", deleteProduct);
 router.delete("/:categoryId", deleteProductCategory);
 router.get("/:categoryId/query", queryProduct);
 
@@ -13,7 +14,6 @@ router.post("/:categoryId", createProductRequest);
 router.post("/:categoryId/import", importProducts);
 router.get("/:categoryId.:productId", getProduct);
 router.put("/:categoryId.:productId", updateProduct);
-router.delete("/:categoryId.:productId", deleteProduct);
 
 router.get("/:categoryId/suggestion/:code", getProductSuggestions);
 router.get("/:categoryId/availability/:code", productAvailability);

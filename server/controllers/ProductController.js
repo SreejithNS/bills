@@ -322,6 +322,7 @@ exports.getProductCategoriesList = [
  */
 exports.deleteProduct = [
 	auth,
+	param("categoryId", "Invalid Product Id").escape().trim().isMongoId(),
 	param("productId", "Invalid Product Id").escape().trim().isMongoId(),
 	async (req, res) => {
 		const errors = validationResult(req);
@@ -342,7 +343,7 @@ exports.deleteProduct = [
 				);
 			} else {
 				if (hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_DELETE")) {
-					return Product.findByIdAndRemove(req.params.id, function (err) {
+					return Product.findByIdAndRemove(req.params.productId, function (err) {
 						if (err) {
 							return apiResponse.ErrorResponse(res, err);
 						} else {
@@ -627,7 +628,7 @@ exports.updateProductCategory = [
 		.trim()
 		.isMongoId(),
 	body("name").optional().escape().trim().matches(/^[a-z0-9 ]+$/i),
-	body("hasAccess").optional().escape().trim().isArray(),
+	body("hasAccess").optional().isArray(),
 	async (req, res) => {
 		if (!validationResult(req).isEmpty())
 			return apiResponse.validationErrorWithData(
@@ -637,21 +638,21 @@ exports.updateProductCategory = [
 			);
 		try {
 			//Check for product category access rights
-			const authenticatedUser = await userData(_id);
+			const authenticatedUser = await userData(req.user._id);
 			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_PUT")))
 				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
 
 			const productCategory = await ProductCategory.findById(req.params.categoryId)
 			if (productCategory) {
 				if (Array.isArray(req.body.hasAccess)) {
-					for (let userId in req.body.hasAccess) {
+					for (let userId of req.body.hasAccess) {
 						const user = await User.findOne({ belongsTo: productCategory.belongsTo, _id: userId }).exec();
 						if (!user) return apiResponse.unauthorizedResponse(res, "You cannot add this user");
 					}
 					productCategory.hasAccess = req.body.hasAccess;
 				}
 				if (req.body.name) {
-					product.name = req.body.name;
+					productCategory.name = req.body.name;
 				}
 				await productCategory.save();
 				return apiResponse.successResponse(
@@ -663,7 +664,7 @@ exports.updateProductCategory = [
 			}
 		} catch (err) {
 			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+			return apiResponse.ErrorResponse(res, err.message);
 		}
 	},
 ];
