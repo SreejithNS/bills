@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, CircularProgress } from '@material-ui/core';
+import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, CircularProgress, Tooltip } from '@material-ui/core';
 import { useDispatch, useSelector } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { useHistory } from 'react-router-dom';
@@ -109,29 +109,45 @@ const ItemToolbar = () => {
     const classes = useStyles();
     return (
         <Paper elevation={2} className={classes.cardPadding + " " + classes.flexContainer}>
-            <ProductCategorySelection />
-            {productCategoryCreatePermission && <Button
-                startIcon={<AddIcon />}
-                onClick={() => setProductCategoryCreationModalOpen(!productCategoryCreationModalOpen)}
-            >Create</Button>}
+            <Tooltip title="Selected Category" arrow>
+                <ProductCategorySelection />
+            </Tooltip>
+            {productCategoryCreatePermission && <Tooltip title="Add Product Category" arrow>
+                <Button
+                    startIcon={<AddIcon />}
+                    onClick={() => setProductCategoryCreationModalOpen(!productCategoryCreationModalOpen)}
+                >Create</Button>
+            </Tooltip>
+            }
             {productCategoryEditPermission
-                && <Button
-                    startIcon={<EditRoundedIcon />}
-                    onClick={handleProductCategoryEdit}>
-                    Edit</Button>
+                && <Tooltip title="Edit this Category" arrow>
+                    <Button
+                        startIcon={<EditRoundedIcon />}
+                        onClick={handleProductCategoryEdit}>
+                        Edit</Button>
+                </Tooltip>
             }
             {(productCategoryList.length > 1 && productCategoryDeletePermission)
-                && <Button
-                    startIcon={<DeleteOutlineRounded />}
-                    color="secondary"
-                    onClick={handleProductCategoryDelete}>
-                    Delete</Button>
+                && <Tooltip title="Delete this Category" arrow>
+                    <Button
+                        startIcon={<DeleteOutlineRounded />}
+                        color="secondary"
+                        onClick={handleProductCategoryDelete}>
+                        Delete</Button>
+                </Tooltip>
             }
             {productCreatePermission &&
-                <Button
-                    startIcon={<SystemUpdateAltIcon />}
-                    onClick={() => toggleImportModal(!importModalOpen)}
-                >Import Products</Button>
+                <Tooltip title={(
+                    <>
+                        <strong>Import from CSV</strong><br />
+                    Add Multiple products to this category from Structured CSV File
+                </>
+                )} arrow>
+                    <Button
+                        startIcon={<SystemUpdateAltIcon />}
+                        onClick={() => toggleImportModal(!importModalOpen)}
+                    >Import Products</Button>
+                </Tooltip>
             }
             <ImportModal visible={importModalOpen} onClose={() => toggleImportModal(false)} />
             <NewProductCategoryModal visible={productCategoryCreationModalOpen} onClose={() => setProductCategoryCreationModalOpen(false)} />
@@ -182,7 +198,7 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
                 { title: "Rate", field: "rate", type: "numeric", editable: "never" },
                 { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
             ]}
-            data={(query) => fetchItems(query)}
+            data={fetchItems}
             actions={[
                 {
                     icon: () => <Refresh />,
