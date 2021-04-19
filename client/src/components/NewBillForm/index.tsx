@@ -4,12 +4,16 @@ import {
 	Button,
 	Checkbox,
 	CircularProgress,
+	createStyles,
 	FormControl,
 	FormControlLabel,
 	Grid,
 	InputLabel,
+	makeStyles,
 	MenuItem,
 	Select,
+	Theme,
+	Typography,
 	Zoom,
 } from "@material-ui/core";
 import { Autocomplete } from "@material-ui/lab";
@@ -29,6 +33,15 @@ import { Product, Unit } from "../../reducers/product.reducer";
 import { useHasPermission } from "../../actions/auth.actions";
 import { ProductCategorySelection } from "../../pages/ItemsHomePage";
 import useAxios from "axios-hooks";
+import useGeolocation from 'react-hook-geolocation'
+
+const useStyles = makeStyles((theme: Theme) => createStyles({
+	"buttons": {
+		"&>*": {
+			marginRight: theme.spacing(1)
+		}
+	}
+}))
 
 function CustomerSelection(props: {
 	customer: Customer | undefined;
@@ -142,6 +155,7 @@ function BillItemSelection(props: {
 }
 
 export default function NewBillForm(props: { closeModal: () => void }) {
+	const classes = useStyles();
 	const dispatch = useDispatch();
 	const billState = useSelector((state: RootState) => state.bill);
 	const {
@@ -152,7 +166,27 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 		discountPercentage,
 		paidAmount,
 		billSaved,
+		location
 	} = billState;
+	const handleGeoLocation = (data: any) => {
+		if (!location) dispatch({
+			type: "BILL_SET_LOCATION", payload: [
+				data.latitude, data.longitude
+			]
+		})
+		if (location && (data.latitude !== location[0] || data.longitude !== location[1])) {
+			dispatch({
+				type: "BILL_SET_LOCATION", payload: [
+					data.latitude, data.longitude
+				]
+			})
+		}
+	}
+	const geoLocation = useGeolocation({
+		enableHighAccuracy: true,
+		maximumAge: 5000,
+		timeout: 10000
+	}, handleGeoLocation);
 
 	const [selectedProduct, setSelectedProduct] = useState<Product>();
 	const [selectedProductUnit, setSelectedProductUnit] = useState<Unit>();
@@ -174,6 +208,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 				credit,
 				discountAmount,
 				paidAmount,
+				...(location && { location: { lat: location[0], lon: location[1] } })
 			};
 		else return null;
 	};
@@ -196,6 +231,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 		if (data) {
 			dispatch({ type: "BILL_SAVE", payload: true });
 			if (billSaved) toast.success(`Bill#${data.data?.serialNumber} added`);
+			dispatch({ type: "BILL_RESET" })
 			props.closeModal();
 		}
 	}, [error, data, dispatch, props, billSaved]);
@@ -447,7 +483,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						variant="outlined"
 					/>
 				</Grid>
-				<Grid item xs={12}>
+				<Grid item xs={12} className={classes.buttons}>
 					<Button
 						variant="contained"
 						disabled={billSaved || !billData()}
@@ -456,6 +492,25 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 					>
 						Save Bill
 					</Button>
+					<Button
+						variant="outlined"
+						onClick={() => dispatch({ type: "BILL_RESET" })}
+						color="secondary"
+					>
+						RESET
+					</Button>
+					{geoLocation?.error && <Typography variant="caption" color="textSecondary" display="inline">
+						( No Location information )
+					</Typography>
+					}
+					{/* {location && <Button
+						variant="text"
+						disabled={geoLocation?.error}
+						onClick={() => update()}
+						color="primary"
+					>
+						Update Customer Location
+					</Button>} */}
 					<Zoom in={loading}>
 						<CircularProgress />
 					</Zoom>
