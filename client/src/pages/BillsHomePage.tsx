@@ -8,11 +8,12 @@ import { billsPaths, paths } from '../routes/paths.enum';
 import { LineWeightRounded } from '@material-ui/icons';
 import BillSearch from '../components/BillSearch';
 import PageContainer from '../components/PageContainer';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import useAxios from 'axios-hooks';
-import { APIResponse } from '../components/Axios';
+import { APIResponse, axios, handleAxiosError } from '../components/Axios';
 import { BillData, PaginateResult } from '../reducers/bill.reducer';
 import { toast } from 'react-toastify';
+import { useConfirm } from 'material-ui-confirm';
 const Fade = require('react-reveal/Fade');
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -34,11 +35,12 @@ export default function BillsHomePage() {
     const [limit, setLimit] = useState(10);
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
     const [sortParam, setSortParam] = useState<keyof BillData>("createdAt");
-    const [search, setSearch] = useState<Object | undefined>()
+    const [search, setSearch] = useState<Object | undefined>();
+    const [requestLoading, setRequestLoading] = useState(false);
 
     type ResponseData = APIResponse<PaginateResult<BillData>>;
 
-    const [{ loading, error, data }] = useAxios<ResponseData>({
+    const [{ loading: getLoading, error, data }] = useAxios<ResponseData>({
         url: "/bill",
         params: {
             page: pageNumber,
@@ -47,6 +49,29 @@ export default function BillsHomePage() {
             ...(search && search),
         }
     })
+
+    const confirm = useConfirm();
+    const deleteBill = useCallback(
+        (billId: BillData["_id"]) => {
+            confirm({
+                title: "Are you sure?",
+                description: "Deleting a bill is not undoable. You cannot recover the bill data once deleted.",
+                confirmationText: "Delete",
+                confirmationButtonProps: {
+                    color: "secondary"
+                }
+            }).then(() => {
+                setRequestLoading(true);
+                return axios.delete("/bill/id/" + billId);
+            }, () => toast.info("Bill did not delete."))
+                .then(
+                    () => toast.success("Bill deleted successfully"),
+                    handleAxiosError
+                ).finally(() => setRequestLoading(false))
+        }, [data]
+    )
+
+    const loading = getLoading || requestLoading;
 
     const history = useHistory();
     const classes = useStyles();
@@ -97,7 +122,7 @@ export default function BillsHomePage() {
                                                 customerName={bill.customer.name}
                                                 billAmount={bill.billAmount}
                                                 timestamp={bill.createdAt.toString()}
-                                                deleteAction={console.log}
+                                                deleteAction={() => deleteBill(bill._id)}
                                                 onClickAction={() => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", bill._id))}
                                             />
                                         </Fade>
