@@ -30,6 +30,7 @@ export interface BillState {
 	billSaved: boolean;
 	paidAmount: number;
 	credit: boolean;
+	location: null | [GeolocationCoordinates["latitude"], GeolocationCoordinates["longitude"]]
 }
 
 export interface BillPayments {
@@ -62,6 +63,7 @@ const initialState: BillState = {
 	billSaved: false,
 	paidAmount: 0,
 	credit: true,
+	location: null,
 };
 
 export interface BillPostData extends Object {
@@ -70,6 +72,10 @@ export interface BillPostData extends Object {
 	items: { _id: BillItem["_id"]; quantity: BillItem["quantity"]; unit?: Unit["name"] }[];
 	credit: BillState["credit"];
 	paidAmount: BillState["paidAmount"];
+	location?: {
+		lat: GeolocationCoordinates["latitude"],
+		lon: GeolocationCoordinates["longitude"]
+	}
 }
 
 export const getItemsTotalAmount = (billState: BillState) => {
@@ -180,6 +186,17 @@ export default function billReducer(state: BillState = initialState, action: { t
 			return {
 				...state,
 				paidAmount: action.payload,
+			};
+		}
+		case "BILL_SET_LOCATION": {
+			return {
+				...state,
+				location: action.payload,
+			};
+		}
+		case "BILL_RESET": {
+			return {
+				...initialState,
 			};
 		}
 		default:
