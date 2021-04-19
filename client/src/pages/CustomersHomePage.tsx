@@ -3,7 +3,7 @@ import { Fab, Grid, makeStyles, Theme, Typography } from '@material-ui/core';
 import { customersPaths, paths } from '../routes/paths.enum';
 import { useHistory } from 'react-router-dom';
 import AddIcon from '@material-ui/icons/Add';
-import { Add, Refresh } from '@material-ui/icons';
+import { Add, Pageview, PageviewOutlined, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
 import { store } from '..';
 import MaterialTable, { Query, QueryResult } from 'material-table';
@@ -39,13 +39,7 @@ const CustomersTable = () => {
         tableRef?.current?.onQueryChange();
     })
 
-    const fetchItems = (query: Query<{
-        name: string;
-    } & {
-        phone: number;
-    } & {
-        place: string;
-    }>): Promise<QueryResult<Customer>> => new Promise((resolve) => {
+    const fetchItems = (query: Query<Customer>): Promise<QueryResult<Customer>> => new Promise((resolve) => {
         const url = `/customer/query?`;
         const search = (new URLSearchParams(interpretMTQuery(query))).toString();
         axios
@@ -60,6 +54,7 @@ const CustomersTable = () => {
             })
             .catch(handleAxiosError)
     })
+
     return (
         <MaterialTable
             tableRef={tableRef}
@@ -69,7 +64,7 @@ const CustomersTable = () => {
                 { title: "Phone Number", field: "phone", type: "numeric", sorting: false, editable: "never" },
                 { title: "Place", field: "place", editable: "never" }
             ]}
-            data={(query) => fetchItems(query)}
+            data={fetchItems}
             actions={[
                 {
                     icon: () => <Refresh />,
@@ -82,6 +77,14 @@ const CustomersTable = () => {
                     tooltip: 'Add Customer',
                     isFreeAction: true,
                     onClick: () => history.push(paths.customer + customersPaths.createCustomer)
+                },
+                {
+                    icon: () => <Pageview />,
+                    tooltip: 'Show Details',
+                    isFreeAction: false,
+                    onClick: (_, data: any) => {
+                        history.push((paths.customer + customersPaths.customerViewer).replace(":id", data._id))
+                    }
                 }
             ]}
             options={{
