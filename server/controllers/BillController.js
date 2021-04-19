@@ -21,6 +21,7 @@ function BillData(doc) {
 	this.soldBy = new UserData(doc.soldBy);
 	this.belongsTo = new UserData(doc.belongsTo);
 	this.items = doc.items;
+	this.location = doc.location;
 	this.discountAmount = doc.discountAmount;
 	this.itemsTotalAmount = doc.itemsTotalAmount;
 	this.billAmount = doc.billAmount;
@@ -257,6 +258,13 @@ exports.saveBill = [
 		.isNumeric(),
 	body("paidAmount").optional().trim().escape().isNumeric(),
 	body("credit").optional().trim().escape().isBoolean(),
+	body("location", "Invalid coordinates")
+		.optional()
+		.custom((value) => {
+			const { lat, lon } = value;
+			const reg = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+			return reg.test(lat + "," + lon);
+		}),
 	async function (req, res) {
 		const validationError = validationResult(req);
 		if (!validationError.isEmpty())
@@ -311,6 +319,7 @@ exports.saveBill = [
 									? 0
 									: req.body.paidAmount,
 							belongsTo,
+							...(req.body.location && { location: { type: "Point", coordinates: [req.body.location.lat, req.body.location.lon] } })
 						});
 
 						newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();

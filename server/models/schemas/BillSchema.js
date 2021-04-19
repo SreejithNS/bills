@@ -5,6 +5,7 @@ var Schema = mongoose.Schema;
 const Payment = require("./PaymentSchema");
 
 const autoIncrement = require("mongoose-auto-increment");
+const LocationSchema = require("./LocationSchema");
 autoIncrement.initialize(mongoose.connection);
 
 const BillSchema = new Schema(
@@ -35,6 +36,10 @@ const BillSchema = new Schema(
 		credit: { type: Boolean, default: true },
 		paidAmount: { type: Number, default: 0 },
 		belongsTo: { type: Schema.Types.ObjectId, ref: "User" },
+		location: {
+			type: LocationSchema,
+			required: false
+		},
 		payments: {
 			type: [
 				{
