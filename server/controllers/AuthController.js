@@ -327,11 +327,12 @@ const login = [
 				try {
 					const authenticationData = await userAuthentication(req.body.phone, req.body.password);
 					const date = new Date();
+					date.setMonth(date.getMonth() + 1)
 					res.cookie("auth-token", authenticationData.token, {
 						httpOnly: true,
 						sameSite: "none",
 						secure: true,
-						expire: date.setMonth(date.getMonth() + 1)
+						maxAge: 15 * 24 * 3600000
 					});
 					return apiResponse.successResponseWithData(res, "User Authenticated", authenticationData);
 				} catch (e) {
