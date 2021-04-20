@@ -82,7 +82,7 @@ export default function HomePage() {
                 <Grid item xs={12} sm={6} md={4}>
                     <HomeCard
                         icon={<HelpIcon fontSize="large" />}
-                        onClick={() => console.log("Everything works fine.")}
+                        onClick={() => console.log("Everything works fine")}
                         content={"Bills WebApp: v" + appVersion}
                     />
                 </Grid>

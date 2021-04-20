@@ -71,7 +71,6 @@ export default function ProductCategoryEditModal() {
                     <UsersTransferList
                         value={productCategoryData.hasAccess}
                         onListUpdate={(data) => {
-                            console.log(data)
                             setProductCategoryData((prevData) => {
                                 const newState = { ...prevData as any }
                                 newState.hasAccess = [...data];
