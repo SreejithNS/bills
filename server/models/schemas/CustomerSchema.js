@@ -6,7 +6,7 @@ const LocationSchema = require("./LocationSchema");
 const CustomerSchema = new Schema(
 	{
 		name: { type: String, required: true, index: true },
-		phone: { type: Number, required: true, index: { unique: true } },
+		phone: { type: Number, required: true, index: true },
 		place: String,
 		location: {
 			type: LocationSchema,
@@ -18,5 +18,6 @@ const CustomerSchema = new Schema(
 );
 
 CustomerSchema.plugin(mongoosePaginate);
+CustomerSchema.index({ phone: 1, belongsTo: 1 }, { unique: true });
 
 module.exports = CustomerSchema;
