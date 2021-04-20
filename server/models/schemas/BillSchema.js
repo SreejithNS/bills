@@ -4,18 +4,14 @@ const { Product } = require("../ProductModel");
 var Schema = mongoose.Schema;
 const Payment = require("./PaymentSchema");
 
-const autoIncrement = require("mongoose-auto-increment");
 const LocationSchema = require("./LocationSchema");
-autoIncrement.initialize(mongoose.connection);
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const BillSchema = new Schema(
 	{
 		serialNumber: { //Incremental Serial Number Right from 0
 			type: Number,
-			required: true,
-			index: {
-				unique: true,
-			},
+			index: true,
 		},
 		items: [
 			{
@@ -216,10 +212,14 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 };
 
 BillSchema.plugin(mongoosePaginate);
-BillSchema.plugin(autoIncrement.plugin, {
-	model: "Bill",
-	field: "serialNumber",
-	startAt: 1,
-});
+BillSchema.index({ serialNumber: 1, belongsTo: 1 }, { unique: true });
+BillSchema.plugin(AutoIncrement,
+	{
+		id: 'bill_sequence',
+		inc_field: 'serialNumber',
+		reference_fields: ['belongsTo'],
+		start_seq: 1
+	}
+);
 
 module.exports = BillSchema;
