@@ -31,6 +31,7 @@ export function useProductCategoryActions() {
 
     useEffect(() => {
         if (error) {
+            handleAxiosError(error);
             toast.error("Could'nt load product categories");
         }
         if (data) {
