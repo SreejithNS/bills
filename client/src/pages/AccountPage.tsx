@@ -84,7 +84,7 @@ export default function AccountPage() {
                         />
                     </Grid>
                     <Grid item xs={12} className={classes.cardPadding}>
-                        {(!(loading) && usersUnderUser?.length) && usersUnderUser.map(
+                        {(!(loading) && usersUnderUser && usersUnderUser?.length > 0) && usersUnderUser.map(
                             (salesman, key) => (
                                 <SalesmenList
                                     key={key}

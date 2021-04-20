@@ -33,7 +33,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 export default function BillsHomePage() {
     const [pageNumber, setPageNumber] = useState(1);
     const [limit, setLimit] = useState(10);
-    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
     const [sortParam, setSortParam] = useState<keyof BillData>("createdAt");
     const [search, setSearch] = useState<Object | undefined>();
     const [requestLoading, setRequestLoading] = useState(false);

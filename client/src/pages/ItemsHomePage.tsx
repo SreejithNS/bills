@@ -160,6 +160,7 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
     const tableRef = useRef<any>(null);
     const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
     const productEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_PUT);
+    const productDeletePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_DELETE);
     const confirm = useConfirm();
 
     if (!productCategoryId || !productCategoryName) return (
@@ -216,6 +217,7 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
                 {
                     icon: () => <EditRoundedIcon />,
                     tooltip: 'Edit Product',
+                    disabled: !productEditPermission,
                     isFreeAction: false,
                     onClick: (_, data) => {
                         data = data as (Product);
@@ -224,6 +226,7 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
                 },
                 {
                     icon: () => <DeleteOutlineRounded />,
+                    disabled: !productDeletePermission,
                     tooltip: 'Delete Product',
                     isFreeAction: false,
                     onClick: (_, data: any) => {
