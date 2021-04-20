@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
-import { Button, CardActions, Collapse, FormControl, Grid, IconButton, InputLabel, makeStyles, MenuItem, Select, TextField, Theme, Typography } from "@material-ui/core";
+import { Button, Collapse, FormControl, Grid, IconButton, InputLabel, makeStyles, MenuItem, Select, TextField, Theme } from "@material-ui/core";
 import { Autocomplete } from "@material-ui/lab";
 import { Customer } from "../../reducers/customer.reducer";
 import { APIResponse, axios, handleAxiosError } from "../Axios";

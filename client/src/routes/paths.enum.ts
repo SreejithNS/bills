@@ -1,4 +1,3 @@
-import { ProductCategory } from './../reducers/product.reducer';
 export enum paths {
     home = '/',
     customer = '/customers',

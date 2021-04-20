@@ -6,8 +6,6 @@ import { CalendarViewDay, Home, Receipt, RecentActors } from '@material-ui/icons
 import { useHistory } from 'react-router-dom';
 import { paths } from '../../routes/paths.enum';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
-import { useSelector } from 'react-redux';
-import { RootState } from '../../reducers/rootReducer';
 import { useHasPermission } from '../../actions/auth.actions';
 import { UserPermissions } from '../../reducers/auth.reducer';
 

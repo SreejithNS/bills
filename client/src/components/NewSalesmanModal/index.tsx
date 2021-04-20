@@ -21,6 +21,7 @@ export default function NewSalesmanModal() {
             fetchUsersUnderAdmin();
         }
         if (error) handleAxiosError(error);
+        //eslint-disable-next-line
     }, [data, error])
 
     return (

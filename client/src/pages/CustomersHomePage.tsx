@@ -3,7 +3,7 @@ import { Fab, Grid, makeStyles, Theme, Typography } from '@material-ui/core';
 import { customersPaths, paths } from '../routes/paths.enum';
 import { useHistory } from 'react-router-dom';
 import AddIcon from '@material-ui/icons/Add';
-import { Add, Pageview, PageviewOutlined, Refresh } from '@material-ui/icons';
+import { Add, Pageview, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
 import { store } from '..';
 import MaterialTable, { Query, QueryResult } from 'material-table';

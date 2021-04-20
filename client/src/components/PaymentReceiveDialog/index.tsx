@@ -28,6 +28,7 @@ export default function PaymentReceiveDialog({ billId, open, onClose }: Props) {
             toast.success("Payment Received");
             onClose();
         }
+        //eslint-disable-next-line
     }, [data])
 
     if (error) {

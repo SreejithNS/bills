@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button, CircularProgress, createStyles, Grid, IconButton, makeStyles, Theme, Zoom } from '@material-ui/core';
 import { Field, FieldArray, reduxForm } from 'redux-form';
-import { itemCodeExists } from '../../actions/item.actions';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import RemoveCircleOutlineRoundedIcon from '@material-ui/icons/RemoveCircleOutlineRounded';
 import { APIResponse, axios } from '../Axios';

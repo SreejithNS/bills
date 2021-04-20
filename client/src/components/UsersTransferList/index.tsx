@@ -56,6 +56,7 @@ export default function UsersTransferList(props: { onListUpdate: (usersList: Use
 
     useEffect(() => {
         props.onListUpdate(right);
+        //eslint-disable-next-line
     }, [right])
 
     const leftChecked = intersection(checked, left);
@@ -66,6 +67,7 @@ export default function UsersTransferList(props: { onListUpdate: (usersList: Use
             setRight(props.value);
             setLeft(left.filter((leftValue) => props.value?.findIndex(rightValue => leftValue._id === rightValue._id) === -1));
         }
+        //eslint-disable-next-line
     }, [])
 
     if (usersUnderAdmin === null) {

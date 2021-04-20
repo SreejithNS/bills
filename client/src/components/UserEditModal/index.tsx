@@ -1,11 +1,11 @@
-import { Checkbox, Divider, Grid, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, ListSubheader, makeStyles, Paper as BasePaper, Switch, TextField, Theme, withStyles } from "@material-ui/core";
+import { Checkbox, Divider, Grid, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, ListSubheader, Paper as BasePaper, Switch, TextField, Theme, withStyles } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import Modal from "../Modal";
-import { AccountCircleRounded, CalendarViewDay, Check, Close, Lock, Receipt, RecentActors } from "@material-ui/icons";
+import { AccountCircleRounded, CalendarViewDay, Check, Close, Receipt, RecentActors } from "@material-ui/icons";
 import { UserData, UserPermissions } from "../../reducers/auth.reducer";
 import useAxios from "axios-hooks";
 import { APIResponse, handleAxiosError } from "../Axios";
-import { Redirect, useHistory, useParams } from "react-router";
+import { Redirect, useParams } from "react-router";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
@@ -58,6 +58,7 @@ export default function UserEditModal() {
             fetchUsersUnderAdmin();
         }
         if (passwordUpdateError) handleAxiosError(passwordUpdateError);
+        //eslint-disable-next-line
     }, [passwordUpdateLoading, passwordUpdateError, passwordUpdateResponse]);
 
     const [{ loading: settingsUpdateLoading, error: settingsUpdateError, data: settingsUpdateResponse }, updateSettings, resetSettingsUpdate] = useAxios<APIResponse<UserData>>(
@@ -76,6 +77,7 @@ export default function UserEditModal() {
             fetchUsersUnderAdmin();
         }
         if (settingsUpdateError) handleAxiosError(settingsUpdateError);
+        //eslint-disable-next-line
     }, [settingsUpdateLoading, settingsUpdateError, settingsUpdateResponse]);
 
     if (!userData || !newSettings) return (<Redirect to={paths.account + accountPaths.home} />);

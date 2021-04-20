@@ -4,36 +4,11 @@ import {
   //Link
 } from "react-router-dom";
 import Routes from './routes';
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useDispatch } from 'react-redux';
 import FullScreenLoading from './components/FullScreenLoading';
-import useAxios from "axios-hooks";
-import { APIResponse, handleAxiosError } from './components/Axios';
-import { UserData } from './reducers/auth.reducer';
 import { ConfirmProvider } from 'material-ui-confirm';
 import { useAuthActions, useProductCategoryActions, useUsersUnderAdmin } from './actions/auth.actions';
-
-// type Props = ReturnType<typeof mapStateToProps> & ReturnType<typeof mapDispatchToProps>;
-
-// class App extends React.Component<Props> {
-
-//   componentDidMount() {
-//     this.props.getUserData();
-//   }
-
-//   render() {
-//     const { userDataLoading } = this.props;
-//     return (
-//       <main style={{ height: "100vh" }}>
-//         <ToastContainer />
-//         {!userDataLoading ? <Router>
-//           <Routes />
-//         </Router> : <FullScreenLoading />}
-//       </main>
-//     );
-//   }
-// }
 
 export default function App() {
   const { initiated: init1 } = useAuthActions();
@@ -58,17 +33,3 @@ export default function App() {
     </main>
   )
 }
-
-// const mapStateToProps = (state: { app: { userDataLoading: any; }; }) => {
-//   return {
-//     userDataLoading: state.app.userDataLoading
-//   }
-// }
-
-// const mapDispatchToProps = (dispatch: any) => {
-//   return {
-//     getUserData: () => dispatch(fetchUserData())
-//   }
-// }
-
-// export default connect(mapStateToProps, mapDispatchToProps)(App);

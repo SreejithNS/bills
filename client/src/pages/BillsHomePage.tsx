@@ -68,6 +68,7 @@ export default function BillsHomePage() {
                     () => toast.success("Bill deleted successfully"),
                     handleAxiosError
                 ).finally(() => setRequestLoading(false))
+            //eslint-disable-next-line
         }, [data]
     )
 

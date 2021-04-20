@@ -180,10 +180,9 @@ const billConsolidator = async (_id: string, amount: number, onFetch: (data: Bil
                 const bill = fetchedBills.sort(
                     (p, q) => (p.billAmount - p.paidAmount) - (q.billAmount - q.paidAmount)
                 ).shift();
-                {
-                    result = bill ? [bill] : []
-                    break;
-                }
+                result = bill ? [bill] : []
+                break;
+
             }
 
             //Check whether any set of bills whose total equals
@@ -241,6 +240,7 @@ function StepContent({ step, customerId, setStep }: { step: number, customerId: 
                 userFeedbacks(selectedBills, parseFloat(amount + "")).canClose ? userFeedbacks(selectedBills, parseFloat(amount + "")).paymentAmount : undefined
             )
         }
+        //eslint-disable-next-line
     }, [amount, step]);
 
     const userFeedbacks = (bills: BillData[], amount: number) => {

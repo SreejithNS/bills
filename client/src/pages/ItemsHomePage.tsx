@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, CircularProgress, Tooltip } from '@material-ui/core';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { useHistory } from 'react-router-dom';
 import { itemPaths, paths } from '../routes/paths.enum';
@@ -8,14 +8,13 @@ import MaterialTable, { Query, QueryResult } from 'material-table';
 import { tableIcons } from '../components/MaterialTableIcons';
 import { exportToCsv, itemsArrayToCsvArray } from '../actions/item.actions';
 import { toast } from 'react-toastify';
-import { Add, DeleteOutlineRounded, LineStyleTwoTone, Refresh, Store } from '@material-ui/icons';
+import { Add, DeleteOutlineRounded, LineStyleTwoTone, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
 import LineStyleIcon from '@material-ui/icons/LineStyle';
 import EditRoundedIcon from '@material-ui/icons/EditRounded';
 import { RootState } from '../reducers/rootReducer';
 import ImportModal from '../components/ImportModal';
 import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
-import useAxios from 'axios-hooks';
 import { APIResponse, axios, handleAxiosError, interpretMTQuery } from '../components/Axios';
 import { Product, ProductCategory } from '../reducers/product.reducer';
 import { PaginateResult } from '../reducers/bill.reducer';

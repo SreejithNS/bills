@@ -11,7 +11,6 @@ import Slide from '@material-ui/core/Slide';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
-import { paths } from '../../routes/paths.enum';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({

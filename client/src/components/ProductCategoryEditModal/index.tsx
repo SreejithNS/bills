@@ -35,6 +35,7 @@ export default function ProductCategoryEditModal() {
             fetchUsersUnderAdmin();
         }
         if (error) handleAxiosError(error);
+        //eslint-disable-next-line
     }, [data, error])
 
     const [productCategoryData, setProductCategoryData] = useState(productCategory);

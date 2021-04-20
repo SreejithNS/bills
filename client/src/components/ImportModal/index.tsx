@@ -59,6 +59,7 @@ export default function ImportModal(props: ModalProps) {
             setData([]);
             cancel();
         }
+        //eslint-disable-next-line
     }, [responseData])
 
     const handleClose = () => {

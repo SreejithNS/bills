@@ -1,5 +1,5 @@
 import { handleAxiosError, APIResponse } from './../components/Axios/index';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { UserData, UserPermissions, UserTypes } from '../reducers/auth.reducer';
@@ -46,6 +46,7 @@ export function useProductCategoryActions() {
         } else if (productCategoryList.length <= 0 && !error) {
             fetchCategories();
         }
+        //eslint-disable-next-line
     }, [data, dispatch, error]);
 
     return { fetchCategories, changeCategory, loading, error, initiated: !!productCategoryList };
@@ -71,7 +72,7 @@ export function useUsersUnderAdmin() {
         }
 
         dispatch({ type: "USER_DATA_LOAD", payload: loading });
-
+        //eslint-disable-next-line
     }, [dispatch, data, fetchError, fetchSalesmenList, hasAdminPermissions, loading]);
 
     return { fetchUsersUnderAdmin: fetchSalesmenList, loading, error: fetchError, initiated: !!usersUnderUser };
@@ -90,6 +91,7 @@ export function useAuthActions() {
             fetchUserData()
         }
         if (error) handleAxiosError(error);
+        //eslint-disable-next-line
     }, [data, dispatch])
 
     return { fetchUserData, loading, error, initiated: !!userData };

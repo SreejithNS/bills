@@ -12,12 +12,10 @@ import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from '@material-ui/core';
 import NewItemForm from "../NewItemForm";
 import { useHistory } from 'react-router-dom';
-import { addItem } from '../../actions/item.actions';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../reducers/rootReducer';
 import useAxios from 'axios-hooks';
 import { APIResponse, handleAxiosError } from '../Axios';
-// import { useDispatch } from 'react-redux';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -59,6 +57,7 @@ export default function NewItemModal(props: { onCreate?: () => void; visible?: b
             if (props.onCreate) props.onCreate()
             else history.goBack()
         }
+        //eslint-disable-next-line
     }, [data])
 
     return (

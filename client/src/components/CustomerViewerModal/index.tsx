@@ -9,12 +9,10 @@ import {
     withStyles,
     Zoom,
 } from "@material-ui/core";
-import { Refresh } from "@material-ui/icons";
 import useAxios from "axios-hooks";
 import MaterialTable, { Query, QueryResult } from "material-table";
 import React, { useEffect, useRef } from "react";
-import { useHistory, useParams } from "react-router";
-import { store } from "../..";
+import { useParams } from "react-router";
 import { BillData, PaginateResult } from "../../reducers/bill.reducer";
 import { Customer } from "../../reducers/customer.reducer";
 import { APIResponse, axios, handleAxiosError, interpretMTQuery } from "../Axios";
@@ -151,7 +149,7 @@ const BillsTable = () => {
 
 export default function CustomerViewerModal() {
     const param = useParams<{ id: string }>();
-    const [{ error, data, loading }, refetchData] = useAxios<
+    const [{ error, data, loading }] = useAxios<
         APIResponse<Customer & CustomerAggregatedData>
     >(`/customer/${param.id}`);
 
@@ -168,7 +166,7 @@ export default function CustomerViewerModal() {
             </Box>
         );
     if (data && data.data) {
-        const { name, location, phone, place, byCredit } = data.data;
+        const { name, phone, place, byCredit } = data.data;
         return (
             <Modal title="Customer">
                 <Paper>

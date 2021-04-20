@@ -38,6 +38,7 @@ export default function NewProductCategoryModal(props: ModalProps) {
         return () => {
             props.onClose && props.onClose();
         }
+        //eslint-disable-next-line
     }, [data])
 
 
