@@ -60,11 +60,11 @@ function hasAccessPermission(authenticatedUser, paramCustomer, explicitPermissio
 		if (authenticatedUser.type === privilegeEnum.admin || (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission))) {
 			flag = true;
 		}
-	} else if (authenticatedUser._id === paramCustomer.belongsTo._id) { //Belongs to User 
+	} else if (authenticatedUser._id === paramCustomer.belongsTo._id.toString()) { //Belongs to User 
 		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
 			flag = true;
 		}
-	} else if (authenticatedUser.belongsTo._id === paramCustomer.belongsTo._id) { //Customer and user belong to same admin
+	} else if (authenticatedUser.belongsTo._id === paramCustomer.belongsTo._id.toString()) { //Customer and user belong to same admin
 		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
 			flag = true;
 		} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission)) {
@@ -596,14 +596,22 @@ exports.getSuggestions = [
 			if (!(await hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET")))
 				return apiResponse.unauthorizedResponse(
 					res,
-					"You are not authorised to access this product category"
+					"You are not authorised to access Customers"
 				)
+
+			let belongsTo;
+			if (authenticatedUser.type === privilegeEnum.admin | authenticatedUser.type === privilegeEnum.root) {
+				belongsTo = authenticatedUser._id;
+			} else {
+				belongsTo = authenticatedUser.belongsTo._id;
+			}
 
 			return Customer.find(
 				{
 					name: {
 						$regex: new RegExp(`${req.params.name}`, "i"),
 					},
+					belongsTo
 				}).limit(10).lean().exec(
 					(err, customers) => {
 						if (err) return apiResponse.ErrorResponse(res, err);
