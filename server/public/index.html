@@ -407,12 +407,12 @@
 <body>
     <div class="container">
         <section id="content">
-            <form id="loginform" action="">
+            <form id="loginform" action="/api/auth/login" method="POST">
                 <h1>Bills Login</h1>
                 <div> <input type="number" placeholder="Phone Number"
-                        required="" id="username" /></div>
+                        required="" id="username" name="phone" /></div>
                 <div> <input type="password" placeholder="Password" required=""
-                        id="password" /></div>
+                        id="password" name="password" /></div>
                 <div> <input type="submit" value="Log in" /> <a href="#">Lost
                         your password?</a> <a href="#">Register</a></div>
             </form>
@@ -422,6 +422,7 @@
         var phone = document.querySelector("#username").value;
         var pass = document.querySelector("#password").value;
         requestCredential();
+        document.querySelector("#loginform").addEventListener("submit", (e) => { storeCredential() })
 
         function login() {
             console.log("Login start!");
@@ -470,12 +471,6 @@
                 document.querySelector("#password").value = value.password;
             }).catch((err) => log("Error reading credentials: " + err));
         }
-        document.querySelector("#loginform").addEventListener("submit", function (event) {
-            event.preventDefault();
-            phone = document.querySelector("#username").value;
-            pass = document.querySelector("#password").value;
-            login();
-        });
     </script>
 </body>
 

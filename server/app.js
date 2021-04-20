@@ -4,7 +4,6 @@ var logger = require("morgan");
 require("dotenv").config();
 var indexRouter = require("./routes/index");
 var loginRouter = require("./routes/login");
-var apiRouter = require("./routes/api");
 var apiResponse = require("./helpers/apiResponse");
 var cors = require("cors");
 
@@ -48,8 +47,6 @@ if (process.env.NODE_ENV !== "test") {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-// app.use(express.static(path.join(__dirname, "../client/build")));
-// app.use(express.static(path.join(__dirname, "./public")));
 
 //To allow cross-origin requests
 app.use(
@@ -61,18 +58,7 @@ app.use(
 );
 
 //Route Prefixes
-app.use("/api", apiRouter);
-app.use("/api", function (err, req, res, next) {
-	if (err.name === "UnauthorizedError") {
-		apiResponse.unauthorizedResponse(res, err.message);
-	} else next(err);
-});
-app.use("/login", loginRouter);
 app.use("/", indexRouter);
-app.use("/*", indexRouter);
-app.all("*", function (req, res) {
-	return apiResponse.notFoundResponse(res, "Page not found");
-});
 
 // app.use((err, req, res) => {
 // 	if (err.name === "UnauthorizedError") {
@@ -81,9 +67,7 @@ app.all("*", function (req, res) {
 // });
 
 app.use(function (err, req, res, next) {
-	if (err.name === "UnauthorizedError") {
-		apiResponse.unauthorizedResponse(res, err.message);
-	} else next(err);
+	return apiResponse.ErrorResponse(res, err);
 });
 
 module.exports = app;

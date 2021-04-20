@@ -334,6 +334,11 @@ const login = [
 						secure: true,
 						maxAge: 15 * 24 * 3600000
 					});
+					if (req.cookies["redirectToken"]) {
+						const target = req.cookies["redirectToken"].toString();
+						res.cookie("redirectToken", { httpOnly: true, expires: Date.now() });
+						return res.redirect(target);
+					}
 					return apiResponse.successResponseWithData(res, "User Authenticated", authenticationData);
 				} catch (e) {
 					return apiResponse.unauthorizedResponse(res, "Authentication Failed", e);
@@ -365,7 +370,7 @@ const fetchUserData = [
 ];
 
 const logout = (req, res) => {
-	res.cookie("token", { httpOnly: true, expires: Date.now() });
+	res.cookie("auth-token", { httpOnly: true, expires: Date.now() });
 	return apiResponse.successResponse(res, "Successfully logged out");
 }
 
