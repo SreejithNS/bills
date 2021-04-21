@@ -4,7 +4,7 @@ const secret = process.env.JWT_SECRET;
 const authenticate = jwt({
 	secret: secret,
 	getToken: (req) => {
-		if (req.cookies.token) return req.cookies.token;
+		if (req.cookies["auth-token"]) return req.cookies["auth-token"];
 		//Get from cookie token
 		else if (req.body.token) return req.body.token;
 		// or from {token:"xyz"}

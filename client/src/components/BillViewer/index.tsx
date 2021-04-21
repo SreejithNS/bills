@@ -1,4 +1,3 @@
-
 import {
     Avatar,
     Button,
@@ -17,39 +16,7 @@ import * as React from "react";
 import { tableIcons } from "../MaterialTableIcons";
 import PaymentsList from "../PaymentsList";
 import moment from "moment";
-interface Customer {
-    name: string;
-    phone: number;
-    place?: string;
-}
-
-interface User {
-    firstName: string;
-    lastName?: string;
-}
-
-interface BillItem {
-    name: string;
-    code: string;
-    rate: number;
-    mrp: number;
-    quantity: number;
-    amount: number;
-}
-
-export interface BillProps {
-    payments?: any;
-    _id?: any;
-    serialNumber: number;
-    customer: Customer;
-    createdAt: string;
-    soldBy: User;
-    items: BillItem[];
-    discountAmount: number;
-    billAmount: number;
-    paidAmount?: number;
-    credit?: boolean;
-}
+import { BillData } from "../../reducers/bill.reducer";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -81,7 +48,7 @@ interface AdditionalProps {
     creditAction(): void;
 }
 
-export default function BillViewer(props: BillProps & AdditionalProps) {
+export default function BillViewer(props: BillData & AdditionalProps) {
     const classes = useStyles();
     return (
         <Paper>
@@ -116,7 +83,7 @@ export default function BillViewer(props: BillProps & AdditionalProps) {
                 </Grid>
                 <Grid item xs={12} className={classes.itemPadding}>
                     <Typography variant="subtitle1" display="block">
-                        Sold by: {props?.soldBy?.firstName || "Salesman"}
+                        Sold by: {props?.soldBy?.name || "Salesman"}
                     </Typography>
                 </Grid>
                 <Grid item className={classes.itemPadding} xs={12}>
@@ -135,7 +102,8 @@ export default function BillViewer(props: BillProps & AdditionalProps) {
                                 title: "Quantity",
                                 field: "quantity",
                                 type: "numeric",
-                                editable: "always"
+                                editable: "always",
+                                render: (rowData: any) => <><strong>{rowData.quantity}</strong> {rowData.unit?.length ? rowData.unit.split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""}</>
                             },
                             {
                                 title: "Rate",

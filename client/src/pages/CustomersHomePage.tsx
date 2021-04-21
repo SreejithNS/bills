@@ -1,29 +1,18 @@
-import React, { Component } from 'react';
-import { CircularProgress, createStyles, Fab, Grid, Theme, Typography, WithStyles, withStyles, Zoom } from '@material-ui/core';
-import { connect } from 'react-redux';
-import CustomerCard from '../components/CustomerCard';
-import { deleteCustomer, fetchCustomerList } from '../actions/customer.action';
-import { ThunkDispatch } from 'redux-thunk';
-import { compose } from 'redux';
+import React, { useRef } from 'react';
+import { Fab, Grid, makeStyles, Theme, Typography } from '@material-ui/core';
 import { customersPaths, paths } from '../routes/paths.enum';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import AddIcon from '@material-ui/icons/Add';
-import ParagraphIconCard from '../components/ParagraphIconCard';
-import { LineWeightRounded } from '@material-ui/icons';
+import { Add, Pageview, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
+import { store } from '..';
+import MaterialTable, { Query, QueryResult } from 'material-table';
+import { Customer } from '../reducers/customer.reducer';
+import { APIResponse, axios, handleAxiosError, interpretMTQuery } from '../components/Axios';
+import { PaginateResult } from '../reducers/bill.reducer';
+import { tableIcons } from '../components/MaterialTableIcons';
 
-interface DispatchProps {
-    getCustomers(): void;
-    deleteCustomer(id: string): void;
-}
-
-interface StateProps {
-    customersList: any[];
-    listLoadingError: string;
-    listLoading: boolean;
-}
-
-const styles = (theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => ({
     fab: {
         position: "fixed",
         right: theme.spacing(2),
@@ -40,73 +29,99 @@ const styles = (theme: Theme) => createStyles({
         }
     }
 })
+)
 
-type Props = DispatchProps & StateProps & WithStyles<typeof styles> & RouteComponentProps;
+const CustomersTable = () => {
+    const history = useHistory();
+    const tableRef = useRef<any>(null);
 
-class CustomerHomePage extends Component<Props> {
+    store.subscribe(() => {
+        tableRef?.current?.onQueryChange();
+    })
 
-    componentDidMount() {
-        const { getCustomers } = this.props;
-        getCustomers();
-    }
+    const fetchItems = (query: Query<Customer>): Promise<QueryResult<Customer>> => new Promise((resolve) => {
+        const url = `/customer/query?`;
+        const search = (new URLSearchParams(interpretMTQuery(query))).toString();
+        axios
+            .get<APIResponse<PaginateResult<Customer>>>(url + search)
+            .then(function ({ data: responseData }) {
+                if (responseData.data)
+                    resolve({
+                        data: responseData.data.docs,
+                        page: responseData.data.page - 1,
+                        totalCount: responseData.data.totalDocs
+                    });
+            })
+            .catch(handleAxiosError)
+    })
 
-    render() {
-        const { customersList, listLoading, classes, deleteCustomer } = this.props;
-        return (
-            <>
-                <PageContainer>
-                    <Grid
-                        container
-                        direction="row"
-                        justify="flex-start"
-                        alignItems="center"
-                        spacing={2}
-                    >
-                        <Grid item xs={12}>
-                            <Typography variant="h4">
-                                Your Customers
-                            </Typography>
-                        </Grid>
-                        {!listLoading && customersList.map(({ name, phone, _id }, key) =>
-                            <Grid item xs={12} key={key} className={classes.cardPadding}>
-                                < CustomerCard customerName={name} phone={phone} delete={() => deleteCustomer(_id)} />
-                            </Grid>
-                        )}
-                        {listLoading && <Grid item xs={12} className={classes.cardPadding}>
-                            <ParagraphIconCard
-                                icon={<Zoom in={listLoading}><CircularProgress /></Zoom>}
-                                heading="Customers loading"
-                                content="Please wait while fetching the list of Customers you have so far."
-                            />
-                        </Grid>}
-                        {(!listLoading && customersList.length <= 0) && <Grid item xs={12} className={classes.cardPadding}>
-                            <ParagraphIconCard
-                                icon={<LineWeightRounded fontSize="large" />}
-                                heading="No Customers"
-                                content={<>Click on <strong>Add New Customer</strong> icon to add a new customer.</>}
-                            />
-                        </Grid>}
-                    </Grid>
-                </PageContainer>
-                <Fab onClick={() => this.props.history.push(paths.customer + customersPaths.createCustomer)} className={classes.fab} color="primary" variant="extended">
-                    <AddIcon className={classes.fabIcon} />
-                    Add Customer
-                </Fab>
-            </>
-        )
-    }
+    return (
+        <MaterialTable
+            tableRef={tableRef}
+            icons={tableIcons}
+            columns={[
+                { title: "Customer Name", field: "name", editable: "never" },
+                { title: "Phone Number", field: "phone", type: "numeric", sorting: false, editable: "never" },
+                { title: "Place", field: "place", editable: "never" }
+            ]}
+            data={fetchItems}
+            actions={[
+                {
+                    icon: () => <Refresh />,
+                    tooltip: 'Refresh Data',
+                    isFreeAction: true,
+                    onClick: () => tableRef?.current?.onQueryChange(),
+                },
+                {
+                    icon: () => <Add />,
+                    tooltip: 'Add Customer',
+                    isFreeAction: true,
+                    onClick: () => history.push(paths.customer + customersPaths.createCustomer)
+                },
+                {
+                    icon: () => <Pageview />,
+                    tooltip: 'Show Details',
+                    isFreeAction: false,
+                    onClick: (_, data: any) => {
+                        history.push((paths.customer + customersPaths.customerViewer).replace(":id", data._id))
+                    }
+                }
+            ]}
+            options={{
+                exportButton: false,
+                toolbarButtonAlignment: "left",
+                showTitle: false
+            }}
+        />
+    )
 }
 
-const mapStateToProps = (state: any) => {
-    return {
-        ...state.customer
-    }
-};
-
-const mapDispatchToProps = (dispatch: ThunkDispatch<{}, {}, any>) => ({
-    getCustomers: () => dispatch(fetchCustomerList()),
-    deleteCustomer: (id: string) => dispatch(deleteCustomer(id))
-});
-
-
-export default compose(withStyles(styles), withRouter, connect<StateProps, DispatchProps>(mapStateToProps, mapDispatchToProps))(CustomerHomePage) as React.ComponentType;
+export default function CustomerHomePage() {
+    const history = useHistory();
+    const classes = useStyles();
+    return (
+        <>
+            <PageContainer>
+                <Grid
+                    container
+                    direction="row"
+                    justify="flex-start"
+                    alignItems="center"
+                    spacing={2}
+                >
+                    <Grid item xs={12}>
+                        <Typography variant="h4">
+                            Your Customers
+                            </Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <CustomersTable />
+                    </Grid>
+                </Grid>
+            </PageContainer>
+            <Fab onClick={() => history.push(paths.customer + customersPaths.createCustomer)} className={classes.fab} color="primary" variant="extended">
+                <AddIcon className={classes.fabIcon} /> Add Customer
+            </Fab>
+        </>
+    )
+}

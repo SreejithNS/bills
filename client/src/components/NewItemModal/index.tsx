@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
@@ -12,8 +12,10 @@ import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from '@material-ui/core';
 import NewItemForm from "../NewItemForm";
 import { useHistory } from 'react-router-dom';
-import { addItem } from '../../actions/item.actions';
-// import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../reducers/rootReducer';
+import useAxios from 'axios-hooks';
+import { APIResponse, handleAxiosError } from '../Axios';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -37,34 +39,44 @@ const Transition = React.forwardRef(function Transition(
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
-export default function NewItemModal(props: any) {
+export default function NewItemModal(props: { onCreate?: () => void; visible?: boolean; onClose?: any; }) {
     const [open, setOpen] = useState(true);
     const classes = useStyles();
     const history = useHistory();
+    const productCategory = useSelector((state: RootState) => state.product.productCategory);
+    const [{ loading, error, data }, postData] = useAxios<APIResponse<any>>({ url: "/product", method: "POST" }, { manual: true });
 
     const handleSubmit = (values: any) => {
-        return addItem(values).then(() => {
-            if ("onCreate" in props) props.onCreate()
-            else history.goBack();
-        });
+        return postData({ url: `/product/${productCategory?._id}`, method: "POST", data: values })
     }
+
+    if (error) handleAxiosError(error);
+
+    useEffect(() => {
+        if (data) {
+            if (props.onCreate) props.onCreate()
+            else history.goBack()
+        }
+        //eslint-disable-next-line
+    }, [data])
+
     return (
-        <Dialog fullScreen open={"visible" in props ? props.visible : open} onClose={props.onClose || (() => { setOpen(false); history.goBack() })} TransitionComponent={Transition}>
+        <Dialog fullScreen open={props.visible ?? open} onClose={props.onClose ?? (() => { setOpen(false); history.goBack() })} TransitionComponent={Transition}>
             <AppBar className={classes.appBar}>
                 <Toolbar>
-                    <IconButton edge="start" color="inherit" onClick={props.onClose || (() => { setOpen(false); history.goBack() })} aria-label="close">
+                    <IconButton edge="start" color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })} aria-label="close">
                         <CloseIcon />
                     </IconButton>
                     <Typography variant="h6" className={classes.title}>
                         Add Item to Inventory
                         </Typography>
-                    <Button autoFocus color="inherit" onClick={props.onClose || (() => { setOpen(false); history.goBack() })}>
+                    <Button autoFocus color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })}>
                         Cancel
                          </Button>
                 </Toolbar>
             </AppBar>
             <Container fixed className={classes.containerPadding}>
-                <NewItemForm onSubmit={handleSubmit} />
+                <NewItemForm onSubmit={handleSubmit} submiting={loading} category={productCategory} />
             </Container>
         </Dialog>
     );

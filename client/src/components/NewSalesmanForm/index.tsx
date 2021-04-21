@@ -52,16 +52,9 @@ const NewSalesmanForm = (props: { handleSubmit: any; pristine: any; reset: any; 
             >
                 <Grid item xs={12} sm={6}>
                     <Field
-                        name="firstName"
+                        name="name"
                         component={ReduxTextField}
                         label="First Name *"
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <Field
-                        name="lastName"
-                        component={ReduxTextField}
-                        label="Last Name"
                     />
                 </Grid>
                 <Grid item xs={12} sm={6}>

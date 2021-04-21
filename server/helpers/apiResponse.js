@@ -1,9 +1,21 @@
+const e = require("express");
 /**
  * 
- * @param {*} res 
- * @param {*} msg 
+ * @param {e.Response} res 
+ * @param {string} msg 
+ */
+
+/**
+ * @typedef ResponseData
+ * @type {object}
+ * @param {number} status - Success Status of the Response
+ * @param {string} message - Response Message
+ * @param {*=} data - Response Data if any
  */
 exports.successResponse = function (res, msg) {
+	/**
+	 * @type {ResponseData}
+	 */
 	var data = {
 		status: 1,
 		message: msg
@@ -12,11 +24,14 @@ exports.successResponse = function (res, msg) {
 };
 /**
  * 
- * @param {*} res 
- * @param {*} msg 
+ * @param {e.Response} res 
+ * @param {string} msg 
  * @param {*} data 
  */
 exports.successResponseWithData = function (res, msg, data) {
+	/**
+	 * @type {ResponseData}
+	 */
 	var resData = {
 		status: 1,
 		message: msg,
@@ -26,10 +41,13 @@ exports.successResponseWithData = function (res, msg, data) {
 };
 /**
  * 
- * @param {*} res 
- * @param {*} msg 
+ * @param {e.Response} res 
+ * @param {string} msg 
  */
 exports.ErrorResponse = function (res, msg) {
+	/**
+	 * @type {ResponseData}
+	 */
 	var data = {
 		status: 0,
 		message: msg,
@@ -38,10 +56,13 @@ exports.ErrorResponse = function (res, msg) {
 };
 /**
  * 
- * @param {*} res 
- * @param {*} msg 
+ * @param {e.Response} res 
+ * @param {string} msg 
  */
 exports.notFoundResponse = function (res, msg) {
+	/**
+	 * @type {ResponseData}
+	 */
 	var data = {
 		status: 0,
 		message: msg,
@@ -51,11 +72,14 @@ exports.notFoundResponse = function (res, msg) {
 
 /**
  * 
- * @param {*} res 
- * @param {*} msg 
+ * @param {e.Response} res 
+ * @param {string} msg 
  * @param {*} data 
  */
 exports.validationErrorWithData = function (res, msg, data) {
+	/**
+	 * @type {ResponseData}
+	 */
 	var resData = {
 		status: 0,
 		message: msg,
@@ -66,10 +90,13 @@ exports.validationErrorWithData = function (res, msg, data) {
 
 /**
  * 
- * @param {*} res 
- * @param {*} msg 
+ * @param {e.Response} res 
+ * @param {string} msg 
  */
 exports.unauthorizedResponse = function (res, msg) {
+	/**
+	 * @type {ResponseData}
+	 */
 	var data = {
 		status: 0,
 		message: msg,

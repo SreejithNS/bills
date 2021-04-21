@@ -1,27 +1,24 @@
 var mongoose = require("mongoose");
 const mongoosePaginate = require("mongoose-paginate-v2");
-const Product = require("../ProductModel");
+const { Product } = require("../ProductModel");
 var Schema = mongoose.Schema;
 const Payment = require("./PaymentSchema");
 
-const autoIncrement = require("mongoose-auto-increment");
-autoIncrement.initialize(mongoose.connection);
+const LocationSchema = require("./LocationSchema");
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 const BillSchema = new Schema(
 	{
-		serialNumber: {
+		serialNumber: { //Incremental Serial Number Right from 0
 			type: Number,
-			required: true,
-			index: {
-				unique: true,
-			},
+			index: true,
 		},
 		items: [
 			{
 				code: { type: String, required: true },
 				name: { type: String, required: true },
-				weight: { type: Number },
-				weightUnit: { type: String },
+				unit: { type: String },
+				category: { type: String },
 				quantity: { type: Number, required: true },
 				rate: { type: Number, default: 0 },
 				mrp: { type: Number, default: 0 },
@@ -34,7 +31,11 @@ const BillSchema = new Schema(
 		soldBy: { type: Schema.Types.ObjectId, ref: "User" },
 		credit: { type: Boolean, default: true },
 		paidAmount: { type: Number, default: 0 },
-		comesUnder: { type: Schema.Types.ObjectId, ref: "User" },
+		belongsTo: { type: Schema.Types.ObjectId, ref: "User" },
+		location: {
+			type: LocationSchema,
+			required: false
+		},
 		payments: {
 			type: [
 				{
@@ -189,9 +190,17 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 	var populatedItems = [];
 
 	for (let item of items) {
-		const document = await Product.findById(item.id).lean().exec();
+		const document = await Product.findOne({ _id: item._id }).lean().exec();
 		if (document) {
 			document.quantity = item.quantity;
+			if (item.unit) {
+				const unit = document.units.find(unit => unit.name === item.unit);
+				if (unit) {
+					document.unit = unit.name;
+					document.mrp = unit.mrp;
+					document.rate = unit.rate;
+				}
+			}
 			populatedItems.push(document);
 		} else {
 			// apiResponse.ErrorResponse(res,`Product not found:${item.id}`);
@@ -203,9 +212,14 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 };
 
 BillSchema.plugin(mongoosePaginate);
-BillSchema.plugin(autoIncrement.plugin, {
-	model: "Bill",
-	field: "serialNumber",
-});
+BillSchema.index({ serialNumber: 1, belongsTo: 1 }, { unique: true });
+BillSchema.plugin(AutoIncrement,
+	{
+		id: 'bill_sequence',
+		inc_field: 'serialNumber',
+		reference_fields: ['belongsTo'],
+		start_seq: 1
+	}
+);
 
 module.exports = BillSchema;

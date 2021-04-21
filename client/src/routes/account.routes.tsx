@@ -5,6 +5,7 @@ import {
 import AccountPage from '../pages/AccountPage';
 import NewSalesmanModal from "../components/NewSalesmanModal";
 import { accountPaths, paths } from './paths.enum';
+import UserEditModal from '../components/UserEditModal';
 
 export default function AccountRoutes() {
     return (
@@ -14,6 +15,9 @@ export default function AccountRoutes() {
             </Route>
             <Route path={paths.account + accountPaths.addSalesman} >
                 <NewSalesmanModal />
+            </Route>
+            <Route path={paths.account + accountPaths.editSalesman} >
+                <UserEditModal />
             </Route>
         </React.Fragment>
     )

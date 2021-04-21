@@ -3,8 +3,11 @@ import { makeStyles, createStyles, Container, Theme } from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
-        containerTop: {
-            padding: theme.spacing(2)
+        container: {
+            padding: theme.spacing(2),
+            "&>*:last-child": {
+                marginBottom: "120px"
+            }
         }
     }),
 );
@@ -13,7 +16,7 @@ const useStyles = makeStyles((theme: Theme) =>
 export default function PageContainer(props: any) {
     const classes = useStyles();
     return (
-        <Container fixed className={classes.containerTop}>
+        <Container fixed className={classes.container}>
             {props.children}
         </Container>
     )

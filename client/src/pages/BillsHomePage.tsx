@@ -1,21 +1,22 @@
 import * as React from 'react'
-import { CircularProgress, Fab, Grid, Theme, withStyles, Zoom, WithStyles, createStyles, Typography, Button } from '@material-ui/core';
-import { connect } from 'react-redux';
-import { fetchBillList } from '../actions/bill.actions';
+import { CircularProgress, Fab, Grid, Theme, Zoom, Typography, Button, makeStyles } from '@material-ui/core';
 import BillCard from '../components/BillCard';
 import ParagraphIconCard from "../components/ParagraphIconCard";
 import AddIcon from '@material-ui/icons/Add';
-import { compose } from 'redux';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { billsPaths, paths } from '../routes/paths.enum';
 import { LineWeightRounded } from '@material-ui/icons';
 import BillSearch from '../components/BillSearch';
 import PageContainer from '../components/PageContainer';
+import { useCallback, useState } from 'react';
+import useAxios from 'axios-hooks';
+import { APIResponse, axios, handleAxiosError } from '../components/Axios';
+import { BillData, PaginateResult } from '../reducers/bill.reducer';
+import { toast } from 'react-toastify';
+import { useConfirm } from 'material-ui-confirm';
 const Fade = require('react-reveal/Fade');
 
-type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles> & RouteComponentProps;
-
-const styles = (theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => ({
     fab: {
         position: "fixed",
         right: theme.spacing(2),
@@ -25,97 +26,145 @@ const styles = (theme: Theme) => createStyles({
         marginRight: theme.spacing(1)
     },
     cardPadding: {
-        padding: theme.spacing(1),
-        "&:last-of-type": {
-            marginBottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(8)
+        padding: theme.spacing(1)
+    }
+}))
+
+export default function BillsHomePage() {
+    const [pageNumber, setPageNumber] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+    const [sortParam, setSortParam] = useState<keyof BillData>("createdAt");
+    const [search, setSearch] = useState<Object | undefined>();
+    const [requestLoading, setRequestLoading] = useState(false);
+
+    type ResponseData = APIResponse<PaginateResult<BillData>>;
+
+    const [{ loading: getLoading, error, data }] = useAxios<ResponseData>({
+        url: "/bill",
+        params: {
+            page: pageNumber,
+            limit,
+            sort: (sortDirection === "desc" ? "-" : "") + sortParam,
+            ...(search && search),
+        }
+    })
+
+    const confirm = useConfirm();
+    const deleteBill = useCallback(
+        (billId: BillData["_id"]) => {
+            confirm({
+                title: "Are you sure?",
+                description: "Deleting a bill is not undoable. You cannot recover the bill data once deleted.",
+                confirmationText: "Delete",
+                confirmationButtonProps: {
+                    color: "secondary"
+                }
+            }).then(() => {
+                setRequestLoading(true);
+                return axios.delete("/bill/id/" + billId);
+            }, () => toast.info("Bill did not delete."))
+                .then(
+                    () => toast.success("Bill deleted successfully"),
+                    handleAxiosError
+                ).finally(() => setRequestLoading(false))
+            //eslint-disable-next-line
+        }, [data]
+    )
+
+    const loading = getLoading || requestLoading;
+
+    const history = useHistory();
+    const classes = useStyles();
+
+    if (error) toast.error("Could get bills list");
+
+    const handleSearch = (param: string, value: string) => {
+        if (value === "") {
+            setSearch(undefined);
+        } else {
+            setSearch({ [param]: value })
         }
     }
-})
 
-class BillsHomePage extends React.Component<Props> {
-    componentDidMount() {
-        this.props.getBillsList();
-    }
-    render() {
-        const { billsList, billsListLoad, classes, history, billsListHasNextPage, getBillsList } = this.props;
-        return (
-            <React.Fragment>
-                <PageContainer>
-                    <Grid
-                        container
-                        justify="center"
-                        alignItems="flex-start"
-                        spacing={2}
-                    >
-                        <Grid item xs={12}>
-                            <Typography variant="h4">
-                                Your Bills
+    return (
+        <React.Fragment>
+            <PageContainer>
+                <Grid
+                    container
+                    justify="center"
+                    alignItems="flex-start"
+                    spacing={2}
+                >
+                    <Grid item xs={12}>
+                        <Typography variant="h4">
+                            Your Bills
                                  <Button onClick={() => history.push("/items")}>inventory</Button>
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <BillSearch />
-                        </Grid>
-                        {(billsList.length) ? billsList.map((bill: { customer: { name: String | undefined; }; billAmount: Number | undefined; createdAt: String | undefined; _id: string; }, key: any) =>
-                            <React.Fragment key={key}>
-                                <Grid item xs={12} className={classes.cardPadding}>
-                                    <Fade bottom>
-                                        <BillCard
-                                            customerName={bill.customer.name}
-                                            billAmount={bill.billAmount}
-                                            timestamp={bill.createdAt}
-                                            deleteAction={console.log}
-                                            onClickAction={() => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", bill._id))}
-                                        />
-                                    </Fade>
-                                </Grid>
-                                {(key === billsList.length - 1) && billsListHasNextPage ?
-                                    <Grid item xs={12} className={classes.cardPadding} style={{ textAlign: "center" }}>
+                        </Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <BillSearch
+                            onPageSizeChange={setLimit}
+                            onSearch={handleSearch}
+                            onSortDirectionChange={setSortDirection}
+                            onSortParamChange={setSortParam}
+                            pageSize={limit}
+                            sortDirection={sortDirection}
+                            sortParam={sortParam}
+                        />
+                    </Grid>
+                    {
+                        (data?.data?.docs.length && !loading)
+                            ? data.data.docs.map((bill: BillData, key: any) =>
+                                <React.Fragment key={key}>
+                                    <Grid item xs={12} className={classes.cardPadding}>
                                         <Fade bottom>
-                                            <Button disabled={billsListLoad} onClick={() => getBillsList(true)}>Load more bills</Button>
+                                            <BillCard
+                                                customerName={bill.customer.name}
+                                                billAmount={bill.billAmount}
+                                                timestamp={bill.createdAt.toString()}
+                                                deleteAction={() => deleteBill(bill._id)}
+                                                onClickAction={() => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", bill._id))}
+                                            />
                                         </Fade>
-                                    </Grid> : ""}
-                            </React.Fragment>
-                        )
-                            : billsList.length === 0 && billsListLoad
+                                    </Grid>
+                                </React.Fragment>
+                            )
+                            : loading
                                 ? <Grid item xs>
                                     <ParagraphIconCard
-                                        icon={<Zoom in={billsListLoad}><CircularProgress /></Zoom>}
+                                        icon={<Zoom in={loading}><CircularProgress /></Zoom>}
                                         heading="Bills loading"
-                                        content="Please wait while fetching the list of Bills you created so far."
+                                        content="Please wait while fetching the list of Bills"
                                     />
                                 </Grid>
-                                : billsList.length === 0 && !billsListLoad
+                                : !loading && data?.data?.totalDocs === 0
                                     ? <Grid item xs>
                                         <ParagraphIconCard
                                             icon={<LineWeightRounded fontSize="large" />}
                                             heading="No bills yet"
                                             content={<>Click on <strong>Add New Bill</strong> icon to add a new bill which you can see here.</>} />
                                     </Grid>
-                                    : <></>}
-                    </Grid>
-                </PageContainer>
-                <Fab onClick={() => history.push(paths.billsHome + billsPaths.addBill)} className={classes.fab} color="primary" variant="extended">
-                    <AddIcon className={classes.fabIcon} />
+                                    : <></>
+                    }
+                    {data?.data?.hasPrevPage &&
+                        <Grid item className={classes.cardPadding} style={{ textAlign: "center" }}>
+                            <Fade bottom>
+                                <Button disabled={loading} onClick={() => setPageNumber(data?.data?.prevPage ?? pageNumber - 1)}>Previous Page</Button>
+                            </Fade>
+                        </Grid>}
+                    {data?.data?.hasNextPage &&
+                        <Grid item className={classes.cardPadding} style={{ textAlign: "center" }}>
+                            <Fade bottom>
+                                <Button disabled={loading} onClick={() => setPageNumber(data?.data?.nextPage ?? pageNumber + 1)}>Next Page</Button>
+                            </Fade>
+                        </Grid>}
+                </Grid>
+            </PageContainer>
+            <Fab onClick={() => history.push(paths.billsHome + billsPaths.addBill)} className={classes.fab} color="primary" variant="extended">
+                <AddIcon className={classes.fabIcon} />
                         New Bill
                 </Fab>
-            </React.Fragment >
-        )
-    }
+        </React.Fragment>
+    )
 }
-
-const mapStateToProps = (state: any) => {
-    return {
-        billsList: state.bill.billsList,
-        billsListHasNextPage: state.bill.billsListHasNextPage,
-        billsListLoad: state.bill.billsListLoad
-    }
-};
-
-const mapDispatchToProps = (dispatch: any) => {
-    return {
-        getBillsList: (extraBills?: boolean) => dispatch(fetchBillList(extraBills))
-    }
-};
-
-export default compose(withRouter, withStyles(styles), connect(mapStateToProps, mapDispatchToProps))(BillsHomePage) as React.ComponentType;

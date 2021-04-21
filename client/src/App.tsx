@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router
   //Link
@@ -6,42 +6,30 @@ import {
 import Routes from './routes';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { connect } from 'react-redux';
 import FullScreenLoading from './components/FullScreenLoading';
-import { fetchUserData } from './actions/app.actions';
+import { ConfirmProvider } from 'material-ui-confirm';
+import { useAuthActions, useProductCategoryActions, useUsersUnderAdmin } from './actions/auth.actions';
 
+export default function App() {
+  const { initiated: init1 } = useAuthActions();
+  const { initiated: init2 } = useUsersUnderAdmin();
+  const { initiated: init3 } = useProductCategoryActions();
+  const [init, setInit] = useState(false);
 
-type Props = ReturnType<typeof mapStateToProps> & ReturnType<typeof mapDispatchToProps>;
+  useEffect(() => {
+    if (!init && (init1 && init2 && init3)) {
+      setInit(true);
+    }
+  }, [init1, init2, init3, init]);
 
-class App extends React.Component<Props> {
-
-  componentDidMount() {
-    this.props.getUserData();
-  }
-
-  render() {
-    const { userDataLoading } = this.props;
-    return (
-      <main style={{ height: "100vh" }}>
-        <ToastContainer />
-        {!userDataLoading ? <Router>
+  return (
+    <main style={{ height: "100vh" }}>
+      <ToastContainer />
+      <ConfirmProvider>
+        {init ? <Router>
           <Routes />
         </Router> : <FullScreenLoading />}
-      </main>
-    );
-  }
+      </ConfirmProvider>
+    </main>
+  )
 }
-
-const mapStateToProps = (state: { app: { userDataLoading: any; }; }) => {
-  return {
-    userDataLoading: state.app.userDataLoading
-  }
-}
-
-const mapDispatchToProps = (dispatch: any) => {
-  return {
-    getUserData: () => dispatch(fetchUserData())
-  }
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(App);

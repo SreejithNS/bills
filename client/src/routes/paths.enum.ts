@@ -14,15 +14,20 @@ export enum billsPaths {
 
 export enum customersPaths {
     home = '/',
-    createCustomer = '/create'
+    createCustomer = '/create',
+    customerViewer = "/view/:id"
 }
 
 export enum itemPaths {
     home = '/',
-    addItem = '/create'
+    addItem = '/create',
+    editCategory = '/category/edit/:productCategoryId',
+    editProduct = '/product/edit/:productId',
+    import = '/import'
 }
 
 export enum accountPaths {
     home = '/',
-    addSalesman = '/salesman/add'
+    addSalesman = '/salesman/add',
+    editSalesman = '/salesman/edit/:id'
 }

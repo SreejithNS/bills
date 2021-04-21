@@ -1,14 +1,21 @@
 var express = require("express");
-const BillItemController = require("../controllers/BillItemController");
+const { createCategoryRequest, deleteProductCategory, updateProductCategory, getProductCategoriesList, productAvailability, getProductSuggestions, createProductRequest, deleteProduct, updateProduct, queryProduct, importProducts, getProduct } = require("../controllers/ProductController");
 
 var router = express.Router();
 
-router.get("/query", BillItemController.query);
-router.get("/suggestions/:code", BillItemController.getSuggestions);
-router.get("/availability/:code", BillItemController.productAvailability);
-router.get("/:id", BillItemController.get);
-router.post("/", BillItemController.create);
-router.put("/:id", BillItemController.update);
-router.delete("/:id", BillItemController.delete);
+router.post("/category", createCategoryRequest);
+router.get("/category", getProductCategoriesList);
+router.put("/:categoryId", updateProductCategory);
+router.delete("/:categoryId.:productId", deleteProduct);
+router.delete("/:categoryId", deleteProductCategory);
+router.get("/:categoryId/query", queryProduct);
+
+router.post("/:categoryId", createProductRequest);
+router.post("/:categoryId/import", importProducts);
+router.get("/:categoryId.:productId", getProduct);
+router.put("/:categoryId.:productId", updateProduct);
+
+router.get("/:categoryId/suggestion/:code", getProductSuggestions);
+router.get("/:categoryId/availability/:code", productAvailability);
 
 module.exports = router;

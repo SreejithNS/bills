@@ -28,18 +28,18 @@ export default function PaymentListItem(props: { payments: any[] }) {
                         { paidAmount, paymentReceivedBy, updatedAt }: any,
                         key: string | number | undefined
                     ) => (
-                            <ListItem key={key}>
-                                <ListItemAvatar>
-                                    <Avatar>
-                                        <AddCircleOutlineRoundedIcon />
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText
-                                    primary={`₹${paidAmount}`}
-                                    secondary={`${"Received by " + paymentReceivedBy?.firstName.toLocaleUpperCase()} at ${moment(updatedAt.toString()).format('MMM D YYYY, h:mm a')}`}
-                                />
-                            </ListItem>
-                        )
+                        <ListItem key={key}>
+                            <ListItemAvatar>
+                                <Avatar>
+                                    <AddCircleOutlineRoundedIcon />
+                                </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                                primary={`₹${paidAmount}`}
+                                secondary={`${"Received by " + paymentReceivedBy?.name.toLocaleUpperCase()} at ${moment(updatedAt.toString()).format('MMM D YYYY, h:mm a')}`}
+                            />
+                        </ListItem>
+                    )
                 )}
         </List>
     );

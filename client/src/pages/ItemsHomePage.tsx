@@ -1,21 +1,31 @@
-import * as React from 'react'
-import { Fab, Grid, Theme, withStyles, WithStyles, createStyles, Typography } from '@material-ui/core';
-import { connect } from 'react-redux';
+import React, { useRef, useState } from 'react'
+import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, CircularProgress, Tooltip } from '@material-ui/core';
+import { useSelector } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
-import { compose } from 'redux';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { itemPaths, paths } from '../routes/paths.enum';
-import MaterialTable from 'material-table';
+import MaterialTable, { Query, QueryResult } from 'material-table';
 import { tableIcons } from '../components/MaterialTableIcons';
-import { fetchItemsList } from '../actions/item.actions';
-import Axios from 'axios';
+import { exportToCsv, itemsArrayToCsvArray } from '../actions/item.actions';
 import { toast } from 'react-toastify';
-import { Add, Refresh } from '@material-ui/icons';
+import { Add, DeleteOutlineRounded, LineStyleTwoTone, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
+import LineStyleIcon from '@material-ui/icons/LineStyle';
+import EditRoundedIcon from '@material-ui/icons/EditRounded';
+import { RootState } from '../reducers/rootReducer';
+import ImportModal from '../components/ImportModal';
+import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
+import { APIResponse, axios, handleAxiosError, interpretMTQuery } from '../components/Axios';
+import { Product, ProductCategory } from '../reducers/product.reducer';
+import { PaginateResult } from '../reducers/bill.reducer';
+import { useConfirm } from 'material-ui-confirm';
+import NewProductCategoryModal from '../components/NewProductCategoryModal';
+import { useHasPermission, useProductCategoryActions } from '../actions/auth.actions';
+import ParagraphIconCard from '../components/ParagraphIconCard';
+import { store } from '..';
+import { UserPermissions } from '../reducers/auth.reducer';
 
-type Props = ReturnType<typeof mapDispatchToProps> & ReturnType<typeof mapStateToProps> & WithStyles<typeof styles> & RouteComponentProps;
-
-const styles = (theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => ({
     fab: {
         position: "fixed",
         right: theme.spacing(2),
@@ -26,150 +36,279 @@ const styles = (theme: Theme) => createStyles({
         marginRight: theme.spacing(1)
     },
     cardPadding: {
-        padding: theme.spacing(1),
-        "&:last-of-type": {
-            marginBottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(8)
+        padding: theme.spacing(2),
+        // "&:last-of-type": {
+        //     marginBottom: parseInt(theme.mixins.toolbar.minHeight + "") + theme.spacing(8)
+        // }
+    },
+    flexContainer: {
+        display: "flex",
+        flexFlow: "row nowrap",
+        alignContent: "center",
+        overflowX: "auto",
+        "&>*": {
+            margin: theme.spacing(1),
+            minWidth: "auto"
         }
     }
-})
+}))
 
-class ItemsHomePage extends React.Component<Props> {
-    componentDidMount() {
-        //this.props.getItemsList();
-    }
-    tableRef = React.createRef<{ onQueryChange(): void }>();
-    render() {
-        const { classes, history } = this.props;
-        return (
-            <React.Fragment>
-                <PageContainer>
-                    <Grid
-                        container
-                        justify="center"
-                        alignItems="flex-start"
-                        spacing={2}
-                    >
-                        <Grid item xs={12}>
-                            <Typography variant="h4">
-                                Inventory
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} className={classes.cardPadding}>
-                            <MaterialTable
-                                tableRef={this.tableRef}
+export function ProductCategorySelection() {
+    const { productCategoryList, productCategory } = useSelector((state: RootState) => state.product);
+    const { loading, changeCategory, error } = useProductCategoryActions();
 
-                                icons={tableIcons}
-                                //isLoading={itemsListLoad}
-                                columns={[
-                                    { title: "Item Name", field: "name", editable: "never" },
-                                    { title: "Code", field: "code", editable: "never" },
-                                    { title: "Rate", field: "rate", type: "numeric", editable: "never" },
-                                    { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
-                                ]}
-
-                                data={query =>
-                                    new Promise((resolve, reject) => {
-                                        // prepare your data and then call resolve like this:
-                                        const queryString = new URL(process.env.REACT_APP_API_URL + "/api/product/query/");
-                                        queryString.searchParams.append("page", (query.page + 1).toString());
-                                        queryString.searchParams.append("limit", query.pageSize.toString());
-                                        queryString.searchParams.append("search", query.search);
-                                        queryString.searchParams.append("sort", `${query.orderDirection === 'desc' ? "-" : ""}${query.orderBy?.field || ""}`);
-                                        Axios
-                                            .get(queryString.toString(), { withCredentials: true })
-                                            .then(function (response) {
-                                                const responseData = response.data.data
-
-                                                resolve({
-                                                    data: responseData.docs,
-                                                    page: responseData.page - 1,
-                                                    totalCount: responseData.totalDocs
-                                                });
-                                            })
-                                            .catch(function (error) {
-                                                toast.error("Items List Error:" + error.message);
-                                                reject(error)
-                                            })
-                                    })
-                                }
-                                actions={[
-                                    {
-                                        icon: () => <Refresh />,
-                                        tooltip: 'Refresh Data',
-                                        isFreeAction: true,
-                                        onClick: () => this.tableRef.current && this.tableRef.current.onQueryChange(),
-                                    },
-                                    {
-                                        icon: () => <Add />,
-                                        tooltip: 'Add Item',
-                                        isFreeAction: true,
-                                        onClick: () => history.push(paths.items + itemPaths.addItem)
-                                    }
-                                ]}
-                                options={{
-                                    exportButton: false,
-                                    exportCsv: (columns, data) => {
-                                        console.log(data)
-                                        alert('You should develop a code to export ' + data.length + ' rows');
-                                    },
-                                    toolbarButtonAlignment: "left",
-                                    showTitle: false
-                                }}
-                            />
-                        </Grid>
-                        {/* {(itemsList.length) ?
-                            <Grid item xs={12} className={classes.cardPadding}>
-                                <MaterialTable
-                                    icons={tableIcons}
-                                    isLoading={itemsListLoad}
-                                    columns={[
-                                        { title: "Item Name", field: "name", editable: "never" },
-                                        { title: "Code", field: "code", editable: "never" },
-                                        { title: "Rate", field: "rate", type: "numeric", editable: "never" },
-                                        { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
-                                    ]}
-                                    data={itemsList}
-                                // options={{
-                                // search: false,
-                                // paging: false,
-                                // toolbar: false,
-                                // padding: "dense"
-                                // }}
-                                // editable={{
-                                //     onRowUpdate: (newData, oldData) => new Promise((res, rej) => {
-                                //         updateQuantity(newData.id, newData.quantity)
-                                //         res();
-                                //     })
-                                // }}
-                                />
-                            </Grid>
-                            : itemsList.length === 0 && itemsListLoad ? <Grid item xs container alignItems="center" justify="center">
-                                <Typography variant="h6" align="center"><Zoom in={itemsListLoad}><CircularProgress /></Zoom><br />Please wait while fetching items</Typography>
-                            </Grid>
-                                : ""} */}
-                    </Grid>
-                </PageContainer>
-                <Fab onClick={() => this.props.history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
-                    <AddIcon className={classes.fabIcon} />
-                        Add Item
-                </Fab>
-            </React.Fragment >
-        )
-    }
+    return (
+        <FormControl variant="outlined">
+            <InputLabel id="category-selection-label">Category</InputLabel>
+            <Select
+                labelId="category-selection-label"
+                value={productCategory?._id ?? ""}
+                onChange={(changed) => changeCategory(productCategoryList.find((category => category._id === changed.target.value)))}
+                label="Category"
+                disabled={loading || !!error}
+            >
+                {productCategoryList.map(
+                    (category, key: any) => <MenuItem key={key} value={category._id}>{category.name.toUpperCase()}</MenuItem>
+                )}
+            </Select>
+        </FormControl>
+    )
 }
 
-const mapStateToProps = (state: any) => {
-    return {
-        itemsList: state.item.itemsList,
-        itemsListHasNextPage: state.item.itemsListHasNextPage,
-        itemsListLoad: state.item.itemsListLoad
-    }
-};
+const ItemToolbar = () => {
+    const [importModalOpen, toggleImportModal] = useState<boolean>(false);
+    const [productCategoryCreationModalOpen, setProductCategoryCreationModalOpen] = useState(false);
+    const { productCategory, productCategoryList } = useSelector((state: RootState) => state.product);
+    const { fetchCategories } = useProductCategoryActions();
+    const confirm = useConfirm();
+    const history = useHistory();
 
-const mapDispatchToProps = (dispatch: any) => {
-    return {
-        getItemsList: (extraItems?: boolean) => dispatch(fetchItemsList(extraItems))
-    }
-};
+    const productCategoryDeletePermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_DELETE);
+    const productCategoryCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_POST);
+    const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
+    const productCategoryEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_PUT);
 
-export default compose(withRouter, withStyles(styles), connect(mapStateToProps, mapDispatchToProps))(ItemsHomePage) as React.ComponentType;
+    const handleProductCategoryDelete = () => {
+        confirm({
+            title: "Are you sure?",
+            description: "Deleting a product category will delete all the Product items within the category. Do you really want to delete this Product category?",
+            cancellationText: "No",
+            confirmationText: "Yes"
+        }).then(() => {
+            axios.delete<APIResponse<{ deletedProductsCount: number }>>(`/product/${productCategory?._id}`)
+                .then(response => {
+                    toast.success(`Product category along with its ${response.data.data?.deletedProductsCount} products deleted.`);
+                    fetchCategories();
+                }).catch(handleAxiosError);
+        }, () => toast.warn("Didn't delete the product category"));
+    }
+    const handleProductCategoryEdit = () => {
+        history.push((paths.items + itemPaths.editCategory).replace(":productCategoryId", productCategory?._id ?? ""))
+    }
+    const classes = useStyles();
+    return (
+        <Paper elevation={2} className={classes.cardPadding + " " + classes.flexContainer}>
+            <Tooltip title="Selected Category" arrow>
+                <ProductCategorySelection />
+            </Tooltip>
+            {productCategoryCreatePermission && <Tooltip title="Add Product Category" arrow>
+                <Button
+                    startIcon={<AddIcon />}
+                    onClick={() => setProductCategoryCreationModalOpen(!productCategoryCreationModalOpen)}
+                >Create</Button>
+            </Tooltip>
+            }
+            {productCategoryEditPermission
+                && <Tooltip title="Edit this Category" arrow>
+                    <Button
+                        startIcon={<EditRoundedIcon />}
+                        onClick={handleProductCategoryEdit}>
+                        Edit</Button>
+                </Tooltip>
+            }
+            {(productCategoryList.length > 1 && productCategoryDeletePermission)
+                && <Tooltip title="Delete this Category" arrow>
+                    <Button
+                        startIcon={<DeleteOutlineRounded />}
+                        color="secondary"
+                        onClick={handleProductCategoryDelete}>
+                        Delete</Button>
+                </Tooltip>
+            }
+            {productCreatePermission &&
+                <Tooltip title={(
+                    <>
+                        <strong>Import from CSV</strong><br />
+                    Add Multiple products to this category from Structured CSV File
+                </>
+                )} arrow>
+                    <Button
+                        startIcon={<SystemUpdateAltIcon />}
+                        onClick={() => toggleImportModal(!importModalOpen)}
+                    >Import Products</Button>
+                </Tooltip>
+            }
+            <ImportModal visible={importModalOpen} onClose={() => toggleImportModal(false)} />
+            <NewProductCategoryModal visible={productCategoryCreationModalOpen} onClose={() => setProductCategoryCreationModalOpen(false)} />
+        </Paper>
+    )
+}
+
+const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategoryId?: ProductCategory["_id"], productCategoryName?: ProductCategory["name"] }) => {
+    const history = useHistory();
+    const tableRef = useRef<any>(null);
+    const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
+    const productEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_PUT);
+    const productDeletePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_DELETE);
+    const confirm = useConfirm();
+
+    if (!productCategoryId || !productCategoryName) return (
+        <ParagraphIconCard
+            heading="Please Select a product category"
+            icon={<CircularProgress />}
+        />
+    )
+
+    store.subscribe(() => {
+        tableRef?.current?.onQueryChange();
+    })
+
+    const fetchItems = (query: Query<Product>): Promise<QueryResult<Product>> => new Promise((resolve) => {
+        const url = `/product/${productCategoryId}/query?`;
+        const search = (new URLSearchParams(interpretMTQuery(query))).toString();
+        axios
+            .get<APIResponse<PaginateResult<Product>>>(url + search)
+            .then(function ({ data: responseData }) {
+                if (responseData.data)
+                    resolve({
+                        data: responseData.data.docs,
+                        page: responseData.data.page - 1,
+                        totalCount: responseData.data.totalDocs
+                    });
+            })
+            .catch(handleAxiosError)
+    })
+    return (
+        <MaterialTable
+            tableRef={tableRef}
+            icons={tableIcons}
+            columns={[
+                { title: "Item Name", field: "name", editable: "never" },
+                { title: "Code", field: "code", editable: "never" },
+                { title: "Rate", field: "rate", type: "numeric", editable: "never" },
+                { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
+            ]}
+            data={fetchItems}
+            actions={[
+                {
+                    icon: () => <Refresh />,
+                    tooltip: 'Refresh Data',
+                    isFreeAction: true,
+                    onClick: () => tableRef?.current?.onQueryChange(),
+                },
+                {
+                    icon: () => <Add />,
+                    disabled: !productCreatePermission,
+                    tooltip: 'Add Product',
+                    isFreeAction: true,
+                    onClick: () => history.push(paths.items + itemPaths.addItem)
+                },
+                {
+                    icon: () => <EditRoundedIcon />,
+                    tooltip: 'Edit Product',
+                    disabled: !productEditPermission,
+                    isFreeAction: false,
+                    onClick: (_, data) => {
+                        data = data as (Product);
+                        history.push((paths.items + itemPaths.editProduct).replace(":productId", data._id))
+                    }
+                },
+                {
+                    icon: () => <DeleteOutlineRounded />,
+                    disabled: !productDeletePermission,
+                    tooltip: 'Delete Product',
+                    isFreeAction: false,
+                    onClick: (_, data: any) => {
+                        confirm({
+                            title: "Are you sure?",
+                            description: "Do you really want to delete this Product?",
+                            cancellationText: "No",
+                            confirmationText: "Yes"
+                        })
+                            .then(
+                                () => axios.delete(`/product/${productCategoryId}.${data._id}`)
+                                , () => toast.warn("Didn't delete the Product"))
+                            .then(() => tableRef?.current?.onQueryChange())
+                            .catch(handleAxiosError)
+                    }
+                }
+            ]}
+            options={{
+                exportButton: false,
+                exportCsv: (columns, data) => {
+                    exportToCsv(productCategoryName, itemsArrayToCsvArray(data))
+                },
+                toolbarButtonAlignment: "left",
+                showTitle: false
+            }}
+            detailPanel={[{
+                icon: LineStyleIcon,
+                openIcon: LineStyleTwoTone,
+                tooltip: 'Show Units',
+                render: (rowData: Product) => {
+                    return (rowData.units && rowData.units.length) ? (
+                        <List dense>
+                            {rowData.units.map((unit: { name: string; rate: number; mrp: number; }, key) =>
+                                <ListItem key={key}>
+                                    <ListItemText
+                                        primary={unit.name.toUpperCase()}
+                                        secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate}`}
+                                    />
+                                </ListItem>,
+                            )}
+                        </List>
+                    ) : <></>
+                }
+            }]}
+        />
+    )
+}
+
+export default function ItemsHomePage() {
+    const classes = useStyles();
+    const history = useHistory();
+    const { productCategory } = useSelector((state: RootState) => state.product);
+    const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
+
+    return (
+        <React.Fragment>
+            <PageContainer>
+                <Grid
+                    container
+                    justify="center"
+                    alignItems="flex-start"
+                    spacing={2}
+                >
+                    <Grid item xs={12}>
+                        <Typography variant="h4">
+                            Inventory
+                            </Typography>
+                    </Grid>
+                    <Grid item xs={12} className={classes.cardPadding}>
+                        <ItemToolbar />
+                    </Grid>
+                    <Grid item xs={12} className={classes.cardPadding}>
+                        <ItemsTable
+                            productCategoryId={productCategory?._id}
+                            productCategoryName={productCategory?.name}
+                        />
+                    </Grid>
+                </Grid>
+            </PageContainer>
+            {productCreatePermission && <Fab onClick={() => history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
+                <AddIcon className={classes.fabIcon} />
+                        Add Item
+                </Fab>}
+        </React.Fragment >
+    )
+}

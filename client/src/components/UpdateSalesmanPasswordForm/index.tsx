@@ -46,6 +46,7 @@ const UpdateSalesmanPasswordForm = (props: { handleSubmit: any; pristine: any; r
                         component={ReduxTextField}
                         label="Password"
                         type="password"
+                        disabled={submitting}
                     />
                 </Grid>
                 <Grid item xs={6} container justify="center" alignItems="center" spacing={2}>
@@ -67,7 +68,7 @@ const UpdateSalesmanPasswordForm = (props: { handleSubmit: any; pristine: any; r
     );
 };
 
-export default reduxForm({
+export default reduxForm<{ password: string }>({
     form: 'UpdateSalesmanPasswordForm', // a unique identifier for this form
     validate,
     // asyncValidate,
