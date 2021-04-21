@@ -1,5 +1,4 @@
-import { APIResponse } from './../components/Axios/index';
-import axios from "axios";
+import { APIResponse, axios } from './../components/Axios/index';
 
 export const checkPhoneNumberExists = (phoneNumber: any) => {
     return axios
