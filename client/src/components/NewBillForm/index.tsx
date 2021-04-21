@@ -276,7 +276,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 	const addItemToBill = () => {
 		if (selectedProduct && addItemPossible()) {
 			const product: BillItem = { ...selectedProduct, quantity: itemQuantity, amount: 0 };
-			if (!!selectedProductUnit) {
+			if (selectedProductUnit) {
 				product.amount = itemQuantity * selectedProductUnit.rate;
 			} else {
 				product.amount = itemQuantity * selectedProduct.rate;
@@ -335,7 +335,6 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 								value={selectedProductUnit?.name ?? ""}
 								onChange={(event) => {
 									const value = event.target.value;
-
 									setSelectedProductUnit(
 										selectedProduct?.units.find(
 											(unit) => unit.name === value
@@ -371,24 +370,26 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						icons={tableIcons}
 						isLoading={loading}
 						columns={[
-							{ title: "Item Name", field: "name", editable: "never" },
+							{
+								title: "Item Name",
+								field: "name",
+								editable: "never",
+								// render: (rowData) => (
+								// 	<>
+								// 		<strong>{rowData.name}</strong>{" "}
+								// 		{rowData.unit
+								// 			? "( " + rowData.unit.name.toUpperCase() + " )"
+								// 			: ""
+								// 		}
+								// 	</>
+								// ),
+							},
 							{
 								title: "Quantity",
 								field: "quantity",
 								type: "numeric",
-								editable: "always",
-								render: (rowData) => (
-									<>
-										<strong>{rowData.quantity}</strong>{" "}
-										{rowData.unit
-											? rowData.unit.name
-												.split(" ")
-												.map((c: string) => c.charAt(0))
-												.join("")
-												.toUpperCase()
-											: ""}
-									</>
-								),
+								editable: "onUpdate",
+
 							},
 							{
 								title: "Amount",
@@ -407,11 +408,19 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 							padding: "dense",
 						}}
 						editable={{
-							onRowUpdate: (newData, oldData) =>
+							onRowUpdate: (newData) =>
 								new Promise<void>((res, rej) => {
 									dispatch({
 										type: "BILL_ITEM_QUANTITY_UPDATE",
 										payload: [newData._id, newData.quantity, newData.unit],
+									});
+									res();
+								}),
+							onRowDelete: (newData) =>
+								new Promise<void>((res, rej) => {
+									dispatch({
+										type: "BILL_ITEM_DELETE",
+										payload: [newData._id, newData.unit],
 									});
 									res();
 								}),
@@ -426,10 +435,9 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						variant="outlined"
 						onFocus={(event) => {
 							event.target.select();
-							setValues("discountPercentage")(0);
 						}}
 						onChange={(event) => setValues("discountPercentage")(event.target.value)}
-						value={discountPercentage}
+						value={discountPercentage || ""}
 					/>
 				</Grid>
 				<Grid item xs={6}>
@@ -440,10 +448,9 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						variant="outlined"
 						onFocus={(event) => {
 							event.target.select();
-							setValues("discountAmount")(0);
 						}}
 						onChange={(event) => setValues("discountAmount")(event.target.value)}
-						value={discountAmount}
+						value={discountAmount || ""}
 					/>
 				</Grid>
 				<Grid item xs={4}>
@@ -486,7 +493,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 				<Grid item xs={12} className={classes.buttons}>
 					<Button
 						variant="contained"
-						disabled={billSaved || !billData()}
+						disabled={billSaved || !billData() || loading}
 						onClick={() => saveBill()}
 						color="primary"
 					>
@@ -494,6 +501,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 					</Button>
 					<Button
 						variant="outlined"
+						disabled={loading}
 						onClick={() => dispatch({ type: "BILL_RESET" })}
 						color="secondary"
 					>
