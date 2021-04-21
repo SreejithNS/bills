@@ -92,7 +92,8 @@ export const getBillAmount = (billState: BillState) => {
 
 const calculateItemAmounts = (billState: BillState) => {
 	billState.items.forEach((item) => {
-		item.amount = item.quantity * item.rate;
+		if (item.unit) item.amount = item.quantity * item.unit.rate;
+		else item.amount = item.quantity * item.rate;
 	});
 	return billState;
 };
@@ -100,20 +101,21 @@ const calculateItemAmounts = (billState: BillState) => {
 const setDiscountAmountFromPercentage = (billState: BillState) => {
 	const itemsTotalAmount = getItemsTotalAmount(billState);
 	const discountPercentage = billState.discountPercentage;
-
-	return {
+	const discountAmount = (discountPercentage * itemsTotalAmount) / 100
+	if (discountAmount > getItemsTotalAmount(billState)) return { ...billState };
+	else return {
 		...billState,
-		discountAmount: (discountPercentage * itemsTotalAmount) / 100,
+		discountAmount
 	};
 };
 
 const setPercentageFromDiscountAmount = (billState: BillState) => {
 	const itemsTotalAmount = getItemsTotalAmount(billState);
-	const discountAmount = billState.discountPercentage;
-
+	const discountAmount = billState.discountAmount;
+	const discountPercentage = (discountAmount / itemsTotalAmount) * 100;
 	return {
 		...billState,
-		discountPercentage: (discountAmount / itemsTotalAmount) * 100,
+		discountPercentage: parseFloat(discountPercentage.toFixed(2)),
 	};
 };
 
@@ -126,30 +128,32 @@ export default function billReducer(state: BillState = initialState, action: { t
 			};
 		}
 		case "BILL_SET_DISCOUNT": {
+			const payload = Math.abs(action.payload);
+			if (payload > getItemsTotalAmount(state)) return state;
 			return setPercentageFromDiscountAmount({
 				...state,
-				discountAmount:
-					Math.abs(action.payload) > 0 ? action.payload : 0,
+				discountAmount: payload
 			});
 		}
 		case "BILL_SET_DISCOUNT_PERCENTAGE": {
+			const payload = Math.abs(action.payload);
 			return setDiscountAmountFromPercentage({
 				...state,
-				discountPercentage:
-					Math.abs(action.payload) > 0 ? action.payload : 0,
+				discountPercentage: payload,
 			});
 		}
 		case "BILL_ADD_ITEM": {
 			const items = [...state.items];
+			let payload = action.payload as BillItem;
 			const index = items.findIndex(
 				(item) =>
-					item._id === action.payload._id &&
-					item.unit?.name === action.payload.unit?.name
+					item._id === payload._id &&
+					item.unit?._id === payload.unit?._id
 			);
 			if (index >= 0) {
-				items[index].quantity += action.payload.quantity;
+				items[index].quantity += payload.quantity;
 			} else {
-				items.push(action.payload);
+				items.push(payload);
 			}
 			return calculateItemAmounts({
 				...state,
@@ -159,11 +163,24 @@ export default function billReducer(state: BillState = initialState, action: { t
 
 		case "BILL_ITEM_QUANTITY_UPDATE": {
 			const items = [...state.items];
-			const [_id, quantity, unit] = action.payload;
+			const [_id, quantity, unit] = action.payload as [BillItem["_id"], BillItem["quantity"], BillItem["unit"]];
 			const item = items.find(
-				(item) => item._id === _id && (unit ? item.unit?.name === unit?.name : true)
+				(item) => item._id === _id && item.unit?._id === unit?._id
 			);
 			if (item) item.quantity = quantity;
+			return calculateItemAmounts({
+				...state,
+				items,
+			});
+		}
+
+		case "BILL_ITEM_DELETE": {
+			const items = [...state.items];
+			const [_id, unit] = action.payload as [BillItem["_id"], BillItem["unit"]];
+			const itemIndex = items.findIndex(
+				(item) => item._id === _id && item.unit?._id === unit?._id
+			);
+			if (itemIndex >= 0) items.splice(itemIndex, 1);
 			return calculateItemAmounts({
 				...state,
 				items,
