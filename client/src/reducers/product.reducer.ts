@@ -10,6 +10,7 @@ export interface Product {
 }
 
 export interface Unit {
+    _id: string;
     name: string;
     rate: number;
     mrp: number;
