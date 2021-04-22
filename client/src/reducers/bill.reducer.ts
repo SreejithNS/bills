@@ -62,7 +62,7 @@ const initialState: BillState = {
 	discountPercentage: 0,
 	billSaved: false,
 	paidAmount: 0,
-	credit: true,
+	credit: false,
 	location: null,
 };
 
