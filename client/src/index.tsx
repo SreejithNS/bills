@@ -11,17 +11,25 @@ import { createMuiTheme, CssBaseline, ThemeProvider } from '@material-ui/core';
 import { createLogger } from 'redux-logger';
 import initAxios from './components/Axios';
 
-const logger = createLogger({
-  // ...options
-});
 declare global {
   interface Window {
     __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
   }
 }
 
-const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-export const store = createStore(rootReducer, composeEnhancers(applyMiddleware(thunk, logger)));
+const isProduction = process.env.NODE_ENV === "production";
+
+let middlewares: any = [thunk];
+let composeEnhancers = compose;
+
+if (!isProduction) {
+  composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+
+  const logger = createLogger();
+  middlewares = [...middlewares, logger];
+}
+
+export const store = createStore(rootReducer, composeEnhancers(applyMiddleware(...middlewares)));
 
 const theme = createMuiTheme({
   overrides: {
