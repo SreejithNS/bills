@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import TextField from "@material-ui/core/TextField";
 import {
 	Button,
@@ -45,16 +45,17 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 
 function CustomerSelection(props: {
 	customer: Customer | undefined;
-	onChange: (value: Customer | null | string) => void;
+	onChange: (value: Customer | null) => void;
 	addNewCustomer: (customerName: Customer["name"]) => void;
 }) {
 	const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([]);
 	const [customerInputValue, setCustomerInputValue] = useState<Customer["name"]>("");
+	const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 	const hasPermissionToAccess = useHasPermission(UserPermissions.ALLOW_CUSTOMER_POST);
 
 	useEffect(() => {
 		if (customerInputValue) {
-			setCustomerSuggestions([]);
+			setSuggestionsLoading(true);
 			axios
 				.get<APIResponse<Customer[]>>("/customer/suggestions/" + customerInputValue)
 				.then((response) => {
@@ -62,20 +63,23 @@ function CustomerSelection(props: {
 					if (data?.length) {
 						setCustomerSuggestions(data);
 					}
-				}, handleAxiosError);
+				}, handleAxiosError).finally(() => setSuggestionsLoading(false));
 		}
 	}, [customerInputValue]);
 
 	return (
 		<Autocomplete
-			value={props.customer}
+			value={props.customer ?? null}
 			options={customerSuggestions}
+			getOptionSelected={(option, value) => {
+				return props.customer?._id === value._id
+			}}
 			autoHighlight
+			loading={suggestionsLoading}
 			getOptionLabel={(option: Customer) => option.name}
 			onInputChange={(event: any, val: Customer["name"]) => setCustomerInputValue(val)}
 			onChange={(event, newValue) => props.onChange(newValue)}
 			selectOnFocus
-			freeSolo
 			handleHomeEndKeys
 			filterOptions={(options, params) => {
 				const filtered = createFilterOptions<Customer>({ ignoreCase: true })(
@@ -85,7 +89,8 @@ function CustomerSelection(props: {
 
 				if (
 					hasPermissionToAccess &&
-					params.inputValue !== ""
+					params.inputValue !== "" &&
+					!suggestionsLoading
 				) {
 					filtered.push({
 						name: params.inputValue,
@@ -103,7 +108,7 @@ function CustomerSelection(props: {
 				<React.Fragment>
 					{option.phone === 0 && option._id === "" ? (
 						<Button onClick={() => props.addNewCustomer(option._id)}>
-							Add&nbsp;<em><strong>{option.name}</strong></em>&nbsp;as new customer
+							Add&nbsp;&quot;<strong>{option.name}</strong>&quot;&nbsp;as new customer
 						</Button>
 					) : (
 						option.name
@@ -121,11 +126,19 @@ function BillItemSelection(props: {
 }) {
 	const [productsSuggestion, setProductsSuggestion] = useState<Product[]>([]);
 	const [productCode, setProductCode] = useState<Product["code"]>("");
+	const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 	const productCategory = useSelector((state: RootState) => state.product.productCategory);
 
+	const { onChange: propsOnChange } = props;
+	const onChange = useCallback(
+		(value: Product | null) => {
+			return propsOnChange(value)
+		},
+		[propsOnChange]
+	)
 	useEffect(() => {
 		if (productCode) {
-			setProductsSuggestion([]);
+			setSuggestionsLoading(true);
 			axios
 				.get<APIResponse<Product[]>>(`/product/${productCategory?._id}/suggestion/${productCode}`)
 				.then((response) => {
@@ -133,21 +146,24 @@ function BillItemSelection(props: {
 					if (data?.length) {
 						setProductsSuggestion(data);
 					}
-				}, handleAxiosError);
+				}, handleAxiosError).finally(() => setSuggestionsLoading(false));
 		}
 	}, [productCode, productCategory]);
-
 	return (
 		<Autocomplete
-			value={props.product}
+			value={props.product ?? null}
 			options={productsSuggestion}
+			getOptionSelected={(_, value) => {
+				return props.product?._id === value._id
+			}}
+			loading={suggestionsLoading}
 			filterOptions={createFilterOptions({
 				ignoreCase: true,
 				stringify: (option: Product) => option.code,
 			})}
 			getOptionLabel={(option: Product) => option.name}
-			onInputChange={(event: any, val: Product["code"]) => setProductCode(val)}
-			onChange={(event, newValue) => props.onChange(newValue)}
+			onInputChange={(_, val: Product["code"]) => setProductCode(val)}
+			onChange={(_, newValue) => onChange(newValue)}
 			fullWidth={true}
 			renderInput={(params) => <TextField {...params} label="Item Code" variant="outlined" />}
 		/>
@@ -291,6 +307,13 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 			toast.warn("Couldn't add item to the bill");
 		}
 	};
+
+	const clearBill = () => {
+		setSelectedProduct(void 0);
+		setSelectedProductUnit(void 0);
+		setItemQuantity(0);
+		dispatch({ type: "BILL_RESET" })
+	}
 
 	return (
 		<form>
@@ -502,7 +525,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 					<Button
 						variant="outlined"
 						disabled={loading}
-						onClick={() => dispatch({ type: "BILL_RESET" })}
+						onClick={() => clearBill()}
 						color="secondary"
 					>
 						RESET
