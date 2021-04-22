@@ -59,13 +59,13 @@ const StatPaper = ({
     title,
     billCount,
     billAmount,
-    billAmountAverage,
+    billAmountBalance,
     paidAmount,
 }: {
     title: string;
     billCount: number;
     billAmount: number;
-    billAmountAverage: number;
+    billAmountBalance: number;
     paidAmount: number;
 }) => {
     const classes = useStyles();
@@ -86,8 +86,8 @@ const StatPaper = ({
                 </Box>
 
                 <Box flexGrow={1}>
-                    <Typography variant="subtitle2">Average Bill Amount</Typography>
-                    <Typography variant="h5">₹ {billAmountAverage.toLocaleString()}</Typography>
+                    <Typography variant="subtitle2">Total Bills Balance</Typography>
+                    <Typography variant="h5">₹ {billAmountBalance.toLocaleString()}</Typography>
                 </Box>
 
                 <Box flexGrow={1}>
@@ -226,7 +226,7 @@ export default function CustomerViewerModal() {
                                         title={stat._id ? "Credited" : "Closed"}
                                         billCount={stat.count}
                                         billAmount={stat.totalBillAmount}
-                                        billAmountAverage={stat.averageBillAmount}
+                                        billAmountBalance={stat.totalBillAmount - stat.totalPaidAmount}
                                         paidAmount={stat.totalPaidAmount}
                                     />
                                 </Grid>
