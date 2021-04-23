@@ -16,6 +16,11 @@ let PENDING_REQUESTS = 0
 const axios = Axios.create({
     baseURL: process.env.REACT_APP_API_URL + '/api',
     withCredentials: true,
+    headers: {
+        "Cache-Control": "no-store",
+        'Pragma': 'no-cache',
+        'Expires': '0',
+    }
 })
 
 /**
