@@ -8,12 +8,15 @@ import { billsPaths, paths } from '../routes/paths.enum';
 import { LineWeightRounded } from '@material-ui/icons';
 import BillSearch from '../components/BillSearch';
 import PageContainer from '../components/PageContainer';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import useAxios from 'axios-hooks';
 import { APIResponse, axios, handleAxiosError } from '../components/Axios';
 import { BillData, PaginateResult } from '../reducers/bill.reducer';
 import { toast } from 'react-toastify';
 import { useConfirm } from 'material-ui-confirm';
+import moment from 'moment';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import TollIcon from '@material-ui/icons/Toll';
 const Fade = require('react-reveal/Fade');
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -40,7 +43,7 @@ export default function BillsHomePage() {
 
     type ResponseData = APIResponse<PaginateResult<BillData>>;
 
-    const [{ loading: getLoading, error, data }] = useAxios<ResponseData>({
+    const [{ loading: getLoading, error, data }, execute] = useAxios<ResponseData>({
         url: "/bill",
         params: {
             page: pageNumber,
@@ -48,7 +51,11 @@ export default function BillsHomePage() {
             sort: (sortDirection === "desc" ? "-" : "") + sortParam,
             ...(search && search),
         }
-    })
+    }, { manual: true })
+
+    useEffect(() => {
+        execute();
+    }, [])
 
     const confirm = useConfirm();
     const deleteBill = useCallback(
@@ -62,12 +69,11 @@ export default function BillsHomePage() {
                 }
             }).then(() => {
                 setRequestLoading(true);
-                return axios.delete("/bill/id/" + billId);
-            }, () => toast.info("Bill did not delete."))
-                .then(
-                    () => toast.success("Bill deleted successfully"),
-                    handleAxiosError
-                ).finally(() => setRequestLoading(false))
+                return axios.delete("/bill/id/" + billId).catch(() => toast.info("Bill did not delete."));
+            }).then(
+                () => { toast.success("Bill deleted successfully"); execute() },
+                handleAxiosError
+            ).finally(() => setRequestLoading(false))
             //eslint-disable-next-line
         }, [data]
     )
@@ -120,9 +126,17 @@ export default function BillsHomePage() {
                                     <Grid item xs={12} className={classes.cardPadding}>
                                         <Fade bottom>
                                             <BillCard
-                                                customerName={bill.customer.name}
-                                                billAmount={bill.billAmount}
-                                                timestamp={bill.createdAt.toString()}
+                                                primaryText={bill.customer.name}
+                                                rightPrimary={bill.billAmount}
+                                                secondaryText={`Received ₹ ${bill.paidAmount}`}
+                                                timestamp={moment(bill.createdAt.toString()).format('MMM D YYYY, h:mm a')}
+                                                rightSecondary={(
+                                                    <>
+                                                        {bill.credit ? "IN CREDIT" : "CLOSED"}&nbsp;
+                                                        {bill.credit ? <TollIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} /> : <CheckCircleIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} />}
+                                                    </>
+                                                )}
+                                                location={bill.location?.coordinates}
                                                 deleteAction={() => deleteBill(bill._id)}
                                                 onClickAction={() => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", bill._id))}
                                             />
