@@ -53,6 +53,10 @@ export interface BillData {
 	paidAmount: number;
 	payments: BillPayments[];
 	createdAt: Date;
+	location?: {
+		type: "Point";
+		coordinates: [number, number]
+	}
 }
 
 const initialState: BillState = {
