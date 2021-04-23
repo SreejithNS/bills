@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Stepper from '@material-ui/core/Stepper';
 import Step from '@material-ui/core/Step';
@@ -66,24 +66,63 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-const receiveConsolidatedPayements = async (bills: BillData[], setProgress: (paidAmount: number, paidBills: number) => void, amount?: number) => {
+const receiveConsolidatedPayments = async (bills: BillData[], amount: number, setProgress: (paidAmount: number, paidBills: number, remainingCash?: number) => void) => {
+    var remainingCash = amount;
     var paidAmount = 0;
     var paidBills = 0;
-    for (let bill of bills) {
-        try {
-            await axios.post(`/bill/${bill._id}/payment`, {
-                paidAmount: amount || bill.billAmount - bill.paidAmount
-            })
-            await axios.put(`/bill/${bill._id}/credit`)
 
-            paidAmount += amount || bill.billAmount - bill.paidAmount
-            setProgress(paidAmount, ++paidBills);
+    //Only one bill
+    if (bills.length === 1) {
+        const bill = bills[0];
+        try {
+            let payingAmount;
+            if (remainingCash >= bill.billAmount - bill.paidAmount) {
+                payingAmount = bill.billAmount - bill.paidAmount;
+                await axios.post(`/bill/${bill._id}/payment`, {
+                    paidAmount: payingAmount
+                })
+                remainingCash -= payingAmount;
+                paidAmount += payingAmount;
+                try { await axios.put(`/bill/${bill._id}/credit`) } catch (e) {
+                    toast.warn(`Bill#${bill.serialNumber} payment received but did not close.`);
+                    handleAxiosError(e);
+                }
+            } else {
+                payingAmount = remainingCash;
+                await axios.post(`/bill/${bill._id}/payment`, {
+                    paidAmount: payingAmount
+                })
+                remainingCash -= payingAmount;
+                paidAmount += payingAmount;
+            }
+            setProgress(paidAmount, ++paidBills, remainingCash);
         } catch (e) {
             toast.warn(`Payment for Bill#${bill.serialNumber} did not happen`);
             handleAxiosError(e);
-            continue;
         }
-    }
+    } else
+        //Close each bill by fullfilling the balance amount
+        for (let bill of bills) {
+            try {
+                const payingAmount = bill.billAmount - bill.paidAmount;
+
+                await axios.post(`/bill/${bill._id}/payment`, {
+                    paidAmount: payingAmount
+                })
+                remainingCash -= payingAmount;
+                paidAmount += payingAmount;
+
+                try { await axios.put(`/bill/${bill._id}/credit`) } catch (e) {
+                    toast.warn(`Bill#${bill.serialNumber} payment received but did not close.`);
+                    handleAxiosError(e);
+                }
+                setProgress(paidAmount, ++paidBills, remainingCash);
+            } catch (e) {
+                toast.warn(`Payment for Bill#${bill.serialNumber} did not happen`);
+                handleAxiosError(e);
+                continue;
+            }
+        }
 }
 
 const billConsolidator = async (_id: string, amount: number, onFetch: (data: BillData[]) => void): Promise<BillData[]> => {
@@ -136,7 +175,7 @@ const billConsolidator = async (_id: string, amount: number, onFetch: (data: Bil
                             const sumOfB = setb.map(
                                 (bill) => bill.billAmount - bill.paidAmount
                             ).reduce((acc, cur) => acc + cur)
-                            return sumOfA - sumOfB
+                            return sumOfB - sumOfA
                         }
                     )[0];
                     result = bestAvailableSet;
@@ -182,7 +221,6 @@ const billConsolidator = async (_id: string, amount: number, onFetch: (data: Bil
                 ).shift();
                 result = bill ? [bill] : []
                 break;
-
             }
 
             //Check whether any set of bills whose total equals
@@ -212,45 +250,52 @@ function getSteps() {
     return ['Payment Amount', 'Bills Applicable', 'Update Payments', 'Complete'];
 }
 
-function StepContent({ step, customerId, setStep }: { step: number, customerId: Customer["_id"], setStep: (step: number) => void }) {
-    const [amount, setAmount] = useState();
+function StepContent({ step, customerId, setStep, onFinalStep }: { step: number, customerId: Customer["_id"], setStep: (step: number) => void; onFinalStep?: () => void }) {
+    const [amount, setAmount] = useState(0);
     const [selectedBills, setSelectedBills] = useState<BillData[]>([]);
     const [billListLoading, setBillListLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const history = useHistory();
 
     useEffect(() => {
-        if (parseFloat(amount + "") > 0 && step === 1 && !billListLoading) {
-            setBillListLoading(true)
-            billConsolidator(
-                customerId, parseFloat(amount + ""),
-                (data) => {
-                    setSelectedBills(data); setBillListLoading(false)
-                }
-            );
-        }
-        if (selectedBills.length > 0 && step === 2 && !billListLoading) {
-            setBillListLoading(true)
-            receiveConsolidatedPayements(
-                selectedBills,
-                (paidAmount, paidBills) => {
-                    setProgress(Math.ceil(paidBills / selectedBills.length) * 100)
-                    if (paidBills === selectedBills.length) setBillListLoading(false);
-                },
-                userFeedbacks(selectedBills, parseFloat(amount + "")).canClose ? userFeedbacks(selectedBills, parseFloat(amount + "")).paymentAmount : undefined
-            )
+        if (amount > 0) {
+            if (step === 1 && !billListLoading) {
+                setBillListLoading(true)
+                billConsolidator(
+                    customerId, amount,
+                    (data) => {
+                        setSelectedBills(data); setBillListLoading(false)
+                    }
+                );
+            }
+            if (selectedBills.length > 0 && step === 2 && !billListLoading) {
+                setBillListLoading(true)
+                receiveConsolidatedPayments(
+                    selectedBills,
+                    amount,
+                    (paidAmount, paidBills) => {
+                        setProgress(Math.floor((selectedBills.length / paidBills) * 100))
+                        if (paidBills === selectedBills.length) setBillListLoading(false);
+                    }
+                )
+            }
+            if (step === 3 && onFinalStep) onFinalStep();
         }
         //eslint-disable-next-line
     }, [amount, step]);
 
-    const userFeedbacks = (bills: BillData[], amount: number) => {
-        const billSum = selectedBills.map(bill => bill.billAmount - bill.paidAmount).reduce((acc, cur) => acc + cur, 0);
-        return {
-            canClose: billSum <= amount,
-            paymentAmount: billSum <= amount ? billSum : amount,
-            remainingCash: billSum <= amount ? amount - billSum : 0
-        }
-    }
+    const userFeedbacks = useCallback(
+        () => {
+            const billSum = selectedBills.map(bill => bill.billAmount - bill.paidAmount).reduce((acc, cur) => acc + cur, 0);
+            let givenAmount = amount ?? 0;
+            return {
+                canClose: billSum <= givenAmount,
+                paymentAmount: billSum <= givenAmount ? billSum : givenAmount,
+                remainingCash: billSum <= givenAmount ? givenAmount - billSum : 0
+            }
+        },
+        [selectedBills, amount]
+    )
 
     switch (step) {
         case 0:
@@ -258,10 +303,10 @@ function StepContent({ step, customerId, setStep }: { step: number, customerId: 
                 <div style={{ textAlign: 'center' }}>
                     <TextField
                         type="number"
-                        value={amount ?? 0}
+                        value={amount || ""}
                         onChange={(event) => {
                             var value: any = event.target.value;
-                            value = value === "" || value === "" ? undefined : parseFloat(value)
+                            value = value === "" ? 0 : Math.abs(parseFloat(value))
                             setAmount(value);
                         }}
                         variant="outlined"
@@ -276,22 +321,22 @@ function StepContent({ step, customerId, setStep }: { step: number, customerId: 
                     {(!billListLoading && selectedBills.length === 0) &&
                         <div style={{ textAlign: "center" }}>No payable bills found.</div>
                     }
-                    {(!billListLoading && selectedBills.length > 0) && userFeedbacks(selectedBills, parseFloat(amount + "")).canClose
+                    {(!billListLoading && selectedBills.length > 0) && userFeedbacks().canClose
                         ?
                         <Paper variant="outlined" elevation={0}>
-                            By paying&nbsp;₹{userFeedbacks(selectedBills, parseFloat(amount + "")).paymentAmount}&nbsp;you can close&nbsp;{selectedBills.length}&nbsp;bill(s)
+                            By paying&nbsp;₹{userFeedbacks().paymentAmount}&nbsp;you can close&nbsp;{selectedBills.length}&nbsp;bill(s)
                         </Paper>
                         : <Paper variant="outlined" elevation={0}>
-                            You receive&nbsp;₹{userFeedbacks(selectedBills, parseFloat(amount + "")).paymentAmount}&nbsp;for&nbsp;{selectedBills.length}&nbsp;bill
+                            You receive&nbsp;₹{userFeedbacks().paymentAmount}&nbsp;for&nbsp;{selectedBills.length}&nbsp;bill
                         </Paper>
                     }
                     {
                         selectedBills.map((bill, key) =>
                             <Fade key={key} bottom>
                                 <BillCard
-                                    customerName={bill.customer.name}
-                                    billAmount={bill.billAmount}
-                                    timestamp={bill.createdAt.toString()}
+                                    primaryText={bill.customer.name}
+                                    rightPrimary={bill.billAmount}
+                                    secondaryText={bill.createdAt.toString()}
                                     deleteAction={console.log}
                                     onClickAction={() => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", bill._id))}
                                 />
@@ -301,7 +346,7 @@ function StepContent({ step, customerId, setStep }: { step: number, customerId: 
                     {(!billListLoading && selectedBills.length > 0) &&
                         <Paper variant="outlined" elevation={0}>
                             After receiving you will have&nbsp;
-                        ₹{userFeedbacks(selectedBills, parseFloat(amount + "")).remainingCash}&nbsp;
+                        ₹{userFeedbacks().remainingCash}&nbsp;
                         as remained cash
                         </Paper>
                     }
@@ -320,14 +365,14 @@ function StepContent({ step, customerId, setStep }: { step: number, customerId: 
             return (<>
                 <div style={{ textAlign: "center" }}>All payments updated successfully</div>
                 {
-                    userFeedbacks(selectedBills, parseFloat(amount + "")).remainingCash > 0 &&
+                    userFeedbacks().remainingCash > 0 &&
                     <Button onClick={() => {
                         setStep(0);
                         var value: any = 0;
                         value = value === "" || value === "" ? undefined : parseFloat(value)
                         setAmount(value);
                     }}>
-                        Add ₹{userFeedbacks(selectedBills, parseFloat(amount + "")).remainingCash} to another bill
+                        Add ₹{userFeedbacks().remainingCash} to another bill
                     </Button>
                 }
             </>)
@@ -336,7 +381,7 @@ function StepContent({ step, customerId, setStep }: { step: number, customerId: 
     }
 }
 
-export default function CustomerBulkPaymentReceiveStepper({ customer }: { customer: Customer["_id"] }) {
+export default function CustomerBulkPaymentReceiveStepper({ customer, onFinish }: { customer: Customer["_id"]; onFinish?: () => void }) {
     const classes = useStyles();
     const [activeStep, setActiveStep] = React.useState(0);
     const steps = getSteps();
@@ -372,7 +417,7 @@ export default function CustomerBulkPaymentReceiveStepper({ customer }: { custom
                         <div>
                             <Typography>
                                 All steps completed - you&apos;re finished
-                        </Typography>
+                            </Typography>
                         </div>
                         <div>
                             <Button onClick={handleReset} className={classes.button}>
@@ -383,7 +428,7 @@ export default function CustomerBulkPaymentReceiveStepper({ customer }: { custom
                 ) : (
                     <>
                         <div>
-                            <StepContent step={activeStep} customerId={customer} setStep={setActiveStep} />
+                            <StepContent step={activeStep} customerId={customer} setStep={setActiveStep} onFinalStep={onFinish} />
                         </div>
                         <div>
                             <Button disabled={activeStep === 0} onClick={handleBack} className={classes.button}>
