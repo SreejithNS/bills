@@ -1,5 +1,6 @@
 import {
     Box,
+    Button,
     CircularProgress,
     Grid,
     makeStyles,
@@ -9,6 +10,7 @@ import {
     withStyles,
     Zoom,
 } from "@material-ui/core";
+import { RefreshRounded } from "@material-ui/icons";
 import useAxios from "axios-hooks";
 import MaterialTable, { Query, QueryResult } from "material-table";
 import React, { useEffect, useRef } from "react";
@@ -149,13 +151,18 @@ const BillsTable = () => {
 
 export default function CustomerViewerModal() {
     const param = useParams<{ id: string }>();
-    const [{ error, data, loading }] = useAxios<
+    const [{ error, data, loading }, execute] = useAxios<
         APIResponse<Customer & CustomerAggregatedData>
-    >(`/customer/${param.id}`);
+    >(`/customer/${param.id}`, { manual: true });
 
     useEffect(() => {
         if (error) handleAxiosError(error);
     });
+
+    useEffect(() => {
+        execute();
+    }, [])
+
 
     if (loading && !data && !error)
         return (
@@ -197,12 +204,21 @@ export default function CustomerViewerModal() {
                                         </Typography>
                                     </Grid>
                                     <Grid item>
-                                        <Typography variant="subtitle1">
+                                        <Typography variant="subtitle1" component="div" align="right">
                                             Total Bills:
 											{byCredit
                                                 .map((val) => val.count)
                                                 .reduce((acc, cur) => acc + cur, 0)}
                                         </Typography>
+                                        <Button
+                                            variant="text"
+                                            color="primary"
+                                            size="small"
+                                            onClick={() => execute()}
+                                            startIcon={<RefreshRounded />}
+                                        >
+                                            Refresh
+                                        </Button>
                                     </Grid>
                                 </Grid>
                             </Paper>
@@ -233,7 +249,7 @@ export default function CustomerViewerModal() {
                             ))}
                         </Grid>
                         <Grid item xs={12} md={6} lg>
-                            <CustomerBulkPaymentReceiveStepper customer={param.id} />
+                            <CustomerBulkPaymentReceiveStepper customer={param.id} onFinish={() => execute()} />
                         </Grid>
                     </Grid>
                 </Paper>
