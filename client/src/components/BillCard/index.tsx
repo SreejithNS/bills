@@ -5,14 +5,20 @@ import CardActions from "@material-ui/core/CardActions";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
-import { CardActionArea, Grid } from "@material-ui/core";
+import { CardActionArea, Collapse, Grid, IconButton } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
-import moment from "moment";
+import QueryBuilderRoundedIcon from '@material-ui/icons/QueryBuilderRounded';
+import clsx from "clsx";
+import MoreVertIcon from '@material-ui/icons/MoreVert';
+import { RoomRounded } from "@material-ui/icons";
 
 export interface BillCardProps {
-  customerName?: String;
-  timestamp?: String;
-  billAmount?: Number;
+  primaryText?: string;
+  secondaryText?: string;
+  rightPrimary?: number;
+  rightSecondary?: any;
+  timestamp?: string;
+  location?: [number, number];
   deleteAction(): void;
   onClickAction(): void;
 }
@@ -30,7 +36,23 @@ const useStyles = makeStyles((theme) => ({
     cursor: "pointer"
   },
   zeroPadding: {
-    padding: theme.spacing(0)
+    padding: theme.spacing(0),
+    "&>*": {
+      margin: theme.spacing(1)
+    },
+    "&>*:first-child": {
+      marginLeft: 0
+    }
+  },
+  expand: {
+    transform: 'rotate(0deg)',
+    marginLeft: 'auto',
+    transition: theme.transitions.create('transform', {
+      duration: theme.transitions.duration.shortest,
+    }),
+  },
+  expandOpen: {
+    transform: 'rotate(180deg)',
   }
 }));
 
@@ -48,34 +70,58 @@ export default function BillCard(props: BillCardProps) {
         >
           <Grid item xs>
             <CardActionArea onClick={props.onClickAction}>
-              <Typography variant="h5">
-                {props.customerName || "Customer Name"}
+              <Typography component="label" variant="h5">
+                {props.primaryText || "Customer Name"}
               </Typography>
-              <Typography variant="subtitle1">
-                {moment(props.timestamp?.toString()).format('MMM D YYYY, h:mm a') || "Timestamp"}
+              <Typography component="label" variant="subtitle1" display="block">
+                <strong>{props.secondaryText || "Payment"}</strong>
               </Typography>
+              {props.timestamp &&
+                <Typography component="label" variant="subtitle2" display="block" color="textSecondary">
+                  <QueryBuilderRoundedIcon fontSize="inherit" style={{ verticalAlign: "middle" }} />&nbsp;{props.timestamp}
+                </Typography>
+              }
             </CardActionArea>
           </Grid>
-
-          <Grid item xs>
-            <Typography variant="h4" align="right">
-              ₹ {props.billAmount || 12345.25}
+          <Grid item>
+            <Typography component="label" variant="h3" align="right" display="block">
+              ₹ {props.rightPrimary || 12345.25}
             </Typography>
             <Typography
               color="textSecondary"
               variant="subtitle2"
               align="right"
-              className={classes.selectCursor}
-              onClick={() => toggleActions(!actionsOpen)}
             >
-              MORE ACTIONS
+              {props.rightSecondary}
             </Typography>
           </Grid>
+          <Grid item style={{ display: "flex", alignItems: "center" }}>
+            <IconButton
+              className={clsx(classes.expand, {
+                [classes.expandOpen]: actionsOpen,
+              })}
+              onClick={() => toggleActions(!actionsOpen)}
+              aria-expanded={actionsOpen}
+              aria-label="Options"
+            >
+              <MoreVertIcon />
+            </IconButton>
+          </Grid>
         </Grid>
-
-        {actionsOpen ? (
+        <Collapse in={actionsOpen} timeout="auto" unmountOnExit>
           <CardActions className={classes.zeroPadding}>
-            {props.deleteAction ? (
+            {props.location &&
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                startIcon={<RoomRounded />}
+                onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${props.location?.join(",")}`) }}
+              >
+                Map
+              </Button>
+            }
+            {props.deleteAction &&
               <Button
                 variant="outlined"
                 color="secondary"
@@ -85,13 +131,9 @@ export default function BillCard(props: BillCardProps) {
               >
                 Delete
               </Button>
-            ) : (
-                ""
-              )}
+            }
           </CardActions>
-        ) : (
-            ""
-          )}
+        </Collapse>
       </CardContent>
     </Card>
   );
