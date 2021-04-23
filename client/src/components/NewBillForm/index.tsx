@@ -14,9 +14,10 @@ import {
 	Select,
 	Theme,
 	Typography,
+	withStyles,
 	Zoom,
 } from "@material-ui/core";
-import { Autocomplete } from "@material-ui/lab";
+import { Autocomplete as AutocompleteBase } from "@material-ui/lab";
 import MaterialTable from "material-table";
 import { useDispatch, useSelector } from "react-redux";
 import { createFilterOptions } from "@material-ui/lab/Autocomplete";
@@ -42,6 +43,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 		}
 	}
 }))
+
+const Autocomplete = withStyles((theme: Theme) => ({
+	listbox: {
+		color: theme.palette.secondary.main,
+		border: `2px solid ${theme.palette.secondary.light}`,
+		borderRadius: "inherit"
+	}
+}))(AutocompleteBase) as typeof AutocompleteBase;
 
 function CustomerSelection(props: {
 	customer: Customer | undefined;
