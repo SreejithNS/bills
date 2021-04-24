@@ -10,13 +10,14 @@ import {
     withStyles,
     Zoom,
 } from "@material-ui/core";
-import { RefreshRounded } from "@material-ui/icons";
+import { InfoOutlined, RefreshRounded } from "@material-ui/icons";
 import useAxios from "axios-hooks";
 import MaterialTable, { Query, QueryResult } from "material-table";
 import React, { useEffect, useRef } from "react";
-import { useParams } from "react-router";
+import { useHistory, useParams } from "react-router";
 import { BillData, PaginateResult } from "../../reducers/bill.reducer";
 import { Customer } from "../../reducers/customer.reducer";
+import { paths, billsPaths } from "../../routes/paths.enum";
 import { APIResponse, axios, handleAxiosError, interpretMTQuery } from "../Axios";
 import CustomerBulkPaymentReceiveStepper from "../CustomerBulkPaymentReceiveStepper";
 import { tableIcons } from "../MaterialTableIcons";
@@ -104,6 +105,7 @@ const StatPaper = ({
 const BillsTable = () => {
     const tableRef = useRef<any>(null);
     const param = useParams<{ id: string }>();
+    const history = useHistory();
 
     const fetchItems = (query: Query<{
         serialNumber: number;
@@ -137,6 +139,13 @@ const BillsTable = () => {
                 { title: "Paid Amount", field: "paidAmount", type: "numeric", editable: "never" },
             ]}
             data={(query) => fetchItems(query)}
+            actions={[
+                {
+                    icon: () => <InfoOutlined />,
+                    tooltip: 'Open Bill',
+                    isFreeAction: false,
+                    onClick: (_, data: any) => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", data._id))
+                }]}
             options={{
                 exportButton: false,
                 toolbarButtonAlignment: "left",
@@ -161,7 +170,7 @@ export default function CustomerViewerModal() {
 
     useEffect(() => {
         execute();
-    }, [])
+    }, [execute])
 
 
     if (loading && !data && !error)
