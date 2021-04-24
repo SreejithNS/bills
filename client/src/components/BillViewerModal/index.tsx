@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { CircularProgress, Zoom } from '@material-ui/core';
 import { useHistory, useParams } from 'react-router-dom';
 import BillViewer from '../BillViewer';
@@ -9,12 +9,34 @@ import { APIResponse, axios, handleAxiosError } from '../Axios';
 import { BillData } from '../../reducers/bill.reducer';
 import ErrorCard from '../ImportModal/ErrorCard';
 import { paths } from '../../routes/paths.enum';
+import { toast } from 'react-toastify';
+import { useConfirm } from 'material-ui-confirm';
 
 export default function BillViewerModal(props: ModalProps) {
     const params = useParams<{ id: BillData["_id"] }>();
     const history = useHistory();
     const [paymentReceiveModalOpen, setPaymentReceiveModalOpen] = useState(false);
     const [{ loading, error, data }, fetchAgain] = useAxios<APIResponse<BillData>>("/bill/id/" + params.id);
+    const confirm = useConfirm();
+    const deleteBill = useCallback(
+        (billId: BillData["_id"]) => {
+            confirm({
+                title: "Are you sure?",
+                description: "Deleting a bill is not undoable. You cannot recover the bill data once deleted.",
+                confirmationText: "Delete",
+                confirmationButtonProps: {
+                    color: "secondary"
+                }
+            }).then(() => {
+                return axios.delete("/bill/id/" + billId).catch(handleAxiosError);
+            }).then(
+                () => { toast.success("Bill deleted successfully"); history.goBack() },
+                () => toast.info("Bill did not delete.")
+            )
+            //eslint-disable-next-line
+        }, [data]
+    )
+
 
     const handleCreditUpdate = () => {
         axios.put(`/bill/${params.id}/credit`).then(() => fetchAgain()).catch(handleAxiosError);
@@ -46,6 +68,8 @@ export default function BillViewerModal(props: ModalProps) {
                 _id={data.data._id}
                 belongsTo={data.data.belongsTo}
                 itemsTotalAmount={data.data.itemsTotalAmount}
+                location={data.data.location}
+                onDelete={() => deleteBill(data.data?._id ?? "")}
             />}
             <PaymentReceiveDialog open={paymentReceiveModalOpen} billId={params.id} onClose={() => { fetchAgain(); setPaymentReceiveModalOpen(false) }} />
         </Modal>

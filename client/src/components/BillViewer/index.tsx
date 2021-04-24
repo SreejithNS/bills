@@ -5,18 +5,22 @@ import {
     createStyles,
     Divider,
     Grid,
+    IconButton,
     makeStyles,
     Paper,
     Theme,
+    Tooltip,
     Typography
 } from "@material-ui/core";
-import { Add } from "@material-ui/icons";
+import { Add, DeleteRounded, InfoOutlined, RoomRounded } from "@material-ui/icons";
 import MaterialTable from "material-table";
 import * as React from "react";
 import { tableIcons } from "../MaterialTableIcons";
 import PaymentsList from "../PaymentsList";
 import moment from "moment";
 import { BillData } from "../../reducers/bill.reducer";
+import { useHistory } from "react-router";
+import { customersPaths, paths } from "../../routes/paths.enum";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -46,10 +50,12 @@ const useStyles = makeStyles((theme: Theme) =>
 interface AdditionalProps {
     receivePayment(): void;
     creditAction(): void;
+    onDelete?(): void;
 }
 
 export default function BillViewer(props: BillData & AdditionalProps) {
     const classes = useStyles();
+    const history = useHistory();
     return (
         <Paper>
             <Grid
@@ -60,10 +66,15 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                 className={classes.paddingGrid}
             >
                 <Grid item className={classes.itemPadding} xs>
-                    <Typography variant="h4" display="block">
+                    <Typography variant="h4">
                         {props.customer?.name || "Shop Name"}
+                        <Tooltip title="View Customer Details">
+                            <IconButton onClick={() => history.push((paths.customer + customersPaths.customerViewer).replace(":id", props.customer._id))}>
+                                <InfoOutlined />
+                            </IconButton>
+                        </Tooltip>
                     </Typography>
-                    <Typography variant="subtitle2" display="block">
+                    <Typography variant="subtitle2" display="block" >
                         Phone: {props.customer?.phone || 9489126016}
                     </Typography>
                     <Typography variant="subtitle1" display="block">
@@ -77,6 +88,16 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                     <Typography variant="subtitle2" display="block">
                         Date: {moment(props?.createdAt).format('MMM D YYYY, h:mm a') || moment().format('MMM D YYYY, h:mm a')}
                     </Typography>
+                    {props.location && <Tooltip title="Open Location in Google Maps">
+                        <IconButton onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${props.location?.coordinates.join(",")}`) }}>
+                            <RoomRounded />
+                        </IconButton>
+                    </Tooltip>}
+                    {props.onDelete && <Tooltip title="Delete Bill">
+                        <IconButton color="secondary" onClick={() => props.onDelete && props.onDelete()}>
+                            <DeleteRounded />
+                        </IconButton>
+                    </Tooltip>}
                 </Grid>
                 <Grid item className={classes.itemPadding} xs={12}>
                     <Divider />
