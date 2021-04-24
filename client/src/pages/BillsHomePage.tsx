@@ -55,7 +55,7 @@ export default function BillsHomePage() {
 
     useEffect(() => {
         execute();
-    }, [])
+    }, [execute])
 
     const confirm = useConfirm();
     const deleteBill = useCallback(

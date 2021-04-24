@@ -3,7 +3,7 @@ import { Fab, Grid, makeStyles, Theme, Typography } from '@material-ui/core';
 import { customersPaths, paths } from '../routes/paths.enum';
 import { useHistory } from 'react-router-dom';
 import AddIcon from '@material-ui/icons/Add';
-import { Add, Pageview, Refresh } from '@material-ui/icons';
+import { Add, Delete, Edit, Pageview, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
 import { store } from '..';
 import MaterialTable, { Query, QueryResult } from 'material-table';
@@ -11,6 +11,8 @@ import { Customer } from '../reducers/customer.reducer';
 import { APIResponse, axios, handleAxiosError, interpretMTQuery } from '../components/Axios';
 import { PaginateResult } from '../reducers/bill.reducer';
 import { tableIcons } from '../components/MaterialTableIcons';
+import { useConfirm } from 'material-ui-confirm';
+import { toast } from 'react-toastify';
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -34,6 +36,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 const CustomersTable = () => {
     const history = useHistory();
     const tableRef = useRef<any>(null);
+    const confirm = useConfirm();
 
     store.subscribe(() => {
         tableRef?.current?.onQueryChange();
@@ -84,6 +87,28 @@ const CustomersTable = () => {
                     isFreeAction: false,
                     onClick: (_, data: any) => {
                         history.push((paths.customer + customersPaths.customerViewer).replace(":id", data._id))
+                    }
+                },
+                {
+                    icon: () => <Delete />,
+                    tooltip: 'Delete',
+                    isFreeAction: false,
+                    onClick: (_, data: any) => {
+                        confirm({
+                            title: "Are you sure?",
+                            description: "Deleting a customer will delete all the bills of that customer too. This operation undo-able. Are you sure you want to continue deleting this customer?",
+                            confirmationText: "Delete",
+                            confirmationButtonProps: { color: "secondary" },
+                        }).then(() => axios.delete(`/customer/${data._id}`).catch(handleAxiosError))
+                            .then(() => toast.success("Customer Deleted"));
+                    }
+                },
+                {
+                    icon: () => <Edit />,
+                    tooltip: 'Edit Details',
+                    isFreeAction: false,
+                    onClick: (_, data: any) => {
+                        history.push((paths.customer + customersPaths.customerEditor).replace(":customerId", data._id))
                     }
                 }
             ]}
