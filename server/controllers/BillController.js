@@ -378,6 +378,11 @@ exports.receivePayment = [
 						"You are not allowed to receive payment for this bill."
 					);
 
+				const balance = bill.billAmount - bill.paidAmount;
+				if (balance <= req.body.paidAmount) {
+					return apiResponse.validationErrorWithData(res, "Validation Error.", [{ msg: "Paid amount is more than Balance" }])
+				}
+
 				const paymentInfo = {
 					paidAmount: req.body.paidAmount,
 					paymentReceivedBy: req.user._id,
