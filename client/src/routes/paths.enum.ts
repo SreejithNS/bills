@@ -15,7 +15,8 @@ export enum billsPaths {
 export enum customersPaths {
     home = '/',
     createCustomer = '/create',
-    customerViewer = "/view/:id"
+    customerViewer = "/view/:id",
+    customerEditor = "/edit/:customerId"
 }
 
 export enum itemPaths {

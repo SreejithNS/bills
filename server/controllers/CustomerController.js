@@ -20,6 +20,15 @@ const { UserData, userData } = require("../controllers/AuthController");
 
 //Functions
 /**
+ * Abstract Locatoin Data from Document
+ * @param {object} data 
+ */
+function LocationData(data) {
+	this.type = data.type;
+	this.coordinates = data.coordinates;
+}
+
+/**
  * Abstract Customer Data from Customer Document
  * @param {object} data 
  */
@@ -28,7 +37,7 @@ function CustomerData(data) {
 	this.name = data.name;
 	this.place = data.place;
 	this.phone = data.phone;
-	this.location = data.location;
+	this.location = data.location ? new LocationData(data.location) : data.location;
 	this.belongsTo = new UserData(data.belongsTo);
 }
 
@@ -101,6 +110,31 @@ async function createCustomer(name, phone, belongsTo, place, location) {
 
 	await newCustomer.save()
 	return newCustomer.populate("belongsTo");
+}
+
+/**
+ * Delete the Customer by deleting all the bills from that customer.
+ * @param {Customer._id} _id 
+ * @returns {{deletedBillsCount:number}}
+ */
+async function deleteCustomerAndBills(_id) {
+	const session = await mongoose.startSession();
+	session.startTransaction();
+
+	try {
+		const deletedBills = await Bill.deleteMany({ customer: _id }, { session });
+		if (!deletedBills.ok) {
+			throw new Error("Couldn't delete bills");
+		}
+		await Customer.findByIdAndDelete(_id, { session });
+		await session.commitTransaction();
+		session.endSession();
+		return { deletedBillsCount: deletedBills.deletedCount };
+	} catch (e) {
+		await session.abortTransaction();
+		session.endSession();
+		throw e;
+	}
 }
 
 /**
@@ -364,71 +398,6 @@ exports.create = [
 ];
 
 /** 
- * Customer update.
- * 
- * @returns {Object}
- *
-exports.bookUpdate = [
-	auth,
-	body("title", "Title must not be empty.").isLength({ min: 1 }).trim(),
-	body("description", "Description must not be empty.").isLength({ min: 1 }).trim(),
-	body("isbn", "ISBN must not be empty").isLength({ min: 1 }).trim().custom((value, { req }) => {
-		return Book.findOne({ isbn: value, user: req.user._id, _id: { "$ne": req.params.id } }).then(book => {
-			if (book) {
-				return Promise.reject("Book already exist with this ISBN no.");
-			}
-		});
-	}),
-	sanitizeBody("*").escape(),
-	(req, res) => {
-		try {
-			const errors = validationResult(req);
-			var book = new Book(
-				{
-					title: req.body.title,
-					description: req.body.description,
-					isbn: req.body.isbn,
-					_id: req.params.id
-				});
-
-			if (!errors.isEmpty()) {
-				return apiResponse.validationErrorWithData(res, "Validation Error.", errors.array());
-			}
-			else {
-				if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-					return apiResponse.validationErrorWithData(res, "Invalid Error.", "Invalid ID");
-				} else {
-					Book.findById(req.params.id, function (err, foundBook) {
-						if (foundBook === null) {
-							return apiResponse.notFoundResponse(res, "Book not exists with this id");
-						} else {
-							//Check authorized user
-							if (foundBook.user.toString() !== req.user._id) {
-								return apiResponse.unauthorizedResponse(res, "You are not authorized to do this operation.");
-							} else {
-								//update book.
-								Book.findByIdAndUpdate(req.params.id, book, {}, function (err) {
-									if (err) {
-										return apiResponse.ErrorResponse(res, err);
-									} else {
-										let bookData = new BookData(book);
-										return apiResponse.successResponseWithData(res, "Book update Success.", bookData);
-									}
-								});
-							}
-						}
-					});
-				}
-			}
-		} catch (err) {
-			//throw error in json response with status 500. 
-			return apiResponse.ErrorResponse(res, err);
-		}
-	}
-];
-//
-
-/** 
  * Customer Delete.
  * Only Admins are allowed to delete
  * 
@@ -436,7 +405,6 @@ exports.bookUpdate = [
  * 
  * @returns {Object}
  */
-
 exports.deleteCustomer = [
 	auth,
 	param("customerId", "Invalid Customer Id").escape().trim().isMongoId(),
@@ -462,24 +430,15 @@ exports.deleteCustomer = [
 					"Customer does not exist"
 				);
 			} else {
-				if (hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_DELETE")) {
-					return Customer.findByIdAndRemove(req.params.id, function (err) {
-						if (err) {
-							return apiResponse.ErrorResponse(res, err);
-						} else {
-							return apiResponse.successResponse(
-								res,
-								"Customer deleted"
-							);
-						}
-					});
-				} else {
-					return apiResponse.unauthorizedResponse(res, "Not authorised for this action");
-				}
+				const report = await deleteCustomerAndBills(req.params.customerId);
+				return apiResponse.successResponse(
+					res,
+					`Customer along with their ${report.deletedBillsCount} bill(s) deleted.`
+				);
 			}
 		} catch (err) {
 			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+			return apiResponse.ErrorResponse(res, err.message);
 		}
 	},
 ];
@@ -489,7 +448,6 @@ exports.deleteCustomer = [
  *
  * @returns {Object}
  */
-
 exports.update = [
 	auth,
 	param("customerId")
@@ -516,6 +474,9 @@ exports.update = [
 			}
 			return Customer.findOne(
 				{
+					_id: {
+						$nin: [req.params.customerId]
+					},
 					phone: value,
 					belongsTo: authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id
 				}
@@ -528,11 +489,12 @@ exports.update = [
 			);
 		}),
 	body("place", "Invalid place name").optional().trim().escape().isAlphanumeric(),
-	body("coordinates", "Invalid coordinates")
+	body("location", "Invalid coordinates")
 		.optional()
-		.custom(({ lat, lon }) => {
-			const reg = /^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}/;
-			return reg.exec(lat) && reg.exec(lon);
+		.custom((value) => {
+			const [lat, lon] = value.coordinates;
+			const reg = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+			return reg.test(lat + "," + lon);
 		}),
 	async (req, res) => {
 		if (!validationResult(req).isEmpty())
@@ -543,19 +505,16 @@ exports.update = [
 			);
 		try {
 			//Check for customer category access rights
-			const authenticatedUser = await userData(_id);
-			const customer = await Product.findById(req.params.customerId)
+			const authenticatedUser = await userData(req.user._id);
+			const customer = await Customer.findById(req.params.customerId)
 
 			if (!hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_PUT"))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation");
 
-			//Remove belongsTo from change request body
-			const execptBelonsTo = Object.keys(req.body).reduce((acc, elem) => {
-				if (elem !== "belongsTo") acc[elem] = obj[elem]
-				return acc
-			}, {})
+			//Select only valid keys from object;
+			const editValues = _.pick(req.body, "name", "phone", "place", "location");
 
-			const newCustomer = await Customer.findByIdAndUpdate(req.body.customerId, execptBelonsTo, { new: true }).populate("belongsTo").exec();
+			const newCustomer = await Customer.findByIdAndUpdate(req.params.customerId, editValues, { new: true }).populate("belongsTo").exec();
 			return apiResponse.successResponseWithData(
 				res,
 				"Customer Update Success",
@@ -563,7 +522,7 @@ exports.update = [
 			)
 		} catch (err) {
 			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+			return apiResponse.ErrorResponse(res, err.message);
 		}
 	},
 ];

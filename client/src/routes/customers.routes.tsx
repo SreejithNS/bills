@@ -2,6 +2,7 @@ import React from 'react';
 import {
     Route
 } from "react-router-dom";
+import CustomerEditModal from '../components/CustomerEditModal';
 import CustomerViewerModal from '../components/CustomerViewerModal';
 import NewCustomerCreationModal from '../components/NewCustomerCreationModal';
 import CustomersHomePage from '../pages/CustomersHomePage';
@@ -18,6 +19,9 @@ export default function CustomersRoutes() {
             </Route>
             <Route path={paths.customer + customersPaths.customerViewer} >
                 <CustomerViewerModal />
+            </Route>
+            <Route path={paths.customer + customersPaths.customerEditor} >
+                <CustomerEditModal />
             </Route>
         </React.Fragment>
     )
