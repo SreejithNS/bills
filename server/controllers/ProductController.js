@@ -54,7 +54,6 @@ function ProductCategoryData(data) {
  * @param {object} query 
  */
 function QueryParser(query) {
-	this.offset = Math.abs(parseInt(query.offset)) || 0;
 	this.page = Math.abs(parseInt(query.page)) || 1;
 	this.limit = Math.abs(parseInt(query.limit)) || 5;
 	this.soldBy = query.soldBy;

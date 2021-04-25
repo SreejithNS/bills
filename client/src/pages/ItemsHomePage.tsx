@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react'
-import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, CircularProgress, Tooltip } from '@material-ui/core';
+import React, { useEffect, useRef, useState } from 'react'
+import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, Tooltip } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { useHistory } from 'react-router-dom';
@@ -16,13 +16,11 @@ import { RootState } from '../reducers/rootReducer';
 import ImportModal from '../components/ImportModal';
 import SystemUpdateAltIcon from '@material-ui/icons/SystemUpdateAlt';
 import { APIResponse, axios, handleAxiosError, interpretMTQuery } from '../components/Axios';
-import { Product, ProductCategory } from '../reducers/product.reducer';
+import { Product } from '../reducers/product.reducer';
 import { PaginateResult } from '../reducers/bill.reducer';
 import { useConfirm } from 'material-ui-confirm';
 import NewProductCategoryModal from '../components/NewProductCategoryModal';
 import { useHasPermission, useProductCategoryActions } from '../actions/auth.actions';
-import ParagraphIconCard from '../components/ParagraphIconCard';
-import { store } from '..';
 import { UserPermissions } from '../reducers/auth.reducer';
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -154,27 +152,23 @@ const ItemToolbar = () => {
     )
 }
 
-const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategoryId?: ProductCategory["_id"], productCategoryName?: ProductCategory["name"] }) => {
+export default function ItemsHomePage() {
+    const classes = useStyles();
     const history = useHistory();
     const tableRef = useRef<any>(null);
+    const { productCategory } = useSelector((state: RootState) => state.product);
+
+    const confirm = useConfirm();
     const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
     const productEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_PUT);
     const productDeletePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_DELETE);
-    const confirm = useConfirm();
 
-    if (!productCategoryId || !productCategoryName) return (
-        <ParagraphIconCard
-            heading="Please Select a product category"
-            icon={<CircularProgress />}
-        />
-    )
-
-    store.subscribe(() => {
-        tableRef?.current?.onQueryChange();
-    })
+    useEffect(() => {
+        tableRef?.current?.onQueryChange()
+    }, [productCategory])
 
     const fetchItems = (query: Query<Product>): Promise<QueryResult<Product>> => new Promise((resolve) => {
-        const url = `/product/${productCategoryId}/query?`;
+        const url = `/product/${productCategory?._id}/query?`;
         const search = (new URLSearchParams(interpretMTQuery(query))).toString();
         axios
             .get<APIResponse<PaginateResult<Product>>>(url + search)
@@ -188,97 +182,6 @@ const ItemsTable = ({ productCategoryId, productCategoryName }: { productCategor
             })
             .catch(handleAxiosError)
     })
-    return (
-        <MaterialTable
-            tableRef={tableRef}
-            icons={tableIcons}
-            columns={[
-                { title: "Item Name", field: "name", editable: "never" },
-                { title: "Code", field: "code", editable: "never" },
-                { title: "Rate", field: "rate", type: "numeric", editable: "never" },
-                { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
-            ]}
-            data={fetchItems}
-            actions={[
-                {
-                    icon: () => <Refresh />,
-                    tooltip: 'Refresh Data',
-                    isFreeAction: true,
-                    onClick: () => tableRef?.current?.onQueryChange(),
-                },
-                {
-                    icon: () => <Add />,
-                    disabled: !productCreatePermission,
-                    tooltip: 'Add Product',
-                    isFreeAction: true,
-                    onClick: () => history.push(paths.items + itemPaths.addItem)
-                },
-                {
-                    icon: () => <EditRoundedIcon />,
-                    tooltip: 'Edit Product',
-                    disabled: !productEditPermission,
-                    isFreeAction: false,
-                    onClick: (_, data) => {
-                        data = data as (Product);
-                        history.push((paths.items + itemPaths.editProduct).replace(":productId", data._id))
-                    }
-                },
-                {
-                    icon: () => <DeleteOutlineRounded />,
-                    disabled: !productDeletePermission,
-                    tooltip: 'Delete Product',
-                    isFreeAction: false,
-                    onClick: (_, data: any) => {
-                        confirm({
-                            title: "Are you sure?",
-                            description: "Do you really want to delete this Product?",
-                            cancellationText: "No",
-                            confirmationText: "Yes"
-                        })
-                            .then(
-                                () => axios.delete(`/product/${productCategoryId}.${data._id}`)
-                                , () => toast.warn("Didn't delete the Product"))
-                            .then(() => tableRef?.current?.onQueryChange())
-                            .catch(handleAxiosError)
-                    }
-                }
-            ]}
-            options={{
-                exportButton: false,
-                exportCsv: (columns, data) => {
-                    exportToCsv(productCategoryName, itemsArrayToCsvArray(data))
-                },
-                toolbarButtonAlignment: "left",
-                showTitle: false
-            }}
-            detailPanel={[{
-                icon: LineStyleIcon,
-                openIcon: LineStyleTwoTone,
-                tooltip: 'Show Units',
-                render: (rowData: Product) => {
-                    return (rowData.units && rowData.units.length) ? (
-                        <List dense>
-                            {rowData.units.map((unit: { name: string; rate: number; mrp: number; }, key) =>
-                                <ListItem key={key}>
-                                    <ListItemText
-                                        primary={unit.name.toUpperCase()}
-                                        secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate}`}
-                                    />
-                                </ListItem>,
-                            )}
-                        </List>
-                    ) : <></>
-                }
-            }]}
-        />
-    )
-}
-
-export default function ItemsHomePage() {
-    const classes = useStyles();
-    const history = useHistory();
-    const { productCategory } = useSelector((state: RootState) => state.product);
-    const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
 
     return (
         <React.Fragment>
@@ -298,9 +201,87 @@ export default function ItemsHomePage() {
                         <ItemToolbar />
                     </Grid>
                     <Grid item xs={12} className={classes.cardPadding}>
-                        <ItemsTable
-                            productCategoryId={productCategory?._id}
-                            productCategoryName={productCategory?.name}
+                        <MaterialTable
+                            tableRef={tableRef}
+                            icons={tableIcons}
+                            columns={[
+                                { title: "Item Name", field: "name", editable: "never" },
+                                { title: "Code", field: "code", editable: "never" },
+                                { title: "Rate", field: "rate", type: "numeric", editable: "never" },
+                                { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
+                            ]}
+                            data={fetchItems}
+                            actions={[
+                                {
+                                    icon: () => <Refresh />,
+                                    tooltip: 'Refresh Data',
+                                    isFreeAction: true,
+                                    onClick: () => tableRef?.current?.onQueryChange(),
+                                },
+                                {
+                                    icon: () => <Add />,
+                                    disabled: !productCreatePermission,
+                                    tooltip: 'Add Product',
+                                    isFreeAction: true,
+                                    onClick: () => history.push(paths.items + itemPaths.addItem)
+                                },
+                                {
+                                    icon: () => <EditRoundedIcon />,
+                                    tooltip: 'Edit Product',
+                                    disabled: !productEditPermission,
+                                    isFreeAction: false,
+                                    onClick: (_, data) => {
+                                        data = data as (Product);
+                                        history.push((paths.items + itemPaths.editProduct).replace(":productId", data._id))
+                                    }
+                                },
+                                {
+                                    icon: () => <DeleteOutlineRounded />,
+                                    disabled: !productDeletePermission,
+                                    tooltip: 'Delete Product',
+                                    isFreeAction: false,
+                                    onClick: (_, data: any) => {
+                                        confirm({
+                                            title: "Are you sure?",
+                                            description: "Do you really want to delete this Product?",
+                                            cancellationText: "No",
+                                            confirmationText: "Yes"
+                                        })
+                                            .then(
+                                                () => axios.delete(`/product/${productCategory?._id}.${data._id}`)
+                                                , () => toast.warn("Didn't delete the Product"))
+                                            .then(() => tableRef?.current?.onQueryChange())
+                                            .catch(handleAxiosError)
+                                    }
+                                }
+                            ]}
+                            options={{
+                                exportButton: false,
+                                exportCsv: (columns, data) => {
+                                    exportToCsv(productCategory?.name ?? "", itemsArrayToCsvArray(data))
+                                },
+                                toolbarButtonAlignment: "left",
+                                showTitle: false
+                            }}
+                            detailPanel={[{
+                                icon: LineStyleIcon,
+                                openIcon: LineStyleTwoTone,
+                                tooltip: 'Show Units',
+                                render: (rowData: Product) => {
+                                    return (rowData.units && rowData.units.length) ? (
+                                        <List dense>
+                                            {rowData.units.map((unit: { name: string; rate: number; mrp: number; }, key) =>
+                                                <ListItem key={key}>
+                                                    <ListItemText
+                                                        primary={unit.name.toUpperCase()}
+                                                        secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate}`}
+                                                    />
+                                                </ListItem>,
+                                            )}
+                                        </List>
+                                    ) : <></>
+                                }
+                            }]}
                         />
                     </Grid>
                 </Grid>
