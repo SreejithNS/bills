@@ -51,6 +51,7 @@ interface AdditionalProps {
     receivePayment(): void;
     creditAction(): void;
     onDelete?(): void;
+    paymentDelete?(id: string): void;
 }
 
 export default function BillViewer(props: BillData & AdditionalProps) {
@@ -151,7 +152,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                 </Grid>
                 {(props.payments && props.payments.length)
                     ? <Grid item className={classes.itemPadding} xs={12}>
-                        <PaymentsList payments={props.payments} />
+                        <PaymentsList payments={props.payments} onDelete={props.paymentDelete} />
                     </Grid>
                     : <></>
                 }

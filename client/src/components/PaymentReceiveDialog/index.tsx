@@ -11,12 +11,12 @@ import useAxios from 'axios-hooks';
 import { APIResponse, handleAxiosError } from '../Axios';
 import { toast } from 'react-toastify';
 
-type Props = { billId: BillData["_id"]; open: boolean; onClose: () => any; };
+type Props = BillData & { open: boolean; onClose: () => any; };
 
-export default function PaymentReceiveDialog({ billId, open, onClose }: Props) {
-    const [amount, setAmount] = useState(1);
+export default function PaymentReceiveDialog({ _id, open, onClose, paidAmount, billAmount }: Props) {
+    const [amount, setAmount] = useState(0);
     const [{ loading, error, data }, post] = useAxios<APIResponse<null>>({
-        url: `/bill/${billId}/payment`,
+        url: `/bill/${_id}/payment`,
         method: "POST",
         data: {
             paidAmount: amount
@@ -25,6 +25,7 @@ export default function PaymentReceiveDialog({ billId, open, onClose }: Props) {
 
     useEffect(() => {
         if (data) {
+            setAmount(0);
             toast.success("Payment Received");
             onClose();
         }
@@ -49,10 +50,12 @@ export default function PaymentReceiveDialog({ billId, open, onClose }: Props) {
                     label="Amount in ₹"
                     type="number"
                     fullWidth
-                    value={amount}
+                    value={amount || ""}
                     onChange={(event) => {
                         const value = Math.abs(parseFloat(event.target.value));
-                        setAmount(value > 0 ? value : 1);
+                        const balance = billAmount - paidAmount;
+                        if (value <= balance)
+                            setAmount(value);
                     }}
                 />
             </DialogContent>
@@ -60,7 +63,7 @@ export default function PaymentReceiveDialog({ billId, open, onClose }: Props) {
                 <Button onClick={onClose} disabled={loading} color="primary">
                     Cancel
           </Button>
-                <Button onClick={() => post()} disabled={loading} color="primary">
+                <Button onClick={() => amount > 0 ? post() : toast.warn("Enter a valid amount")} disabled={loading} color="primary">
                     Confirm
           </Button>
             </DialogActions>

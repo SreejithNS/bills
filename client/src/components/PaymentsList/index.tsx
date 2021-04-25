@@ -19,7 +19,7 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-export default function PaymentsList(props: { payments: any[]; }) {
+export default function PaymentsList(props: { payments: any[]; onDelete?(_id: string): void }) {
     const classes = useStyles();
 
     return (
@@ -33,7 +33,7 @@ export default function PaymentsList(props: { payments: any[]; }) {
           </Typography>
             </AccordionSummary>
             <AccordionDetails classes={{ root: classes.root }}>
-                <PaymentListItem payments={props.payments} />
+                <PaymentListItem payments={props.payments} onDelete={props.onDelete} />
             </AccordionDetails>
         </Accordion>
     );

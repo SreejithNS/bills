@@ -36,6 +36,24 @@ export default function BillViewerModal(props: ModalProps) {
             //eslint-disable-next-line
         }, [data]
     )
+    const deletePayment = useCallback(
+        (billId: BillData["_id"]) => (paymentId: string) => {
+            confirm({
+                title: "Are you sure?",
+                description: "Deleting a payment record is unrecoverable and will reduce the Paid Amount as well. Do you want to continue deleting the record?",
+                confirmationText: "Delete",
+                confirmationButtonProps: {
+                    color: "secondary"
+                }
+            }).then(() => {
+                return axios.delete("/bill/" + billId + "/payment/" + paymentId).catch(handleAxiosError);
+            }).then(
+                () => { toast.success("Payment Deleted successfully"); fetchAgain() },
+                () => toast.info("Payment did not delete.")
+            )
+            //eslint-disable-next-line
+        }, [data]
+    )
 
 
     const handleCreditUpdate = () => {
@@ -52,7 +70,7 @@ export default function BillViewerModal(props: ModalProps) {
         }}>
             {loading && <Zoom in={loading}><CircularProgress /></Zoom>}
             {error && <ErrorCard errors={error} title="Couldn't load bill" />}
-            {(!loading && data && data.data) && <BillViewer
+            {(!loading && data && data.data !== undefined) && <BillViewer
                 receivePayment={() => setPaymentReceiveModalOpen(true)}
                 createdAt={data.data.createdAt}
                 customer={data.data.customer}
@@ -70,8 +88,9 @@ export default function BillViewerModal(props: ModalProps) {
                 itemsTotalAmount={data.data.itemsTotalAmount}
                 location={data.data.location}
                 onDelete={() => deleteBill(data.data?._id ?? "")}
+                paymentDelete={deletePayment(data.data._id)}
             />}
-            <PaymentReceiveDialog open={paymentReceiveModalOpen} billId={params.id} onClose={() => { fetchAgain(); setPaymentReceiveModalOpen(false) }} />
+            {data?.data && <PaymentReceiveDialog  {...data.data} open={paymentReceiveModalOpen} onClose={() => { fetchAgain(); setPaymentReceiveModalOpen(false) }} />}
         </Modal>
     );
 }

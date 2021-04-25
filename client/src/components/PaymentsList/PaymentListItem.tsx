@@ -7,6 +7,8 @@ import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
 import AddCircleOutlineRoundedIcon from "@material-ui/icons/AddCircleOutlineRounded";
 import moment from "moment";
+import { ListItemSecondaryAction, IconButton } from "@material-ui/core";
+import DeleteIcon from '@material-ui/icons/Delete';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -17,7 +19,7 @@ const useStyles = makeStyles((theme: Theme) =>
     })
 );
 
-export default function PaymentListItem(props: { payments: any[] }) {
+export default function PaymentListItem(props: { payments: any[]; onDelete?: (_id: string) => void }) {
     const classes = useStyles();
 
     return (
@@ -25,7 +27,7 @@ export default function PaymentListItem(props: { payments: any[] }) {
             {props.payments?.length &&
                 props.payments.map(
                     (
-                        { paidAmount, paymentReceivedBy, updatedAt }: any,
+                        { paidAmount, paymentReceivedBy, updatedAt, _id }: any,
                         key: string | number | undefined
                     ) => (
                         <ListItem key={key}>
@@ -38,6 +40,11 @@ export default function PaymentListItem(props: { payments: any[] }) {
                                 primary={`₹${paidAmount}`}
                                 secondary={`${"Received by " + paymentReceivedBy?.name.toLocaleUpperCase()} at ${moment(updatedAt.toString()).format('MMM D YYYY, h:mm a')}`}
                             />
+                            {props.onDelete && <ListItemSecondaryAction>
+                                <IconButton edge="end" aria-label="delete" onClick={() => props.onDelete && props.onDelete(_id)}>
+                                    <DeleteIcon />
+                                </IconButton>
+                            </ListItemSecondaryAction>}
                         </ListItem>
                     )
                 )}
