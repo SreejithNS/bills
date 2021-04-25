@@ -10,6 +10,8 @@ import thunk from 'redux-thunk';
 import { createMuiTheme, CssBaseline, ThemeProvider } from '@material-ui/core';
 import { createLogger } from 'redux-logger';
 import initAxios from './components/Axios';
+import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from 'react-toastify';
 
 declare global {
   interface Window {
@@ -58,6 +60,7 @@ ReactDOM.render(
       <CssBaseline />
       <Provider store={store}>
         <App />
+        <ToastContainer />
       </Provider>
     </ThemeProvider>
   </React.Fragment>//StrictMode>
@@ -67,4 +70,4 @@ ReactDOM.render(
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.register();
+serviceWorker.register({ onUpdate: () => toast.success("New Update Available! Refresh or click here to update", { onClick: () => window.location.reload() }) });
