@@ -4,7 +4,8 @@ import {
     Grid,
     Theme,
     Typography,
-    makeStyles
+    makeStyles,
+    Button
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import ParagraphIconCard from "../components/ParagraphIconCard";
@@ -17,6 +18,10 @@ import PageContainer from "../components/PageContainer";
 import { RootState } from "../reducers/rootReducer";
 import { useHasPermission, useUsersUnderAdmin } from "../actions/auth.actions";
 import { UserTypes } from "../reducers/auth.reducer";
+import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
+import useAxios from "axios-hooks";
+import { handleAxiosError } from "../components/Axios";
+import { useEffect } from "react";
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -40,10 +45,22 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 export default function AccountPage() {
     const { userData, usersUnderUser } = useSelector((state: RootState) => state.auth);
-    const { loading } = useUsersUnderAdmin();
+    const { loading: usersListLoading } = useUsersUnderAdmin();
     const classes = useStyles();
-    const hasAdminPermissions = useHasPermission(undefined, !loading);
+
+    const hasAdminPermissions = useHasPermission(undefined, !usersListLoading);
     const history = useHistory();
+
+    const [{ loading: logoutLoading, error: logoutError, data: logoutResponse }, logout] = useAxios({
+        url: "/auth/logout", method: "POST"
+    }, { manual: true });
+
+    useEffect(() => {
+        if (logoutResponse) {
+            window.location.href = process.env.REACT_APP_API_URL + '/login';
+        }
+        if (logoutError) handleAxiosError(logoutError);
+    }, [logoutResponse, logoutError])
 
     const taglineUnderUsername = () => {
         const texts = [];
@@ -66,7 +83,7 @@ export default function AccountPage() {
 
         return texts.join(" | ");
     }
-
+    const loading = usersListLoading || logoutLoading;
     return (
         <React.Fragment>
             <PageContainer>
@@ -78,7 +95,12 @@ export default function AccountPage() {
                         <ParagraphIconCard
                             icon={<AccountCircleRoundedIcon fontSize="large" />}
                             heading={"Hi " + userData?.name}
-                            content={taglineUnderUsername()}
+                            content={<>
+                                {taglineUnderUsername()}<br />
+                                <Button disabled={logoutLoading} color="secondary" onClick={() => logout()}>
+                                    <PowerSettingsNewIcon /> Logout
+                                </Button>
+                            </>}
                         />
                     </Grid>
                     <Grid item xs={12} className={classes.cardPadding}>

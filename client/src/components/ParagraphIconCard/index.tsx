@@ -20,7 +20,7 @@ const useStyles = makeStyles((theme) => ({
 interface Props {
     icon: React.ReactNode;
     heading: string;
-    content?: string | React.ReactNode;
+    content?: any;
 }
 
 export default function ParagraphIconCard(props: Props) {
