@@ -379,7 +379,7 @@ exports.receivePayment = [
 					);
 
 				const balance = bill.billAmount - bill.paidAmount;
-				if (balance <= req.body.paidAmount) {
+				if (balance < parseFloat(req.body.paidAmount)) {
 					return apiResponse.validationErrorWithData(res, "Validation Error.", [{ msg: "Paid amount is more than Balance" }])
 				}
 
@@ -391,8 +391,57 @@ exports.receivePayment = [
 				bill.payments.push(paymentInfo);
 
 				bill.paidAmount += parseFloat(req.body.paidAmount);
+
+				if (bill.paidAmount === bill.billAmount) bill.credit = false;
+
 				return bill.save().then(() =>
 					apiResponse.successResponse(res, "Bill payment received")
+				);
+			}
+		} catch (e) {
+			return apiResponse.ErrorResponse(
+				res,
+				e.message || e
+			);
+		}
+	},
+];
+
+exports.deletePayment = [
+	auth,
+	param("billId", "Invalid Bill ID").escape().trim().isMongoId(),
+	param("paymentId", "Invalid Payment ID").escape().trim().isMongoId(),
+	async (req, res) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
+		}
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			const bill = await getBillById(req.params.billId);
+			if (!bill) {
+				return apiResponse.notFoundResponse(res, "Bill Not Found");
+			} else {
+				if (!hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_PUT"))
+					return apiResponse.unauthorizedResponse(
+						res,
+						"You are not allowed to receive payment for this bill."
+					);
+				const paymentIndex = bill.payments.findIndex((payment) => payment._id.toString() === req.params.paymentId);
+				if (paymentIndex >= 0) {
+					bill.paidAmount -= bill.payments[paymentIndex].paidAmount;
+					bill.payments.splice(paymentIndex, 1);
+					bill.credit = true;
+				} else {
+					return apiResponse.notFoundResponse(res, "Payment not found");
+				}
+
+				return bill.save().then(() =>
+					apiResponse.successResponse(res, "Bill marked as credit by deleting payment")
 				);
 			}
 		} catch (e) {

@@ -681,7 +681,7 @@ exports.getProductSuggestions = [
 		.escape()
 		.trim()
 		.isMongoId(),
-	param("code").escape().trim().isAlphanumeric(),
+	param("code").escape().trim().matches(/^[a-z0-9 ]+$/i),
 	async (req, res) => {
 		const validation = validationResult(req);
 		if (!validation.isEmpty())
