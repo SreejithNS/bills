@@ -99,6 +99,9 @@ const calculateItemAmounts = (billState: BillState) => {
 		if (item.unit) item.amount = item.quantity * item.unit.rate;
 		else item.amount = item.quantity * item.rate;
 	});
+	if (!billState.credit) {
+		billState.paidAmount = getBillAmount(billState);
+	}
 	return billState;
 };
 
@@ -107,20 +110,21 @@ const setDiscountAmountFromPercentage = (billState: BillState) => {
 	const discountPercentage = billState.discountPercentage;
 	const discountAmount = (discountPercentage * itemsTotalAmount) / 100
 	if (discountAmount > getItemsTotalAmount(billState)) return { ...billState };
-	else return {
+	else return calculateItemAmounts({
 		...billState,
 		discountAmount
-	};
+	});
 };
 
 const setPercentageFromDiscountAmount = (billState: BillState) => {
 	const itemsTotalAmount = getItemsTotalAmount(billState);
 	const discountAmount = billState.discountAmount;
 	const discountPercentage = (discountAmount / itemsTotalAmount) * 100;
-	return {
+	console.log("update paid amount");
+	return calculateItemAmounts({
 		...billState,
 		discountPercentage: parseFloat(discountPercentage.toFixed(2)),
-	};
+	});
 };
 
 export default function billReducer(state: BillState = initialState, action: { type: string; payload: any }): BillState {
@@ -157,6 +161,10 @@ export default function billReducer(state: BillState = initialState, action: { t
 			if (index >= 0) {
 				items[index].quantity += payload.quantity;
 			} else {
+				if (payload.unit) {
+					payload.rate = payload.unit.rate;
+					payload.mrp = payload.unit.mrp;
+				}
 				items.push(payload);
 			}
 			return calculateItemAmounts({
@@ -198,10 +206,16 @@ export default function billReducer(state: BillState = initialState, action: { t
 			};
 		}
 		case "BILL_SET_CREDIT": {
-			return {
+			const newState = {
 				...state,
 				credit: action.payload,
 			};
+			if (!action.payload) {
+				newState.paidAmount = getBillAmount(newState);
+			} else {
+				newState.paidAmount = 0;
+			}
+			return newState;
 		}
 		case "BILL_SET_PAID_AMOUNT": {
 			return {
