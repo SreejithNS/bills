@@ -141,7 +141,7 @@ BillSchema.methods.calculateBillAmount = function () {
 	const itemsTotalAmount = this.itemsTotalAmount;
 	const discountAmount = this.discountAmount;
 
-	return itemsTotalAmount - discountAmount;
+	return Math.round(itemsTotalAmount - discountAmount);
 };
 
 // BillSchema.virtual("itemsTotalAmount").get(function () {
