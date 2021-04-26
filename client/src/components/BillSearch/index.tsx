@@ -8,6 +8,9 @@ import { APIResponse, axios, handleAxiosError } from "../Axios";
 import { BillData } from "../../reducers/bill.reducer";
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import clsx from "clsx";
+import { UserData } from "../../reducers/auth.reducer";
+import { useSelector } from "react-redux";
+import { RootState } from "../../reducers/rootReducer";
 
 const useStyles = makeStyles((theme: Theme) => ({
     root: {
@@ -68,6 +71,33 @@ function CustomerSelection(props: {
     );
 }
 
+function SalesmanSelection(props: {
+    salesman: UserData | undefined;
+    onChange: (value: UserData) => void;
+}) {
+    const salesmenList = useSelector((state: RootState) => {
+        const { usersUnderUser, userData } = state.auth;
+        let list = [...(usersUnderUser ?? [])];
+        if (userData) list.push(userData);
+        return list;
+    });
+
+    return (
+        <Autocomplete
+            value={props.salesman}
+            options={salesmenList ?? []}
+            autoHighlight
+            getOptionLabel={(option: UserData) => option.name}
+            onChange={(_, newValue) => newValue && props.onChange(newValue as UserData)}
+            selectOnFocus
+            freeSolo
+            handleHomeEndKeys
+            fullWidth={true}
+            renderInput={(params) => <TextField {...params} label="Salesman" margin="dense" variant="outlined" />}
+        />
+    );
+}
+
 
 type Props = {
     onSearch: (param: string, value: string) => void;
@@ -83,6 +113,7 @@ export default function BillSearch(props: Props) {
     const classes = useStyles();
     const [customer, setCustomer] = useState<Customer>();
     const [serialNumber, setserialNumber] = useState<number>();
+    const [salesman, setSalesman] = useState<UserData>();
     const [searchParam, setSearchParam] = useState<string>("customer");
 
     const [expanded, setExpanded] = useState(false);
@@ -97,6 +128,10 @@ export default function BillSearch(props: Props) {
             case "customer":
                 onSearch(searchParam, customer?._id ?? "");
                 setCustomer(undefined);
+                break;
+            case "soldBy":
+                onSearch(searchParam, salesman?._id ?? "");
+                setSalesman(undefined);
                 break;
             default:
                 break;
@@ -119,6 +154,7 @@ export default function BillSearch(props: Props) {
                                 >
                                     <MenuItem value={"serial"}>Serial</MenuItem>
                                     <MenuItem value={"customer"}>Customer</MenuItem>
+                                    <MenuItem value={"soldBy"}>Sold By</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>
@@ -138,6 +174,11 @@ export default function BillSearch(props: Props) {
                                 <CustomerSelection
                                     customer={customer}
                                     onChange={(value) => setCustomer(value ?? undefined)}
+                                />}
+                            {searchParam === "soldBy" &&
+                                <SalesmanSelection
+                                    salesman={salesman}
+                                    onChange={(value) => setSalesman(value ?? undefined)}
                                 />}
                         </Grid>
                         <Grid item>
