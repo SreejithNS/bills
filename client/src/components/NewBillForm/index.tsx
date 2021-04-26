@@ -8,6 +8,7 @@ import {
 	FormControl,
 	FormControlLabel,
 	Grid,
+	InputAdornment,
 	InputLabel,
 	makeStyles,
 	MenuItem,
@@ -23,7 +24,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { createFilterOptions } from "@material-ui/lab/Autocomplete";
 import NewCustomerCreationModal from "../NewCustomerCreationModal";
 import { toast } from "react-toastify";
-import { BillPostData, getBillAmount } from "../../reducers/bill.reducer";
+import { BillPostData, getBillAmount, getItemsTotalAmount } from "../../reducers/bill.reducer";
 import { tableIcons } from "../MaterialTableIcons";
 import { Customer } from "../../reducers/customer.reducer";
 import { axios, APIResponse, handleAxiosError } from "../Axios";
@@ -478,38 +479,38 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 				</Grid>
 				<Grid item xs={4}>
 					<TextField
-						value={getBillAmount(billState)}
+						value={getItemsTotalAmount(billState)}
 						label="Total Amount"
 						InputProps={{
-							readOnly: true,
+							readOnly: true, startAdornment: <InputAdornment position="start">₹</InputAdornment>,
 						}}
 						type="number"
 						variant="outlined"
 					/>
 				</Grid>
 				<Grid item xs={4}>
-					<FormControlLabel
-						control={
-							<Checkbox
-								checked={credit}
-								onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-									setValues("credit")(event.target.checked)
-								}
-								name="credit"
-								color="primary"
-							/>
-						}
-						label="Credit Amount"
-					/>
-				</Grid>
-				<Grid item xs={4}>
 					<TextField
 						value={paidAmount}
+						InputProps={{
+							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+						}}
 						label="Paid Amount"
 						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
 							setValues("paidAmount")(event.target.value)
 						}
 						type="number"
+						variant="outlined"
+					/>
+				</Grid>
+				<Grid item xs={4}>
+					<TextField
+						value={getBillAmount(billState)}
+						label="Bill Amount"
+						InputProps={{
+							readOnly: true, startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+						}}
+						type="number"
+						color="secondary"
 						variant="outlined"
 					/>
 				</Grid>
@@ -530,6 +531,19 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 					>
 						RESET
 					</Button>
+					<FormControlLabel
+						control={
+							<Checkbox
+								checked={credit}
+								onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+									setValues("credit")(event.target.checked)
+								}
+								name="credit"
+								color="primary"
+							/>
+						}
+						label="Credit Amount"
+					/><br />
 					{geoLocation?.error && <Typography variant="caption" color="textSecondary" display="inline">
 						( No Location information )
 					</Typography>

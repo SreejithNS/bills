@@ -122,7 +122,7 @@ const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; subm
                     justify="flex-start"
                     alignItems="center"
                     spacing={2}>
-                    <FieldArray name="units" component={renderUnits} />
+                    <FieldArray name="units" component={renderUnits as any} />
                 </Grid>
                 <Grid item xs={12} container justify="center" alignItems="center" spacing={2}>
                     {!(pristine || submitting)
