@@ -27,7 +27,7 @@ const ProductSchema = new Schema(
 		category: { type: Schema.Types.ObjectId, ref: "ProductCategory" },
 		rate: { type: Number, default: 0 },
 		mrp: { type: Number, default: 0 },
-		belongsTo: { type: Schema.Types.ObjectId, ref: "User" }
+		belongsTo: { type: Schema.Types.ObjectId, ref: "User", required: true }
 	},
 	{ timestamps: true }
 );

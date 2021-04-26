@@ -21,6 +21,7 @@ function ProductData(data) {
 	this.rate = data.rate;
 	this.mrp = data.mrp;
 	this.units = data.units || [];
+	this.belongsTo = data.belongsTo;
 }
 
 function ProductCategoryData(data) {
@@ -78,11 +79,11 @@ function hasAccessPermission(authenticatedUser, paramProduct, explicitPermission
 		if (authenticatedUser.type === privilegeEnum.admin || (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission))) {
 			flag = true;
 		}
-	} else if (authenticatedUser._id === paramProduct.belongsTo._id) { //Belongs to User 
+	} else if (authenticatedUser._id === paramProduct.belongsTo._id.toString()) { //Belongs to User 
 		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
 			flag = true;
 		}
-	} else if (authenticatedUser.belongsTo._id === paramProduct.belongsTo._id) { //Product and user belong to same admin
+	} else if (authenticatedUser.belongsTo._id === paramProduct.belongsTo._id.toString()) { //Product and user belong to same admin
 		if (authenticatedUser.type === privilegeEnum.admin) { // and user is admin
 			flag = true;
 		} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes(explicitPermission)) {
@@ -138,7 +139,7 @@ async function getProductById(_id) {
  * @param {Unit[]=} units - Units array of the product
  * @returns 
  */
-async function createProduct(code, name, rate, mrp, categoryId, units) {
+async function createProduct(code, name, rate, mrp, categoryId, units, user) {
 	try {
 		if (units && units.length)
 			units = unitSchemaValidation(
@@ -161,6 +162,7 @@ async function createProduct(code, name, rate, mrp, categoryId, units) {
 		category: categoryId,
 		rate: rate,
 		mrp: mrp,
+		belongsTo: user
 	})
 	await productData.populate("belongsTo").populate("category").execPopulate();
 	return await productData.save();
@@ -188,7 +190,7 @@ exports.createCategory = createCategory;
  * @param {NewProductData[]} newProductsArray - Array of New Products' data
  * @param {ProductCategory._id} categoryId - Product Category which those comes under
  */
-async function addMultipleProducts(newProductsArray, categoryId) {
+async function addMultipleProducts(newProductsArray, categoryId, user) {
 	for (let product of newProductsArray) {
 		if (product.units && product.units.length)
 			product.units = unitSchemaValidation(
@@ -197,6 +199,7 @@ async function addMultipleProducts(newProductsArray, categoryId) {
 				product.units
 			);
 		product.category = categoryId;
+		product.belongsTo = user;
 	}
 
 	const session = await Product.startSession();
@@ -358,7 +361,7 @@ exports.deleteProduct = [
 			}
 		} catch (err) {
 			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+			return apiResponse.ErrorResponse(res, err.message);
 		}
 	}
 ];
@@ -430,7 +433,8 @@ exports.createProductRequest = [
 				req.body.rate,
 				req.body.mrp,
 				req.params.categoryId,
-				req.body.units
+				req.body.units,
+				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
 			)
 			return apiResponse.successResponseWithData(
 				res,
@@ -531,7 +535,7 @@ exports.importProducts = [
 					"You are not authorised for this operation"
 				)
 			}
-			const { count } = await addMultipleProducts(req.body.items, req.params.categoryId);
+			const { count } = await addMultipleProducts(req.body.items, req.params.categoryId, authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString());
 			return apiResponse.successResponse(
 				res,
 				`Imported ${count} Products`
