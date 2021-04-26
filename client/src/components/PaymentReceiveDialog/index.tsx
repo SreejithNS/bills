@@ -52,7 +52,7 @@ export default function PaymentReceiveDialog({ _id, open, onClose, paidAmount, b
                     fullWidth
                     value={amount || ""}
                     onChange={(event) => {
-                        const value = Math.abs(parseFloat(event.target.value));
+                        const value = Math.abs(parseFloat(event.target.value) || 0);
                         const balance = billAmount - paidAmount;
                         if (value <= balance)
                             setAmount(value);
