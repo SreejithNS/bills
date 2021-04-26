@@ -91,7 +91,7 @@ export const getItemsTotalAmount = (billState: BillState) => {
 };
 
 export const getBillAmount = (billState: BillState) => {
-	return getItemsTotalAmount(billState) - billState.discountAmount;
+	return Math.round(getItemsTotalAmount(billState) - billState.discountAmount);
 };
 
 const calculateItemAmounts = (billState: BillState) => {
