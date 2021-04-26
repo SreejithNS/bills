@@ -215,7 +215,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 
 	const [selectedProduct, setSelectedProduct] = useState<Product>();
 	const [selectedProductUnit, setSelectedProductUnit] = useState<Unit>();
-	const [itemQuantity, setItemQuantity] = useState(1);
+	const [itemQuantity, setItemQuantity] = useState(0);
 
 	const [newCustomerModalOpen, setNewCustomerModalOpen] = useState(false);
 
@@ -274,19 +274,19 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 			case "discountAmount":
 				dispatch({
 					type: "BILL_SET_DISCOUNT",
-					payload: parseFloat(newValue.toString()),
+					payload: parseFloat(newValue.toString()) || 0,
 				});
 				break;
 			case "discountPercentage":
 				dispatch({
 					type: "BILL_SET_DISCOUNT_PERCENTAGE",
-					payload: parseFloat(newValue.toString()),
+					payload: parseFloat(newValue.toString()) || 0,
 				});
 				break;
 			case "paidAmount":
 				dispatch({
 					type: "BILL_SET_PAID_AMOUNT",
-					payload: parseFloat(newValue.toString()),
+					payload: parseFloat(newValue.toString()) || 0,
 				});
 				break;
 		}
@@ -312,6 +312,9 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 			}
 
 			dispatch({ type: "BILL_ADD_ITEM", payload: product });
+			setItemQuantity(0);
+			setSelectedProduct(undefined);
+			setSelectedProductUnit(undefined);
 		} else {
 			toast.warn("Couldn't add item to the bill");
 		}
@@ -350,12 +353,9 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						label="Quantity"
 						type="number"
 						fullWidth
-						onFocus={(event) => {
-							const target = event.target;
-							target.select();
-							setItemQuantity(1);
-						}}
-						onChange={(event) => setItemQuantity(parseFloat(event.target.value))}
+						value={itemQuantity || ""}
+						onFocus={(event) => event.target.select()}
+						onChange={(event) => setItemQuantity(parseFloat(event.target.value) || 0)}
 						variant="outlined"
 					/>
 				</Grid>
@@ -406,15 +406,6 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 								title: "Item Name",
 								field: "name",
 								editable: "never",
-								// render: (rowData) => (
-								// 	<>
-								// 		<strong>{rowData.name}</strong>{" "}
-								// 		{rowData.unit
-								// 			? "( " + rowData.unit.name.toUpperCase() + " )"
-								// 			: ""
-								// 		}
-								// 	</>
-								// ),
 							},
 							{
 								title: "Quantity",
