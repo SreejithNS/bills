@@ -248,7 +248,7 @@ exports.createCategoryRequest = [
 	body("name")
 		.trim()
 		.escape()
-		.isAlphanumeric()
+		.matches(/^[a-z0-9./\- ]+$/i)
 		.bail()
 		.custom((value, { req }) => {
 			return ProductCategory
@@ -393,7 +393,7 @@ exports.createProductRequest = [
 	body("code")
 		.escape()
 		.trim()
-		.isAlphanumeric()
+		.matches(/^[a-z0-9./\- ]+$/i)
 		.custom((value, { req }) =>
 			Product.findOne({
 				code: value,
@@ -405,7 +405,7 @@ exports.createProductRequest = [
 					);
 			})
 		),
-	body("name").escape().isLength().trim().matches(/^[a-z0-9 ]+$/i),
+	body("name").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
 	body("rate").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
@@ -562,8 +562,8 @@ exports.updateProduct = [
 		.escape()
 		.trim()
 		.isMongoId(),
-	body("code").optional().escape().trim().isAlphanumeric(),
-	body("name").optional().escape().trim().matches(/^[a-z0-9 ]+$/i),
+	body("code").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
+	body("name").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
 	body("rate").optional().escape().trim().isFloat({ min: 1 }),
 	body("mrp").optional().escape().trim().isFloat({ min: 1 }),
 	body("units").optional().isArray(),
@@ -630,7 +630,7 @@ exports.updateProductCategory = [
 		.escape()
 		.trim()
 		.isMongoId(),
-	body("name").optional().escape().trim().matches(/^[a-z0-9 ]+$/i),
+	body("name").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
 	body("hasAccess").optional().isArray(),
 	async (req, res) => {
 		if (!validationResult(req).isEmpty())
@@ -684,7 +684,7 @@ exports.getProductSuggestions = [
 		.escape()
 		.trim()
 		.isMongoId(),
-	param("code").escape().trim().matches(/^[a-z0-9 ]+$/i),
+	param("code").escape().trim().matches(/^[a-z0-9./\- ]+$/i),
 	async (req, res) => {
 		const validation = validationResult(req);
 		if (!validation.isEmpty())
@@ -806,7 +806,7 @@ exports.queryProduct = [
  */
 exports.productAvailability = [
 	auth,
-	param("code").escape().trim().isAlphanumeric(),
+	param("code").escape().trim().matches(/^[a-z0-9./\- ]+$/i),
 	param("categoryId")
 		.escape()
 		.trim()
