@@ -30,6 +30,12 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
     cardPadding: {
         padding: theme.spacing(1)
+    },
+    redText: {
+        color: theme.palette.error.main
+    },
+    greenText: {
+        color: theme.palette.success.main
     }
 }))
 
@@ -128,12 +134,17 @@ export default function BillsHomePage() {
                                             <BillCard
                                                 primaryText={bill.customer.name}
                                                 rightPrimary={bill.billAmount}
-                                                secondaryText={`Received ₹ ${bill.paidAmount}`}
+                                                secondaryText={`#${bill.serialNumber} | Received ₹ ${bill.paidAmount}`}
                                                 timestamp={moment(bill.createdAt.toString()).format('MMM D YYYY, h:mm a')}
                                                 rightSecondary={(
                                                     <>
-                                                        {bill.credit ? "IN CREDIT" : "CLOSED"}&nbsp;
-                                                        {bill.credit ? <TollIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} /> : <CheckCircleIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} />}
+                                                        {bill.credit
+                                                            ? <span className={classes.redText}>IN CREDIT</span>
+                                                            : <span className={classes.greenText}>CLOSED</span>
+                                                        }&nbsp;
+                                                        {bill.credit
+                                                            ? <TollIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} className={classes.redText} />
+                                                            : <CheckCircleIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} className={classes.greenText} />}
                                                     </>
                                                 )}
                                                 location={bill.location?.coordinates}

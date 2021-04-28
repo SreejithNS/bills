@@ -70,10 +70,10 @@ export default function BillCard(props: BillCardProps) {
         >
           <Grid item xs>
             <CardActionArea onClick={props.onClickAction}>
-              <Typography component="label" variant="h5">
+              <Typography component="label" variant="h6">
                 {props.primaryText || "Customer Name"}
               </Typography>
-              <Typography component="label" variant="subtitle1" display="block">
+              <Typography component="label" variant="subtitle2" display="block">
                 <strong>{props.secondaryText || "Payment"}</strong>
               </Typography>
               {props.timestamp &&
@@ -84,8 +84,8 @@ export default function BillCard(props: BillCardProps) {
             </CardActionArea>
           </Grid>
           <Grid item>
-            <Typography component="label" variant="h3" align="right" display="block">
-              ₹ {props.rightPrimary || 12345.25}
+            <Typography component="label" variant="h4" align="right" display="block">
+              ₹ {props.rightPrimary?.toLocaleString() || 12345.25}
             </Typography>
             <Typography
               color="textSecondary"
