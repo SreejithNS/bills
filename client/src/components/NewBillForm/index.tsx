@@ -12,6 +12,7 @@ import {
 	InputLabel,
 	makeStyles,
 	MenuItem,
+	Paper,
 	Select,
 	Theme,
 	Typography,
@@ -35,13 +36,23 @@ import { Product, Unit } from "../../reducers/product.reducer";
 import { useHasPermission } from "../../actions/auth.actions";
 import { ProductCategorySelection } from "../../pages/ItemsHomePage";
 import useAxios from "axios-hooks";
-import useGeolocation from 'react-hook-geolocation'
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
 	"buttons": {
 		"&>*": {
 			marginRight: theme.spacing(1)
 		}
+	},
+	tablePaper: {
+		padding: theme.spacing(1),
+		borderColor: theme.palette.primary.main,
+		borderWidth: 2
+	},
+	discountAdornment: {
+		marginRight: theme.spacing(1)
+	},
+	labelOutline: {
+		border: `2px solid ${theme.palette.primary.main}`
 	}
 }))
 
@@ -175,7 +186,7 @@ function BillItemSelection(props: {
 			onInputChange={(_, val: Product["code"]) => setProductCode(val)}
 			onChange={(_, newValue) => onChange(newValue)}
 			fullWidth={true}
-			renderInput={(params) => <TextField {...params} label="Item Code" variant="outlined" />}
+			renderInput={(params) => <TextField {...params} size="small" label="Item Code" variant="outlined" />}
 		/>
 	);
 }
@@ -189,34 +200,41 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 		items,
 		credit,
 		discountAmount,
-		discountPercentage,
 		paidAmount,
 		billSaved,
 		location
 	} = billState;
-	const handleGeoLocation = (data: any) => {
+
+	const [geolocationError, setGeolocationError] = useState(false);
+	const handleGeoLocation = (data: GeolocationPosition) => {
 		if (!location) dispatch({
 			type: "BILL_SET_LOCATION", payload: [
-				data.latitude, data.longitude
+				data.coords.latitude, data.coords.longitude
 			]
 		})
-		if (location && (data.latitude !== location[0] || data.longitude !== location[1])) {
+		if (location && (data.coords.latitude !== location[0] || data.coords.longitude !== location[1])) {
 			dispatch({
 				type: "BILL_SET_LOCATION", payload: [
-					data.latitude, data.longitude
+					data.coords.latitude, data.coords.longitude
 				]
 			})
 		}
 	}
-	const geoLocation = useGeolocation({
-		enableHighAccuracy: true,
-		maximumAge: 5000,
-		timeout: 10000
-	}, handleGeoLocation);
+
+	useEffect(() => {
+		if (navigator.geolocation) {
+			navigator.geolocation.watchPosition(handleGeoLocation, (e) => {
+				if (e) setGeolocationError(true)
+			}, {
+				enableHighAccuracy: true,
+			});
+		}
+	})
 
 	const [selectedProduct, setSelectedProduct] = useState<Product>();
 	const [selectedProductUnit, setSelectedProductUnit] = useState<Unit>();
 	const [itemQuantity, setItemQuantity] = useState(0);
+	const [discountMethod, setDiscountMethod] = useState<"discountPercentage" | "discountAmount">("discountPercentage");
 
 	const [newCustomerModalOpen, setNewCustomerModalOpen] = useState(false);
 
@@ -327,7 +345,6 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 		setItemQuantity(0);
 		dispatch({ type: "BILL_RESET" })
 	}
-
 	return (
 		<form>
 			<Grid container direction="row" justify="space-between" alignItems="center" spacing={3}>
@@ -349,7 +366,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						product={selectedProduct}
 					/>
 				</Grid>
-				<Grid item xs={6} sm>
+				<Grid item>
 					<TextField
 						label="Quantity"
 						type="number"
@@ -358,10 +375,11 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						onFocus={(event) => event.target.select()}
 						onChange={(event) => setItemQuantity(parseFloat(event.target.value) || 0)}
 						variant="outlined"
+						size="small"
 					/>
 				</Grid>
 				{selectedProduct?.units.length && (
-					<Grid item xs={6} sm={2}>
+					<Grid item>
 						<FormControl variant="outlined" fullWidth>
 							<InputLabel>Unit</InputLabel>
 							<Select
@@ -386,7 +404,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						</FormControl>
 					</Grid>
 				)}
-				<Grid item xs={4} sm>
+				<Grid item xs>
 					<Button
 						variant="contained"
 						color="primary"
@@ -402,9 +420,12 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 					<MaterialTable
 						icons={tableIcons}
 						isLoading={loading}
+						components={{
+							Container: props => <Paper className={classes.tablePaper} {...props} variant="outlined" />
+						}}
 						columns={[
 							{
-								title: "Item Name",
+								title: "Item",
 								field: "name",
 								editable: "never",
 							},
@@ -413,7 +434,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 								field: "quantity",
 								type: "numeric",
 								editable: "onUpdate",
-
+								render: (data) => data.unit ? data.quantity + " " + data.unit.name : data.quantity
 							},
 							{
 								title: "Amount",
@@ -423,13 +444,13 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 							},
 							{ title: "Rate", field: "rate", type: "numeric", editable: "never" },
 						]}
-						data={items ?? []}
+						data={items ?? [] as BillItem[]}
 						options={{
 							search: false,
 							paging: false,
 							toolbar: false,
 							actionsColumnIndex: -1,
-							padding: "dense",
+							padding: "dense"
 						}}
 						editable={{
 							onRowUpdate: (newData) =>
@@ -453,65 +474,89 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 				</Grid>
 				<Grid item xs={6}>
 					<TextField
-						label="Discount Percentage"
+						label="Discount"
 						type="number"
 						fullWidth
 						variant="outlined"
+						InputProps={{
+							startAdornment: <Select
+								value={discountMethod}
+								variant="standard"
+								className={classes.discountAdornment}
+								onChange={(e) => setDiscountMethod(e.target.value as typeof discountMethod ?? "discountAmount")}
+							>
+								<option value={"discountAmount"}>₹</option>
+								<option value={"discountPercentage"}>%</option>
+							</Select>
+						}}
 						onFocus={(event) => {
 							event.target.select();
 						}}
-						onChange={(event) => setValues("discountPercentage")(event.target.value)}
-						value={discountPercentage || ""}
+						onChange={(event) => setValues(discountMethod)(event.target.value)}
+						value={billState[discountMethod] || ""}
+						size="small"
 					/>
 				</Grid>
 				<Grid item xs={6}>
 					<TextField
-						label="Discount Amount"
-						type="number"
-						fullWidth
-						variant="outlined"
-						onFocus={(event) => {
-							event.target.select();
-						}}
-						onChange={(event) => setValues("discountAmount")(event.target.value)}
-						value={discountAmount || ""}
-					/>
-				</Grid>
-				<Grid item xs={4}>
-					<TextField
 						value={getItemsTotalAmount(billState)}
-						label="Total Amount"
+						label="Total"
 						InputProps={{
-							readOnly: true, startAdornment: <InputAdornment position="start">₹</InputAdornment>,
-						}}
-						type="number"
-						variant="outlined"
-					/>
-				</Grid>
-				<Grid item xs={4}>
-					<TextField
-						value={paidAmount}
-						InputProps={{
+							readOnly: true,
 							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
 						}}
-						label="Paid Amount"
-						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-							setValues("paidAmount")(event.target.value)
-						}
 						type="number"
 						variant="outlined"
+						size="small"
+						fullWidth
 					/>
 				</Grid>
-				<Grid item xs={4}>
+				<Grid item xs={12}>
 					<TextField
 						value={getBillAmount(billState)}
 						label="Bill Amount"
 						InputProps={{
 							readOnly: true, startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							classes: {
+								notchedOutline: classes.labelOutline
+							}
 						}}
 						type="number"
 						color="secondary"
 						variant="outlined"
+						fullWidth
+					/>
+				</Grid>
+				<Grid item xs>
+					<TextField
+						value={paidAmount}
+						InputProps={{
+							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+						}}
+						label="Paid"
+						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+							setValues("paidAmount")(event.target.value)
+						}
+						type="number"
+						variant="outlined"
+						size="small"
+						fullWidth
+					/>
+				</Grid>
+				<Grid item xs>
+					<TextField
+						value={getBillAmount(billState) - paidAmount}
+						InputProps={{
+							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+						}}
+						label="Balance"
+						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+							setValues("paidAmount")(event.target.value)
+						}
+						type="number"
+						variant="outlined"
+						size="small"
+						fullWidth
 					/>
 				</Grid>
 				<Grid item xs={12} className={classes.buttons}>
@@ -544,18 +589,10 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						}
 						label="Credit Amount"
 					/><br />
-					{geoLocation?.error && <Typography variant="caption" color="textSecondary" display="inline">
+					{geolocationError && <Typography variant="caption" color="textSecondary" display="inline">
 						( No Location information )
 					</Typography>
 					}
-					{/* {location && <Button
-						variant="text"
-						disabled={geoLocation?.error}
-						onClick={() => update()}
-						color="primary"
-					>
-						Update Customer Location
-					</Button>} */}
 					<Zoom in={loading}>
 						<CircularProgress />
 					</Zoom>
