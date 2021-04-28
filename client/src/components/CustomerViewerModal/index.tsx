@@ -3,21 +3,23 @@ import {
     Button,
     CircularProgress,
     Grid,
+    IconButton,
     makeStyles,
     Paper as PaperBase,
     Theme,
+    Tooltip,
     Typography,
     withStyles,
     Zoom,
 } from "@material-ui/core";
-import { InfoOutlined, RefreshRounded } from "@material-ui/icons";
+import { EditRounded, InfoOutlined, RefreshRounded } from "@material-ui/icons";
 import useAxios from "axios-hooks";
 import MaterialTable, { Query, QueryResult } from "material-table";
 import React, { useEffect, useRef } from "react";
 import { useHistory, useParams } from "react-router";
 import { BillData, PaginateResult } from "../../reducers/bill.reducer";
 import { Customer } from "../../reducers/customer.reducer";
-import { paths, billsPaths } from "../../routes/paths.enum";
+import { paths, billsPaths, customersPaths } from "../../routes/paths.enum";
 import { APIResponse, axios, handleAxiosError, interpretMTQuery } from "../Axios";
 import CustomerBulkPaymentReceiveStepper from "../CustomerBulkPaymentReceiveStepper";
 import { tableIcons } from "../MaterialTableIcons";
@@ -160,6 +162,7 @@ const BillsTable = () => {
 
 export default function CustomerViewerModal() {
     const param = useParams<{ id: string }>();
+    const history = useHistory();
     const [{ error, data, loading }, execute] = useAxios<
         APIResponse<Customer & CustomerAggregatedData>
     >(`/customer/${param.id}`, { manual: true });
@@ -182,7 +185,7 @@ export default function CustomerViewerModal() {
             </Box>
         );
     if (data && data.data) {
-        const { name, phone, place, byCredit } = data.data;
+        const { name, phone, place, byCredit, _id } = data.data;
         return (
             <Modal title="Customer">
                 <Paper>
@@ -203,7 +206,13 @@ export default function CustomerViewerModal() {
                                     spacing={2}
                                 >
                                     <Grid item xs>
-                                        <Typography variant="h4">{name}</Typography>
+                                        <Typography variant="h4">{name}
+                                            <Tooltip title="Edit Customer Details">
+                                                <IconButton style={{ marginLeft: "0.5rem" }} size="small" onClick={() => history.push((paths.customer + customersPaths.customerEditor).replace(":customerId", _id))}>
+                                                    <EditRounded />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Typography>
                                         <Typography
                                             variant="subtitle2"
                                             color="textSecondary"
