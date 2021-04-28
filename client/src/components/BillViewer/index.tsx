@@ -170,6 +170,12 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                     Total Items: {props?.items.length || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
+                                    Total Amount: ₹ {props?.items.map(item => item.rate * item.quantity).reduce((acc, cur) => acc + cur, 0) ?? 0}
+                                </Typography>
+                                <Typography variant="subtitle2" display="block">
+                                    Balance: ₹ {(props.billAmount - props.paidAmount).toLocaleString()}
+                                </Typography>
+                                <Typography variant="subtitle2" display="block">
                                     Discount: {props?.discountAmount || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
@@ -186,10 +192,10 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                 }
                             </Grid>
                             <Grid item className={classes.itemPadding + " " + classes.alignRight} xs>
-                                <Typography variant="subtitle2" display="block">
-                                    Total Amount
+                                <Typography variant="subtitle1" display="block">
+                                    Bill Amount
                                 </Typography>
-                                <Typography variant="h5" display="block" >
+                                <Typography variant="h4" display="block" >
                                     <strong>₹{props?.billAmount?.toLocaleString() || 0}</strong>
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
