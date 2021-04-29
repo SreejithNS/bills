@@ -6,7 +6,7 @@ const LocationSchema = require("./LocationSchema");
 const CustomerSchema = new Schema(
 	{
 		name: { type: String, required: true, index: true },
-		phone: { type: Number, required: true, index: true },
+		phone: { type: String, required: true, index: true },
 		place: String,
 		location: {
 			type: LocationSchema,
