@@ -90,7 +90,7 @@ function hasAccessPermission(authenticatedUser, paramCustomer, explicitPermissio
  * Creates customer entry to the database
  * 
  * @param {string} name - Name of the customer
- * @param {number} phone - Phone number of the customer
+ * @param {string} phone - Phone number of the customer
  * @param {User._id} belongsTo - AdminID of the user belonging to
  * @param {string=} place - Place where customer is located
  * @param {Location} location - GeoData of the customer
@@ -228,6 +228,11 @@ exports.getAll = [
 							"place": {
 								$regex: new RegExp(`${req.query.search}`, "i"),
 							}
+						},
+						{
+							"phone": {
+								$regex: new RegExp(`${req.query.search}`, "i"),
+							}
 						}
 					]
 				}),
@@ -328,7 +333,7 @@ exports.create = [
 	body("phone", "Phone Number must not be empty")
 		.trim()
 		.isLength({ min: 10, max: 10 })
-		.isInt()
+		.isNumeric()
 		.withMessage("Phone must be 10 digits.")
 		.custom(async (value, { req }) => {
 			const authenticatedUser = await userData(req.user._id);
@@ -465,7 +470,7 @@ exports.update = [
 		.optional()
 		.trim()
 		.isLength({ min: 10, max: 10 })
-		.isInt()
+		.isNumeric()
 		.withMessage("Phone must be 10 digits.")
 		.custom(async (value, { req }) => {
 			const authenticatedUser = await userData(req.user._id);
