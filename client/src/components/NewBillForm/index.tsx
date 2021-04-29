@@ -53,6 +53,9 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
 	},
 	labelOutline: {
 		border: `2px solid ${theme.palette.primary.main}`
+	},
+	resize: {
+		fontSize: theme.typography.h5.fontSize
 	}
 }))
 
@@ -200,6 +203,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 		items,
 		credit,
 		discountAmount,
+		discountPercentage,
 		paidAmount,
 		billSaved,
 		location
@@ -239,7 +243,6 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 	const [selectedProduct, setSelectedProduct] = useState<Product>();
 	const [selectedProductUnit, setSelectedProductUnit] = useState<Unit>();
 	const [itemQuantity, setItemQuantity] = useState(0);
-	const [discountMethod, setDiscountMethod] = useState<"discountPercentage" | "discountAmount">("discountPercentage");
 
 	const [newCustomerModalOpen, setNewCustomerModalOpen] = useState(false);
 
@@ -298,19 +301,19 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 			case "discountAmount":
 				dispatch({
 					type: "BILL_SET_DISCOUNT",
-					payload: parseFloat(newValue.toString()) || 0,
+					payload: Math.abs(parseFloat(newValue.toString()) || 0),
 				});
 				break;
 			case "discountPercentage":
 				dispatch({
 					type: "BILL_SET_DISCOUNT_PERCENTAGE",
-					payload: parseFloat(newValue.toString()) || 0,
+					payload: Math.abs(parseFloat(newValue.toString()) || 0),
 				});
 				break;
 			case "paidAmount":
 				dispatch({
 					type: "BILL_SET_PAID_AMOUNT",
-					payload: parseFloat(newValue.toString()) || 0,
+					payload: Math.abs(parseFloat(newValue.toString()) || 0),
 				});
 				break;
 		}
@@ -352,7 +355,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 	}
 	return (
 		<form>
-			<Grid container direction="row" justify="space-between" alignItems="center" spacing={3}>
+			<Grid container direction="row" justify="space-between" alignItems="center" spacing={2}>
 				<Grid item xs>
 					<CustomerSelection
 						addNewCustomer={(newCustomerName) => setNewCustomerModalOpen(true)}
@@ -371,7 +374,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						product={selectedProduct}
 					/>
 				</Grid>
-				<Grid item>
+				<Grid item xs>
 					<TextField
 						label="Quantity"
 						type="number"
@@ -384,8 +387,8 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 					/>
 				</Grid>
 				{selectedProduct?.units.length && (
-					<Grid item>
-						<FormControl variant="outlined" fullWidth>
+					<Grid item xs>
+						<FormControl variant="outlined" size="small" fullWidth>
 							<InputLabel>Unit</InputLabel>
 							<Select
 								value={selectedProductUnit?.name ?? ""}
@@ -409,7 +412,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						</FormControl>
 					</Grid>
 				)}
-				<Grid item xs>
+				<Grid item>
 					<Button
 						variant="contained"
 						color="primary"
@@ -477,32 +480,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						}}
 					/>
 				</Grid>
-				<Grid item xs={6}>
-					<TextField
-						label="Discount"
-						type="number"
-						fullWidth
-						variant="outlined"
-						InputProps={{
-							startAdornment: <Select
-								value={discountMethod}
-								variant="standard"
-								className={classes.discountAdornment}
-								onChange={(e) => setDiscountMethod(e.target.value as typeof discountMethod ?? "discountAmount")}
-							>
-								<option value={"discountAmount"}>₹</option>
-								<option value={"discountPercentage"}>%</option>
-							</Select>
-						}}
-						onFocus={(event) => {
-							event.target.select();
-						}}
-						onChange={(event) => setValues(discountMethod)(event.target.value)}
-						value={billState[discountMethod] || ""}
-						size="small"
-					/>
-				</Grid>
-				<Grid item xs={6}>
+				<Grid item xs={12}>
 					<TextField
 						value={getItemsTotalAmount(billState)}
 						label="Total"
@@ -516,6 +494,40 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						fullWidth
 					/>
 				</Grid>
+				<Grid item xs={6}>
+					<TextField
+						label="Discount %"
+						type="number"
+						fullWidth
+						variant="outlined"
+						InputProps={{
+							endAdornment: <InputAdornment position="start">%</InputAdornment>
+						}}
+						onFocus={(event) => {
+							event.target.select();
+						}}
+						onChange={(event) => setValues("discountPercentage")(event.target.value)}
+						value={discountPercentage || ""}
+						size="small"
+					/>
+				</Grid>
+				<Grid item xs={6}>
+					<TextField
+						label="Discount ₹"
+						type="number"
+						fullWidth
+						variant="outlined"
+						InputProps={{
+							startAdornment: <InputAdornment position="start">₹</InputAdornment>
+						}}
+						onFocus={(event) => {
+							event.target.select();
+						}}
+						onChange={(event) => setValues("discountAmount")(event.target.value)}
+						value={discountAmount || ""}
+						size="small"
+					/>
+				</Grid>
 				<Grid item xs={12}>
 					<TextField
 						value={getBillAmount(billState)}
@@ -523,7 +535,8 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						InputProps={{
 							readOnly: true, startAdornment: <InputAdornment position="start">₹</InputAdornment>,
 							classes: {
-								notchedOutline: classes.labelOutline
+								notchedOutline: classes.labelOutline,
+								input: classes.resize
 							}
 						}}
 						type="number"
@@ -534,7 +547,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 				</Grid>
 				<Grid item xs>
 					<TextField
-						value={paidAmount}
+						value={paidAmount || ""}
 						InputProps={{
 							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
 						}}
@@ -552,6 +565,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 					<TextField
 						value={getBillAmount(billState) - paidAmount}
 						InputProps={{
+							readOnly: true,
 							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
 						}}
 						label="Balance"

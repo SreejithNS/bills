@@ -59,7 +59,7 @@ const NewCustomerForm = (props: { handleSubmit: any; pristine: any; reset: any; 
                     />
                 </Grid>
                 <Grid item xs>
-                    <Field name="phone" component={ReduxTextField} label="Phone" type="number" /></Grid>
+                    <Field name="phone" component={ReduxTextField} label="Phone" /></Grid>
                 <Grid item xs>
                     <Field name="place" component={ReduxTextField} label="Place" /></Grid>
                 <Grid item xs container justify="center" alignItems="center" spacing={2}>
