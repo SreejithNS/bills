@@ -206,30 +206,35 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 	} = billState;
 
 	const [geolocationError, setGeolocationError] = useState(false);
-	const handleGeoLocation = (data: GeolocationPosition) => {
-		if (!location) dispatch({
-			type: "BILL_SET_LOCATION", payload: [
-				data.coords.latitude, data.coords.longitude
-			]
-		})
-		if (location && (data.coords.latitude !== location[0] || data.coords.longitude !== location[1])) {
-			dispatch({
+
+	useEffect(() => {
+		const handleGeoLocation = (data: GeolocationPosition) => {
+			if (!location) dispatch({
 				type: "BILL_SET_LOCATION", payload: [
 					data.coords.latitude, data.coords.longitude
 				]
 			})
+			if (location && (data.coords.latitude !== location[0] || data.coords.longitude !== location[1])) {
+				dispatch({
+					type: "BILL_SET_LOCATION", payload: [
+						data.coords.latitude, data.coords.longitude
+					]
+				})
+			}
+			setGeolocationError(false);
 		}
-	}
 
-	useEffect(() => {
 		if (navigator.geolocation) {
 			navigator.geolocation.watchPosition(handleGeoLocation, (e) => {
 				if (e) setGeolocationError(true)
 			}, {
 				enableHighAccuracy: true,
+				timeout: 1000,
+				maximumAge: 5000
 			});
 		}
-	})
+		//eslint-disable-next-line
+	}, [])
 
 	const [selectedProduct, setSelectedProduct] = useState<Product>();
 	const [selectedProductUnit, setSelectedProductUnit] = useState<Unit>();
