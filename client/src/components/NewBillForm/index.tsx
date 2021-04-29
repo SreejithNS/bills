@@ -117,7 +117,7 @@ function CustomerSelection(props: {
 						name: params.inputValue,
 						_id: "",
 						belongsTo: {} as UserData,
-						phone: 0,
+						phone: "",
 						place: "",
 					});
 				}
@@ -127,7 +127,7 @@ function CustomerSelection(props: {
 			fullWidth={true}
 			renderOption={(option) => (
 				<React.Fragment>
-					{option.phone === 0 && option._id === "" ? (
+					{option.phone === "" && option._id === "" ? (
 						<Button onClick={() => props.addNewCustomer(option._id)}>
 							Add&nbsp;&quot;<strong>{option.name}</strong>&quot;&nbsp;as new customer
 						</Button>

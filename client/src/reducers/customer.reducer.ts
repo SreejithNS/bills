@@ -9,7 +9,7 @@ export interface Customer {
 	_id: string;
 	name: string;
 	place: string;
-	phone: number;
+	phone: string;
 	location?: GeoLocation;
 	belongsTo: UserData;
 }
