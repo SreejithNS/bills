@@ -75,9 +75,6 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                             </IconButton>
                         </Tooltip>
                     </Typography>
-                    <Typography variant="subtitle2" display="block" >
-                        Phone: {props.customer?.phone || 9489126016}
-                    </Typography>
                     <Typography variant="subtitle1" display="block">
                         Bill: #{props.serialNumber || "Serial Number Error"}
                     </Typography>
