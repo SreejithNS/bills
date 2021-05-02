@@ -165,7 +165,7 @@ exports.getAllBills = [
 	query("serialNumber")
 		.optional()
 		.isInt({ min: 1 }),
-	query(["page", "limit", "offset"])
+	query(["page", "limit", "offset", "startDate", "endDate"])
 		.optional()
 		.isInt(),
 	query(["customer", "soldBy"])
@@ -211,6 +211,12 @@ exports.getAllBills = [
 				}),
 				...((req.query.credit !== undefined && req.query.credit !== null) && {
 					"credit": req.query.credit
+				}),
+				...((req.query.startDate || req.query.endDate) && {
+					"createdAt": {
+						...(req.query.startDate && { $gte: new Date(parseInt(req.query.startDate)) }),
+						...(req.query.endDate && { $lte: new Date(parseInt(req.query.endDate)) })
+					}
 				}),
 				...query
 			}
