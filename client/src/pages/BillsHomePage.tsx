@@ -210,14 +210,14 @@ export default function BillsHomePage() {
                             sortParam={sortParam ?? ""}
                         />
                     </Grid>
-                    {!loading && data?.data?.docs.length && parseInt(limit ?? "10") === data.data.totalDocs &&
+                    {!loading && (!!data?.data?.docs.length) && parseInt(limit ?? "10") === data.data.totalDocs &&
                         <Grid item xs={12} className={classes.cardPadding}>
                             <StatPaper
                                 billAmount={data.data.docs.map(bill => bill.billAmount).reduce((acc, curr) => acc + curr, 0)}
                                 billAmountBalance={data.data.docs.map(bill => bill.billAmount - bill.paidAmount).reduce((acc, curr) => acc + curr, 0)}
                                 billDiscounts={data.data.docs.map(bill => bill.discountAmount).reduce((acc, curr) => acc + curr, 0)}
                                 paidAmount={data.data.docs.map(bill => bill.paidAmount).reduce((acc, curr) => acc + curr, 0)}
-                                title="Consolidated Bill Amounts"
+                                title={`Consolidated Amounts of ${data.data.totalDocs} Bills`}
                             />
                         </Grid>
                     }
