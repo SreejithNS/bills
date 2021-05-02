@@ -154,12 +154,12 @@ export default function BillSearch(props: Props) {
     }
 
     const parseDTODate = (now: string | null) => {
-        if (now === null) return null;
+        if (now === null || !now) return null;
         return moment(parseInt(now))
     }
     const parseInputDate = (period: "start" | "end") => (date: Moment | null) => {
         if (date === null) return null;
-        return date[period === "start" ? "startOf" : "endOf"]("day").valueOf().toString();
+        return (date[period === "start" ? "startOf" : "endOf"]("day").valueOf() || "").toString();
     }
 
     const handleClearCreditFilter = (e: any) => {
@@ -255,7 +255,7 @@ export default function BillSearch(props: Props) {
                                 format="DD/MM/yyyy"
                                 InputAdornmentProps={{ position: "start" }}
                                 value={parseDTODate(props.selectedFromDate)}
-                                onChange={date => props.onSelectedFromDateChange(parseInputDate("start")(date))}
+                                onChange={(date) => props.onSelectedFromDateChange(parseInputDate("start")(date))}
                             />
                         </Grid>
                         <Grid item>
