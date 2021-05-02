@@ -7,6 +7,8 @@ import Routes from './routes';
 import FullScreenLoading from './components/FullScreenLoading';
 import { ConfirmProvider } from 'material-ui-confirm';
 import { useAuthActions, useProductCategoryActions, useUsersUnderAdmin } from './actions/auth.actions';
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import MomentUtils from '@date-io/moment';
 
 export default function App() {
   const { initiated: init1 } = useAuthActions();
@@ -22,11 +24,13 @@ export default function App() {
 
   return (
     <main style={{ height: "100vh" }}>
-      <ConfirmProvider>
-        {init ? <Router>
-          <Routes />
-        </Router> : <FullScreenLoading />}
-      </ConfirmProvider>
+      <MuiPickersUtilsProvider utils={MomentUtils}>
+        <ConfirmProvider>
+          {init ? <Router>
+            <Routes />
+          </Router> : <FullScreenLoading />}
+        </ConfirmProvider>
+      </MuiPickersUtilsProvider>
     </main>
   )
 }
