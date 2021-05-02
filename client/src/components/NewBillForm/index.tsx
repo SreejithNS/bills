@@ -608,8 +608,8 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 						}
 						label="Credit Amount"
 					/><br />
-					{geolocationError && <Typography variant="caption" color="textSecondary" display="inline">
-						( No Location information )
+					{geolocationError && <Typography variant="caption" color="error" display="inline">
+						( No Location ) - Try turning ON GPS.
 					</Typography>
 					}
 					<Zoom in={loading}>
