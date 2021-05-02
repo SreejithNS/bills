@@ -218,10 +218,12 @@ export default function billReducer(state: BillState = initialState, action: { t
 			return newState;
 		}
 		case "BILL_SET_PAID_AMOUNT": {
-			return {
-				...state,
-				paidAmount: action.payload,
-			};
+			if (action.payload <= getBillAmount(state))
+				return {
+					...state,
+					paidAmount: action.payload,
+				};
+			else return { ...state }
 		}
 		case "BILL_SET_LOCATION": {
 			return {
