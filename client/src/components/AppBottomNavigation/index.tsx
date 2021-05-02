@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import BottomNavigation from '@material-ui/core/BottomNavigation';
 import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
 import { CalendarViewDay, Home, Receipt, RecentActors } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { paths } from '../../routes/paths.enum';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import { useHasPermission } from '../../actions/auth.actions';
@@ -20,7 +20,8 @@ const useStyles = makeStyles({
 export default function AppBottomNavigation() {
     const classes = useStyles();
     const history = useHistory();
-    const [value, setValue] = React.useState<paths>(paths.home);
+    const location = useLocation<paths>();
+    const [value, setValue] = React.useState<paths>(location.pathname as unknown as paths);
 
     const openLink = (path: string) => () => {
         history.push(path);
