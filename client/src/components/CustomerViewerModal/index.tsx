@@ -113,6 +113,7 @@ const BillsTable = () => {
         serialNumber: number;
         billAmount: number;
         paidAmount: number;
+        credit: boolean;
     }>): Promise<QueryResult<BillData>> => new Promise((resolve) => {
         const url = `/bill?`;
         const search = (new URLSearchParams(Object.assign(interpretMTQuery(query), { customer: param.id }))).toString();
@@ -139,6 +140,8 @@ const BillsTable = () => {
                 { title: "Serial No.", field: "serialNumber", type: "numeric", editable: "never", align: "left" },
                 { title: "Bill Amount", field: "billAmount", type: "numeric", editable: "never" },
                 { title: "Paid Amount", field: "paidAmount", type: "numeric", editable: "never" },
+                { title: "Balance", type: "numeric", render: (data) => data.billAmount - data.paidAmount, sorting: false },
+                { title: "Status", type: "string", field: "credit", render: (data) => data.credit ? "IN CREDIT" : "CLOSED" },
             ]}
             data={(query) => fetchItems(query)}
             actions={[
@@ -154,7 +157,9 @@ const BillsTable = () => {
                 showTitle: false,
                 search: false,
                 toolbar: false,
-                padding: "dense"
+                padding: "dense",
+                pageSize: 10,
+                pageSizeOptions: [10, 20, 50]
             }}
         />
     )
