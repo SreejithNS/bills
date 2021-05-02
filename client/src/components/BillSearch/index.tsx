@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
-import { Button, Collapse, FormControl, Grid, IconButton, InputLabel, makeStyles, MenuItem, Select, TextField, Theme } from "@material-ui/core";
+import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormLabel, Grid, IconButton, InputLabel, makeStyles, MenuItem, Radio, RadioGroup, Select, TextField, Theme, Tooltip } from "@material-ui/core";
 import { Autocomplete } from "@material-ui/lab";
 import { Customer } from "../../reducers/customer.reducer";
 import { APIResponse, axios, handleAxiosError } from "../Axios";
@@ -11,6 +11,11 @@ import clsx from "clsx";
 import { UserData } from "../../reducers/auth.reducer";
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
+import ClearIcon from '@material-ui/icons/Clear';
+import { useHistory } from "react-router";
+import { paths } from "../../routes/paths.enum";
+import { KeyboardDatePicker } from "@material-ui/pickers";
+import moment, { Moment } from "moment";
 
 const useStyles = makeStyles((theme: Theme) => ({
     root: {
@@ -66,7 +71,7 @@ function CustomerSelection(props: {
             freeSolo
             handleHomeEndKeys
             fullWidth={true}
-            renderInput={(params) => <TextField {...params} label="Customer Name" margin="dense" variant="outlined" />}
+            renderInput={(params) => <TextField {...params} label="Customer Name" margin="dense" variant="outlined" size="small" />}
         />
     );
 }
@@ -93,17 +98,27 @@ function SalesmanSelection(props: {
             freeSolo
             handleHomeEndKeys
             fullWidth={true}
-            renderInput={(params) => <TextField {...params} label="Salesman" margin="dense" variant="outlined" />}
+            renderInput={(params) => <TextField {...params} label="Salesman" margin="dense" variant="outlined" size="small" />}
         />
     );
 }
 
 
 type Props = {
-    onSearch: (param: string, value: string) => void;
+    onSearchParamChange: (param: string) => void;
+    onSearchValueChange: (param: string) => void;
+    creditFilter: string;
+    onCreditFilterChange: (value: string) => void;
+    selectedFromDate: string | null;
+    onSelectedFromDateChange: (valuee: string | null) => void;
+    selectedToDate: string | null;
+    onSelectedToDateChange: (valuee: string | null) => void;
     sortParam: string;
     sortDirection: "asc" | "desc";
+    searchParam?: string;
     pageSize: number;
+    onShowAllChange: (value: boolean) => void;
+    showAll: boolean;
     onPageSizeChange: (pageSize: number) => void;
     onSortParamChange: (param: keyof BillData) => void;
     onSortDirectionChange: (direction: Props["sortDirection"]) => void;
@@ -111,26 +126,26 @@ type Props = {
 
 export default function BillSearch(props: Props) {
     const classes = useStyles();
+    const history = useHistory();
     const [customer, setCustomer] = useState<Customer>();
     const [serialNumber, setserialNumber] = useState<number>();
     const [salesman, setSalesman] = useState<UserData>();
-    const [searchParam, setSearchParam] = useState<string>("customer");
 
     const [expanded, setExpanded] = useState(false);
 
     const onSearch = () => {
-        const { onSearch } = props;
+        const { onSearchValueChange } = props;
         switch (searchParam) {
             case "serial":
-                onSearch(searchParam, serialNumber?.toString() ?? "");
+                onSearchValueChange(serialNumber?.toString() ?? "");
                 setserialNumber(undefined);
                 break;
             case "customer":
-                onSearch(searchParam, customer?._id ?? "");
+                onSearchValueChange(customer?._id ?? "");
                 setCustomer(undefined);
                 break;
             case "soldBy":
-                onSearch(searchParam, salesman?._id ?? "");
+                onSearchValueChange(salesman?._id ?? "");
                 setSalesman(undefined);
                 break;
             default:
@@ -138,18 +153,34 @@ export default function BillSearch(props: Props) {
         }
     }
 
+    const parseDTODate = (now: string | null) => {
+        if (now === null) return null;
+        return moment(parseInt(now))
+    }
+    const parseInputDate = (period: "start" | "end") => (date: Moment | null) => {
+        if (date === null) return null;
+        return date[period === "start" ? "startOf" : "endOf"]("day").valueOf().toString();
+    }
+
+    const handleClearCreditFilter = (e: any) => {
+        if (e.target.value === props.creditFilter) {
+            props.onCreditFilterChange("");
+        }
+    }
+
+    const { searchParam } = props;
     return (
-        <Card className={classes.root} variant="outlined">
+        <Card className={classes.root} variant="outlined" >
             <CardContent className={classes.content}>
                 <form onSubmit={e => { e.preventDefault(); onSearch(); }}>
                     <Grid container direction="row" justify="space-around" alignItems="center" spacing={2}>
                         <Grid item>
-                            <FormControl variant="outlined" margin="dense">
+                            <FormControl variant="outlined" size="small" margin="dense">
                                 <InputLabel>Field</InputLabel>
                                 <Select
                                     labelId="demo-simple-select-outlined-label"
                                     value={searchParam}
-                                    onChange={(e) => setSearchParam(e.target.value as string)}
+                                    onChange={(e) => props.onSearchParamChange(e.target.value as string)}
                                     label="Field"
                                 >
                                     <MenuItem value={"serial"}>Serial</MenuItem>
@@ -167,7 +198,7 @@ export default function BillSearch(props: Props) {
                                     id="outlined-search"
                                     label="Serial Number"
                                     type="number"
-                                    variant="outlined"
+                                    variant="outlined" size="small"
                                     fullWidth
                                 />}
                             {searchParam === "customer" &&
@@ -185,34 +216,72 @@ export default function BillSearch(props: Props) {
                             <Button variant="contained" type="submit">Search</Button>
                         </Grid>
                         <Grid item>
-                            <IconButton
-                                className={clsx(classes.expand, {
-                                    [classes.expandOpen]: expanded,
-                                })}
-                                onClick={() => setExpanded(!expanded)}
-                                aria-expanded={expanded}
-                                aria-label="show more"
-                            >
-                                <ExpandMoreIcon />
-                            </IconButton>
+                            <Tooltip title="Clear All Filters">
+                                <IconButton
+                                    onClick={() => history.push(paths.billsHome + "?")}
+                                    aria-label="show more"
+                                >
+                                    <ClearIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </Grid>
+                        <Grid item>
+                            <Tooltip title="More Search Filters">
+                                <IconButton
+                                    className={clsx(classes.expand, {
+                                        [classes.expandOpen]: expanded,
+                                    })}
+                                    onClick={() => setExpanded(!expanded)}
+                                    aria-expanded={expanded}
+                                    aria-label="show more"
+                                >
+                                    <ExpandMoreIcon />
+                                </IconButton>
+                            </Tooltip>
                         </Grid>
                     </Grid>
                 </form>
             </CardContent>
             <Collapse in={expanded} timeout="auto" unmountOnExit>
                 <CardContent>
-                    <Grid container direction="row" justify="flex-start" alignItems="center" spacing={2}>
+                    <Grid container direction="row" justify="flex-start" alignItems="flex-start" spacing={2}>
+                        <Grid item>
+                            <KeyboardDatePicker
+                                autoOk
+                                inputVariant="outlined"
+                                size="small"
+                                label="Starting Date"
+                                disableFuture
+                                format="DD/MM/yyyy"
+                                InputAdornmentProps={{ position: "start" }}
+                                value={parseDTODate(props.selectedFromDate)}
+                                onChange={date => props.onSelectedFromDateChange(parseInputDate("start")(date))}
+                            />
+                        </Grid>
+                        <Grid item>
+                            <KeyboardDatePicker
+                                autoOk
+                                size="small"
+                                inputVariant="outlined"
+                                label="Ending Date"
+                                format="DD/MM/yyyy"
+                                disableFuture
+                                InputAdornmentProps={{ position: "start" }}
+                                value={parseDTODate(props.selectedToDate)}
+                                onChange={date => props.onSelectedToDateChange(parseInputDate("end")(date))}
+                            />
+                        </Grid>
                         <Grid item>
                             <TextField
                                 label="Page Size"
                                 type="number"
-                                variant="outlined"
+                                variant="outlined" size="small"
                                 onChange={(v) => props.onPageSizeChange(parseInt(v.target.value))}
                                 value={props.pageSize}
                             />
                         </Grid>
                         <Grid item>
-                            <FormControl variant="outlined">
+                            <FormControl variant="outlined" size="small">
                                 <InputLabel id="demo-simple-select-outlined-label">Sort By</InputLabel>
                                 <Select
                                     labelId="demo-simple-select-outlined-label"
@@ -227,8 +296,8 @@ export default function BillSearch(props: Props) {
                             </FormControl>
                         </Grid>
                         <Grid item>
-                            <FormControl variant="outlined">
-                                <InputLabel id="demo-simple-select-outlined-label">Sort By</InputLabel>
+                            <FormControl variant="outlined" size="small">
+                                <InputLabel id="demo-simple-select-outlined-label">Sort Order</InputLabel>
                                 <Select
                                     labelId="demo-simple-select-outlined-label"
                                     value={props.sortDirection}
@@ -239,6 +308,21 @@ export default function BillSearch(props: Props) {
                                     <MenuItem value={"desc"}>Highest to Lowest</MenuItem>
                                 </Select>
                             </FormControl>
+                        </Grid>
+                        <Grid item>
+                            <FormControl component="fieldset">
+                                <FormLabel component="legend">Credit Filter</FormLabel>
+                                <RadioGroup inlist value={props.creditFilter} onChange={(e) => props.onCreditFilterChange(e.target.value)}>
+                                    <FormControlLabel value="0" control={<Radio />} onClick={handleClearCreditFilter} label="Only Closed" />
+                                    <FormControlLabel value="1" control={<Radio />} onClick={handleClearCreditFilter} label="Only Credited" />
+                                </RadioGroup>
+                            </FormControl>
+                        </Grid>
+                        <Grid item>
+                            <FormControlLabel
+                                control={<Checkbox checked={props.showAll} onChange={(e) => props.onShowAllChange(e.target.checked)} />}
+                                label="Show all bills"
+                            />
                         </Grid>
                     </Grid>
                 </CardContent>
