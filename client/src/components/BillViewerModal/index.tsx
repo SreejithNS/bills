@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { CircularProgress, Zoom } from '@material-ui/core';
 import { useHistory, useParams } from 'react-router-dom';
 import BillViewer from '../BillViewer';
@@ -18,6 +18,26 @@ export default function BillViewerModal(props: ModalProps) {
     const [paymentReceiveModalOpen, setPaymentReceiveModalOpen] = useState(false);
     const [{ loading, error, data }, fetchAgain] = useAxios<APIResponse<BillData>>("/bill/id/" + params.id);
     const confirm = useConfirm();
+
+    const [{ loading: paymentLoading, error: paymentError, data: paymentData }, receiveBalance] = useAxios<APIResponse<null>>({
+        url: `/bill/${params.id}/payment`,
+        method: "POST",
+    }, { manual: true });
+
+    useEffect(() => {
+        if (paymentData) {
+            toast.success("Payment Received");
+            fetchAgain();
+        }
+        //eslint-disable-next-line
+    }, [paymentData])
+
+    useEffect(() => {
+        if (paymentError) {
+            handleAxiosError(paymentError);
+        }
+    }, [paymentError]);
+
     const deleteBill = useCallback(
         (billId: BillData["_id"]) => {
             confirm({
@@ -68,7 +88,7 @@ export default function BillViewerModal(props: ModalProps) {
                 history.push(paths.billsHome);
             }
         }}>
-            {loading && <Zoom in={loading}><CircularProgress /></Zoom>}
+            {(loading || paymentLoading) && <Zoom in={loading || paymentLoading}><CircularProgress /></Zoom>}
             {error && <ErrorCard errors={error} title="Couldn't load bill" />}
             {(!loading && data && data.data !== undefined) && <BillViewer
                 receivePayment={() => setPaymentReceiveModalOpen(true)}
@@ -89,6 +109,7 @@ export default function BillViewerModal(props: ModalProps) {
                 location={data.data.location}
                 onDelete={() => deleteBill(data.data?._id ?? "")}
                 paymentDelete={deletePayment(data.data._id)}
+                payBalance={(balance) => receiveBalance({ data: { paidAmount: balance } })}
             />}
             {data?.data && <PaymentReceiveDialog  {...data.data} open={paymentReceiveModalOpen} onClose={() => { fetchAgain(); setPaymentReceiveModalOpen(false) }} />}
         </Modal>
