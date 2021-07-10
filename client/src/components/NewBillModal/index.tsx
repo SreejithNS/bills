@@ -12,6 +12,7 @@ import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import NewBillForm from '../NewBillForm';
+import { billsPaths, paths } from '../../routes/paths.enum';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -56,7 +57,7 @@ export default function NewBillModal() {
                 </Toolbar>
             </AppBar>
             <Container fixed className={classes.containerPadding}>
-                <NewBillForm closeModal={() => { setOpen(false); history.goBack() }} />
+                <NewBillForm closeModal={(id?: string) => { setOpen(false); id ? history.push(paths.billsHome + billsPaths.billDetail.replace(":id", id)) : history.goBack() }} />
             </Container>
         </Dialog>
     );

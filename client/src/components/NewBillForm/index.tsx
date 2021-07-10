@@ -194,7 +194,7 @@ function BillItemSelection(props: {
 	);
 }
 
-export default function NewBillForm(props: { closeModal: () => void }) {
+export default function NewBillForm(props: { closeModal: (id?: string) => void }) {
 	const classes = useStyles();
 	const dispatch = useDispatch();
 	const billState = useSelector((state: RootState) => state.bill);
@@ -284,7 +284,7 @@ export default function NewBillForm(props: { closeModal: () => void }) {
 			dispatch({ type: "BILL_SAVE", payload: true });
 			if (billSaved) toast.success(`Bill#${data.data?.serialNumber} added`);
 			dispatch({ type: "BILL_RESET" })
-			props.closeModal();
+			props.closeModal(data.data?._id);
 		}
 	}, [error, data, dispatch, props, billSaved]);
 
