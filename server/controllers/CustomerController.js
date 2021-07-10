@@ -236,14 +236,59 @@ exports.getAll = [
 						}
 					]
 				}),
-				belongsTo: authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id
+				belongsTo: mongoose.Types.ObjectId(authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id)
 			};
 
 			const paginateOptions = {
 				...(new QueryParser(req.query))
 			};
 
-			return Customer.paginate(query, paginateOptions).then(
+			let agg = Customer.aggregate([
+				{
+					'$match': query
+				}, {
+					'$lookup': {
+						'from': 'bills',
+						'localField': '_id',
+						'foreignField': 'customer',
+						'as': 'bill'
+					}
+				}, {
+					'$unwind': {
+						'path': '$bill'
+					}
+				}, {
+					'$sort': {
+						'bill.createdAt': -1
+					}
+				}, {
+					'$sort': {
+						'bill.createdAt': -1
+					}
+				}, {
+					'$group': {
+						'_id': '$_id',
+						'doc': {
+							'$first': '$$ROOT'
+						},
+						'recentBillCreatedAt': {
+							'$first': '$bill.createdAt'
+						}
+					}
+				}, {
+					'$replaceRoot': {
+						'newRoot': {
+							'$mergeObjects': [
+								{
+									'recentBillCreatedAt': '$recentBillCreatedAt'
+								}, '$doc'
+							]
+						}
+					}
+				}
+			])
+
+			return Customer.aggregatePaginate(agg, paginateOptions).then(
 				(items) => apiResponse.successResponseWithData(
 					res,
 					"Operation success",

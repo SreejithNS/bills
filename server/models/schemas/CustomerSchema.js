@@ -1,6 +1,7 @@
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 const mongoosePaginate = require("mongoose-paginate-v2");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2")
 const LocationSchema = require("./LocationSchema");
 
 const CustomerSchema = new Schema(
@@ -18,6 +19,7 @@ const CustomerSchema = new Schema(
 );
 
 CustomerSchema.plugin(mongoosePaginate);
+CustomerSchema.plugin(aggregatePaginate);
 CustomerSchema.index({ phone: 1, belongsTo: 1 }, { unique: true });
 
 module.exports = CustomerSchema;
