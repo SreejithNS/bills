@@ -255,7 +255,8 @@ exports.getAll = [
 					}
 				}, {
 					'$unwind': {
-						'path': '$bill'
+						'path': '$bill',
+						preserveNullAndEmptyArrays: true
 					}
 				}, {
 					'$sort': {
