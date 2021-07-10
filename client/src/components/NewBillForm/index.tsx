@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import TextField from "@material-ui/core/TextField";
 import {
 	Button,
@@ -198,6 +198,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 	const classes = useStyles();
 	const dispatch = useDispatch();
 	const billState = useSelector((state: RootState) => state.bill);
+	const quantityRef = useRef<HTMLInputElement>(null);
 	const {
 		customer,
 		items,
@@ -370,21 +371,24 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				</Grid>
 				<Grid item xs={12}>
 					<BillItemSelection
-						onChange={(newValue) => setSelectedProduct(newValue ?? undefined)}
+						onChange={(newValue) => { setSelectedProduct(newValue ?? undefined); quantityRef.current?.focus(); }}
 						product={selectedProduct}
 					/>
 				</Grid>
 				<Grid item xs>
-					<TextField
-						label="Quantity"
-						type="number"
-						fullWidth
-						value={itemQuantity || ""}
-						onFocus={(event) => event.target.select()}
-						onChange={(event) => setItemQuantity(parseFloat(event.target.value) || 0)}
-						variant="outlined"
-						size="small"
-					/>
+					<form onSubmit={(e) => { e.preventDefault(); if (addItemPossible()) addItemToBill() }}>
+						<TextField
+							inputRef={quantityRef}
+							label="Quantity"
+							type="number"
+							fullWidth
+							value={itemQuantity || ""}
+							onFocus={(event) => event.target.select()}
+							onChange={(event) => setItemQuantity(parseFloat(event.target.value) || 0)}
+							variant="outlined"
+							size="small"
+						/>
+					</form>
 				</Grid>
 				{selectedProduct?.units.length && (
 					<Grid item xs>
@@ -622,6 +626,6 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				onClose={() => setNewCustomerModalOpen(false)}
 				onCreate={() => setNewCustomerModalOpen(false)}
 			/>
-		</form>
+		</form >
 	);
 }
