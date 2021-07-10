@@ -33,8 +33,8 @@ export default function HomePage() {
             >
                 <Grid item xs={12}>
                     <Typography variant="h4">
-                        Jithu Appalam
-                            </Typography>
+                        Bills
+                    </Typography>
                 </Grid>
                 {billsPageAccess && createBillAccess
                     && <Grid item xs={12} sm={6} md={4}>
