@@ -65,6 +65,7 @@ const CustomersTable = () => {
             columns={[
                 { title: "Customer Name", field: "name", editable: "never" },
                 { title: "Phone Number", field: "phone", type: "numeric", sorting: false, editable: "never" },
+                { title: "Recent Bill Date", field: "recentBillCreatedAt", type: "date", sorting: false, editable: "never" },
                 { title: "Place", field: "place", editable: "never" }
             ]}
             data={fetchItems}
@@ -137,7 +138,7 @@ export default function CustomerHomePage() {
                     <Grid item xs={12}>
                         <Typography variant="h4">
                             Your Customers
-                            </Typography>
+                        </Typography>
                     </Grid>
                     <Grid item xs={12}>
                         <CustomersTable />
