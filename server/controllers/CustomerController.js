@@ -539,7 +539,7 @@ exports.update = [
 				}
 			);
 		}),
-	body("place", "Invalid place name").optional().trim().escape().isAlphanumeric(),
+	body("place", "Invalid place name").optional().trim().escape().matches(/^[a-z0-9 ]+$/i),
 	body("location", "Invalid coordinates")
 		.optional()
 		.custom((value) => {
