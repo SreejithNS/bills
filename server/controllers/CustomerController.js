@@ -399,7 +399,7 @@ exports.create = [
 				}
 			);
 		}),
-	body("place", "Invalid place name").optional().trim().escape().isAlphanumeric(),
+	body("place", "Invalid place name").optional().trim().escape().matches(/^[a-z0-9 ]+$/i),
 	body("coordinates", "Invalid coordinates")
 		.optional()
 		.custom(({ lat, lon }) => {
