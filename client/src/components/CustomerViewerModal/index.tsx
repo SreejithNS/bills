@@ -15,7 +15,7 @@ import {
 import { EditRounded, InfoOutlined, RefreshRounded } from "@material-ui/icons";
 import useAxios from "axios-hooks";
 import MaterialTable, { Query, QueryResult } from "material-table";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useHistory, useParams } from "react-router";
 import { BillData, PaginateResult } from "../../reducers/bill.reducer";
 import { Customer } from "../../reducers/customer.reducer";
@@ -24,6 +24,7 @@ import { APIResponse, axios, handleAxiosError, interpretMTQuery } from "../Axios
 import CustomerBulkPaymentReceiveStepper from "../CustomerBulkPaymentReceiveStepper";
 import { tableIcons } from "../MaterialTableIcons";
 import Modal from "../Modal";
+import PaymentReceiveDialog from "../PaymentReceiveDialog";
 
 interface BillAggregatedByCredit {
     _id: boolean;
@@ -78,7 +79,7 @@ const StatPaper = ({
         <Paper elevation={0} variant="outlined">
             <Typography variant="subtitle1" color="textSecondary" style={{ fontWeight: "bold" }}>
                 {title} Bills
-			</Typography>
+            </Typography>
             <Box display="flex" flexDirection="row" flexWrap="wrap" className={classes.boxRoot}>
                 <Box flexGrow={1}>
                     <Typography variant="subtitle2">Bill Count</Typography>
@@ -108,12 +109,14 @@ const BillsTable = () => {
     const tableRef = useRef<any>(null);
     const param = useParams<{ id: string }>();
     const history = useHistory();
+    const [deleteBillData, setDeleteBillData] = useState(null);
 
     const fetchItems = (query: Query<{
         serialNumber: number;
         billAmount: number;
         paidAmount: number;
         credit: boolean;
+        createdAt: Date;
     }>): Promise<QueryResult<BillData>> => new Promise((resolve) => {
         const url = `/bill?`;
         const search = (new URLSearchParams(Object.assign(interpretMTQuery(query), { customer: param.id }))).toString();
@@ -129,7 +132,7 @@ const BillsTable = () => {
             })
             .catch(handleAxiosError)
     })
-    return (
+    return (<>
         <MaterialTable
             tableRef={tableRef}
             components={{
@@ -138,6 +141,11 @@ const BillsTable = () => {
             icons={tableIcons}
             columns={[
                 { title: "Serial No.", field: "serialNumber", type: "numeric", editable: "never", align: "left" },
+                {
+                    title: "Date", field: "createdAt", type: "date", editable: "never", align: "left", dateSetting: {
+                        locale: "en-GB"
+                    },
+                },
                 { title: "Bill Amount", field: "billAmount", type: "numeric", editable: "never" },
                 { title: "Paid Amount", field: "paidAmount", type: "numeric", editable: "never" },
                 { title: "Balance", type: "numeric", render: (data) => data.billAmount - data.paidAmount, sorting: false },
@@ -150,7 +158,21 @@ const BillsTable = () => {
                     tooltip: 'Open Bill',
                     isFreeAction: false,
                     onClick: (_, data: any) => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", data._id))
-                }]}
+                },
+                (rowData: any) => ({
+                    icon: () => <span style={{
+                        border: `2px solid ${rowData.credit ? "black" : "inherit"}`,
+                        borderRadius: "50%",
+                        width: "1.3rem",
+                        height: "1.3rem",
+                        fontSize: "1rem"
+                    }
+                    }>₹</span>,
+                    tooltip: 'Receive Payment',
+                    isFreeAction: false,
+                    disabled: !rowData.credit,
+                    onClick: (_, data: any) => setDeleteBillData(data)
+                })]}
             options={{
                 exportButton: false,
                 toolbarButtonAlignment: "left",
@@ -159,9 +181,12 @@ const BillsTable = () => {
                 toolbar: false,
                 padding: "dense",
                 pageSize: 10,
-                pageSizeOptions: [10, 20, 50]
+                pageSizeOptions: [10, 20, 50],
+                actionsColumnIndex: -1
             }}
         />
+        {deleteBillData && <PaymentReceiveDialog  {...deleteBillData} open={!!deleteBillData} onClose={() => { setDeleteBillData(null); tableRef.current?.onQueryChange(); }} />}
+    </>
     )
 }
 
@@ -229,7 +254,7 @@ export default function CustomerViewerModal() {
                                     <Grid item>
                                         <Typography variant="subtitle1" component="div" align="right">
                                             Total Bills:
-											{byCredit
+                                            {byCredit
                                                 .map((val) => val.count)
                                                 .reduce((acc, cur) => acc + cur, 0)}
                                         </Typography>

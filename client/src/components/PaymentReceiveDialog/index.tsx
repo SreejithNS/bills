@@ -32,9 +32,11 @@ export default function PaymentReceiveDialog({ _id, open, onClose, paidAmount, b
         //eslint-disable-next-line
     }, [data])
 
-    if (error) {
-        handleAxiosError(error);
-    }
+    useEffect(() => {
+        if (error) {
+            handleAxiosError(error);
+        }
+    }, [error]);
 
     return (
         <Dialog open={open} onClose={onClose} aria-labelledby="form-dialog-title">
@@ -42,7 +44,7 @@ export default function PaymentReceiveDialog({ _id, open, onClose, paidAmount, b
             <DialogContent>
                 <DialogContentText>
                     Enter the amount you received for this Bill.
-                    </DialogContentText>
+                </DialogContentText>
                 <TextField
                     autoFocus
                     disabled={loading}
@@ -58,14 +60,17 @@ export default function PaymentReceiveDialog({ _id, open, onClose, paidAmount, b
                             setAmount(value);
                     }}
                 />
+                {amount !== (billAmount - paidAmount) && <Button variant="text" onClick={() => setAmount(billAmount - paidAmount)}>
+                    GET FULL AMOUNT
+                </Button>}
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose} disabled={loading} color="primary">
                     Cancel
-          </Button>
+                </Button>
                 <Button onClick={() => amount > 0 ? post() : toast.warn("Enter a valid amount")} disabled={loading} color="primary">
                     Confirm
-          </Button>
+                </Button>
             </DialogActions>
         </Dialog>
     );
