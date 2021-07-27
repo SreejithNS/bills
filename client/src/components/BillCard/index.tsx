@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Card from "@material-ui/core/Card";
 import CardActions from "@material-ui/core/CardActions";
@@ -11,6 +11,9 @@ import QueryBuilderRoundedIcon from '@material-ui/icons/QueryBuilderRounded';
 import clsx from "clsx";
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import { RoomRounded } from "@material-ui/icons";
+import useAxios from "axios-hooks";
+import { toast } from "react-toastify";
+import { APIResponse, handleAxiosError } from "../Axios";
 
 export interface BillCardProps {
   primaryText?: string;
@@ -19,6 +22,13 @@ export interface BillCardProps {
   rightSecondary?: any;
   timestamp?: string;
   location?: [number, number];
+  pay?: {
+    credit: boolean;
+    paidAmount: number;
+    id: string;
+    billAmount: number;
+    refresh: () => void;
+  }
   deleteAction(): void;
   onClickAction(): void;
 }
@@ -59,6 +69,25 @@ const useStyles = makeStyles((theme) => ({
 export default function BillCard(props: BillCardProps) {
   const classes = useStyles();
   const [actionsOpen, toggleActions] = useState(false);
+  const [{ loading: paymentLoading, error: paymentError, data: paymentData }, receiveBalance] = useAxios<APIResponse<null>>({
+    url: `/bill/${props.pay?.id}/payment`,
+    method: "POST",
+  }, { manual: true });
+
+  useEffect(() => {
+    if (paymentData) {
+      toast.success("Payment Received");
+      props.pay?.refresh();
+    }
+    //eslint-disable-next-line
+  }, [paymentData])
+
+  useEffect(() => {
+    if (paymentError) {
+      handleAxiosError(paymentError);
+    }
+  }, [paymentError]);
+
   return (
     <Card className={classes.root} variant="outlined">
       <CardContent className={classes.content}>
@@ -119,6 +148,16 @@ export default function BillCard(props: BillCardProps) {
                 onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${props.location?.join(",")}`) }}
               >
                 Map
+              </Button>
+            }
+            {props.pay?.credit &&
+              <Button
+                variant="outlined"
+                disabled={paymentLoading}
+                size="small"
+                onClick={() => { receiveBalance({ data: { paidAmount: (props.pay?.billAmount ?? 0) - (props.pay?.paidAmount ?? 0) } }) }}
+              >
+                PAY ₹{((props.pay?.billAmount ?? 0) - (props.pay?.paidAmount ?? 0)).toLocaleString()}
               </Button>
             }
             {props.deleteAction &&

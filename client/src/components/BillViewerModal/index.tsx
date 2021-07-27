@@ -16,7 +16,9 @@ export default function BillViewerModal(props: ModalProps) {
     const params = useParams<{ id: BillData["_id"] }>();
     const history = useHistory();
     const [paymentReceiveModalOpen, setPaymentReceiveModalOpen] = useState(false);
-    const [{ loading, error, data }, fetchAgain] = useAxios<APIResponse<BillData>>("/bill/id/" + params.id);
+    const [{ loading, error, data }, fetchAgain] = useAxios<APIResponse<BillData>>("/bill/id/" + params.id, {
+        useCache: false
+    });
     const confirm = useConfirm();
 
     const [{ loading: paymentLoading, error: paymentError, data: paymentData }, receiveBalance] = useAxios<APIResponse<null>>({

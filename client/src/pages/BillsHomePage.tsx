@@ -127,12 +127,12 @@ export default function BillsHomePage() {
             ...(selectedFromDate && { "startDate": selectedFromDate }),
             ...(selectedToDate && { "endDate": selectedToDate }),
             ...(creditFilter && { credit: creditFilter === "1" })
-        }
-    }, { manual: true })
+        },
+    }, { useCache: false })
 
     useEffect(() => {
         execute();
-    }, [execute])
+    }, [execute, searchValue, showAll, searchParam])
 
     const confirm = useConfirm();
     const deleteBill = useCallback(
@@ -186,7 +186,7 @@ export default function BillsHomePage() {
                     <Grid item xs={12}>
                         <Typography variant="h4">
                             Your Bills
-                                 <Button onClick={() => history.push("/items")}>inventory</Button>
+                            <Button onClick={() => history.push("/items")}>inventory</Button>
                         </Typography>
                     </Grid>
                     <Grid item xs={12}>
@@ -237,12 +237,19 @@ export default function BillsHomePage() {
                                                         ? <span className={classes.redText}>IN CREDIT</span>
                                                         : <span className={classes.greenText}>CLOSED</span>
                                                     }&nbsp;
-                                                        {bill.credit
+                                                    {bill.credit
                                                         ? <TollIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} className={classes.redText} />
                                                         : <CheckCircleIcon fontSize="inherit" style={{ verticalAlign: "text-top" }} className={classes.greenText} />}
                                                 </>
                                             )}
                                             location={bill.location?.coordinates}
+                                            pay={{
+                                                billAmount: bill.billAmount,
+                                                credit: bill.credit,
+                                                id: bill._id,
+                                                paidAmount: bill.paidAmount,
+                                                refresh: () => execute()
+                                            }}
                                             deleteAction={() => deleteBill(bill._id)}
                                             onClickAction={() => history.push((paths.billsHome + billsPaths.billDetail).replace(":id", bill._id))}
                                         />
@@ -283,8 +290,8 @@ export default function BillsHomePage() {
             </PageContainer>
             <Fab onClick={() => history.push(paths.billsHome + billsPaths.addBill)} className={classes.fab} color="primary" variant="extended">
                 <AddIcon className={classes.fabIcon} />
-                        New Bill
-                </Fab>
+                New Bill
+            </Fab>
         </React.Fragment>
     )
 }

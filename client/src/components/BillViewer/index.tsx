@@ -185,7 +185,6 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                         ? <Chip color="primary" onClick={props.creditAction} variant="outlined" style={{ color: "white" }} size="small" avatar={<Avatar>₹</Avatar>} label="Bill Closed" />
                                         : <Chip color="primary" size="small" onClick={props.creditAction} avatar={<Avatar>₹</Avatar>} label="In Credit" />
                                 }
-                                <br />{props.credit && (props.billAmount - props.paidAmount) > 0 && <Button variant="outlined" onClick={() => props.payBalance(props.billAmount - props.paidAmount)} className={classes.button} size="small" startIcon={<Add />}>Pay ₹ {(props.billAmount - props.paidAmount).toLocaleString()}</Button>}
                             </Grid>
                             <Grid item className={classes.itemPadding + " " + classes.alignRight} xs>
                                 <Typography variant="subtitle1" display="block">
