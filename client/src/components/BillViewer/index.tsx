@@ -15,12 +15,16 @@ import {
 import { Add, DeleteRounded, InfoOutlined, RoomRounded } from "@material-ui/icons";
 import MaterialTable from "material-table";
 import * as React from "react";
+import { useCallback } from "react";
 import { tableIcons } from "../MaterialTableIcons";
 import PaymentsList from "../PaymentsList";
 import moment from "moment";
 import { BillData } from "../../reducers/bill.reducer";
 import { useHistory } from "react-router";
 import { customersPaths, paths } from "../../routes/paths.enum";
+import Print from "../Print";
+import { toast } from "react-toastify";
+import PrintIcon from '@material-ui/icons/Print';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -58,6 +62,13 @@ interface AdditionalProps {
 export default function BillViewer(props: BillData & AdditionalProps) {
     const classes = useStyles();
     const history = useHistory();
+
+    const print = useCallback(() => {
+        Print.onDisconnect = () => toast.warn("Printer Disconnected")
+        Print.init().then(instance => {
+            return instance.printBill(props)
+        }).then(() => toast.success("Bill Printed!")).catch((error) => toast.error(error.message));
+    }, [props])
     return (
         <Paper>
             <Grid
@@ -92,6 +103,11 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                             <RoomRounded />
                         </IconButton>
                     </Tooltip>}
+                    <Tooltip title="Print via Bluetooth">
+                        <IconButton onClick={() => print()}>
+                            <PrintIcon />
+                        </IconButton>
+                    </Tooltip>
                     {props.onDelete && <Tooltip title="Delete Bill">
                         <IconButton color="secondary" onClick={() => props.onDelete && props.onDelete()}>
                             <DeleteRounded />
