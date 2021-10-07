@@ -7,7 +7,9 @@ var mongoose = require("mongoose");
 const { Customer } = require("../models/CustomerModel");
 const _ = require("lodash");
 const { userData, UserData } = require("./AuthController");
+const Papa = require("papaparse");
 mongoose.set("useFindAndModify", false);
+
 
 //Types
 /**
@@ -238,6 +240,104 @@ exports.getAllBills = [
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err);
 		}
+	},
+];
+
+
+/**
+ * Get  Bills List created by the user based on query received as CSV.
+ *
+ * @returns [Object] {Object}
+ */
+exports.getAllBillsAsCSV = [
+	auth,
+	query(["limit", "offset", "startDate", "endDate"])
+		.optional()
+		.isInt(),
+	query(["customer", "soldBy"])
+		.optional()
+		.isMongoId(),
+	query("credit")
+		.optional()
+		.isBoolean(),
+	async function (req, res) {
+		try {
+			const validationError = validationResult(req);
+			if (!validationError.isEmpty())
+				return apiResponse.validationErrorWithData(
+					res,
+					"Query Validation Error",
+					validationError.array()
+				);
+
+			const authenticatedUser = await userData(req.user._id);
+
+			const query = {};
+			if (authenticatedUser.type === privilegeEnum.root) {
+				Object.assign(query, {});
+			} else if (authenticatedUser.type === privilegeEnum.admin) {
+				if (authenticatedUser.belongsTo) {
+					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+				} else {
+					Object.assign(query, { belongsTo: authenticatedUser._id })
+				}
+			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_BILL_GET")) {
+				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+			}
+
+			const queryWithSearch = {
+				...(req.query.customer && {
+					"customer": req.query.customer
+				}),
+				...(req.query.soldBy && {
+					"soldBy": req.query.soldBy
+				}),
+				...((req.query.credit !== undefined && req.query.credit !== null) && {
+					"credit": req.query.credit
+				}),
+				...((req.query.startDate || req.query.endDate) && {
+					"createdAt": {
+						...(req.query.startDate && { $gte: new Date(parseInt(req.query.startDate)) }),
+						...(req.query.endDate && { $lte: new Date(parseInt(req.query.endDate)) })
+					}
+				}),
+				...query
+			}
+
+			const paginateOptions = { ...(new QueryParser(req.query)) };
+
+			return Bill.find(queryWithSearch).sort(paginateOptions.sort).populate("soldBy", "name").populate("customer").exec().then(
+				(bills) => {
+					bills = bills.map((doc) => {
+						return {
+							"Serial Number": doc.serialNumber,
+							"Customer": doc.customer.name,
+							"Location": doc.customer.location || "",
+							"Date": doc.createdAt,
+							"Sold By": doc.soldBy.name,
+							"Total Amount": doc.billAmount,
+							"Discount Amount": doc.discountAmount,
+							"Paid Amount": doc.paidAmount,
+							"Status": doc.credit ? "IN CREDIT" : "CLOSED",
+							"Balance": doc.billAmount - doc.paidAmount
+						};
+					});
+
+					const csv = Papa.unparse(bills);
+					res.set("Access-Control-Expose-Headers", "x-bills-report-filename");
+					return apiResponse.successResponseWithFile(
+						res.set("x-bills-report-filename", (new Date()).toDateString() + ".csv"),
+						(new Date()).toDateString() + ".csv",
+						csv
+					);
+				},
+				(err) => apiResponse.ErrorResponse(res, err)
+			);
+		} catch (err) {
+			//throw error in json response with status 500.
+			return apiResponse.ErrorResponse(res, err);
+		}
+
 	},
 ];
 

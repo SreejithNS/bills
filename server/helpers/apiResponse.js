@@ -39,6 +39,17 @@ exports.successResponseWithData = function (res, msg, data) {
 	};
 	return res.status(200).json(resData);
 };
+
+/**
+ * 
+ * @param {e.Response} res 
+ * @param {string} name 
+ * @param {*} file 
+ */
+exports.successResponseWithFile = function (res, name, file) {
+	return res.attachment(name).send(file);
+};
+
 /**
  * 
  * @param {e.Response} res 
