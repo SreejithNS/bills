@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 import BillViewerModal from '../components/BillViewerModal';
 import NewBillModal from '../components/NewBillModal';
+import ReportDownloadModal from '../components/ReportDownloadModal';
 import BillsHomePage from '../pages/BillsHomePage';
 import { billsPaths, paths } from './paths.enum';
 
@@ -19,6 +20,9 @@ export default function BillsRoutes() {
             </Route>
             <Route path={paths.billsHome + billsPaths.billDetail} >
                 <BillViewerModal />
+            </Route>
+            <Route path={paths.billsHome + billsPaths.exportBills} >
+                <ReportDownloadModal />
             </Route>
         </Switch>
     )

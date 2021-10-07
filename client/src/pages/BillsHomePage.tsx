@@ -18,6 +18,9 @@ import moment from 'moment';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import TollIcon from '@material-ui/icons/Toll';
 import { useQueryStringKey } from 'use-route-as-state';
+import { useHasPermission } from '../actions/auth.actions';
+import { useSelector } from 'react-redux';
+import { RootState } from '../reducers/rootReducer';
 const Fade = require('react-reveal/Fade');
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -103,17 +106,20 @@ const StatPaper = ({
 };
 
 export default function BillsHomePage() {
+    const { userData } = useSelector((state: RootState) => state.auth);
     const [sortParam, setSortParam] = useQueryStringKey("sortParam", "createdAt");
     const [sortDirection, setSortDirection] = useQueryStringKey("sortDirection", "desc");
     const [pageNumber, setPageNumber] = useQueryStringKey("page", "1");
     const [limit, setLimit] = useQueryStringKey("limit", "10");
-    const [searchParam, setSearchParam] = useQueryStringKey("searchParam", "customer");
+    const [searchParam, setSearchParam] = useQueryStringKey("searchParam", "soldBy");
     const [searchValue, setSearchValue] = useQueryStringKey("searchValue");
     const [selectedFromDate, setSelectedFromDate] = useQueryStringKey("fromDate");
     const [selectedToDate, setSelectedToDate] = useQueryStringKey("toDate");
     const [creditFilter, setCreditFilter] = useQueryStringKey("credit");
     const [showAll, setShowAll] = useQueryStringKey("showAll");
     const [requestLoading, setRequestLoading] = useState(false);
+
+    const hasAdminPermissions = useHasPermission();
 
     type ResponseData = APIResponse<PaginateResult<BillData>>;
 
@@ -132,7 +138,14 @@ export default function BillsHomePage() {
 
     useEffect(() => {
         execute();
-    }, [execute, searchValue, showAll, searchParam])
+    }, [execute, searchValue, showAll, searchParam]);
+
+    useEffect(() => {
+        if (!hasAdminPermissions) {
+            setSearchParam("soldBy");
+            if (userData) setSearchValue(userData._id);
+        }
+    }, [hasAdminPermissions, setSearchParam, setSearchValue, userData]);
 
     const confirm = useConfirm();
     const deleteBill = useCallback(
@@ -186,11 +199,12 @@ export default function BillsHomePage() {
                     <Grid item xs={12}>
                         <Typography variant="h4">
                             Your Bills
-                            <Button onClick={() => history.push("/items")}>inventory</Button>
+                            {hasAdminPermissions ? <Button onClick={() => history.push(paths.billsHome + billsPaths.exportBills)}>Reports</Button> : <></>}
                         </Typography>
                     </Grid>
                     <Grid item xs={12}>
                         <BillSearch
+                            disableSearch={!hasAdminPermissions}
                             showAll={showAll === "true"}
                             onShowAllChange={(value) => setShowAll(value.toString())}
                             creditFilter={creditFilter ?? ""}

@@ -9,7 +9,8 @@ export enum paths {
 export enum billsPaths {
     home = '/',
     billDetail = '/open/:id',
-    addBill = '/create'
+    addBill = '/create',
+    exportBills = "/export"
 }
 
 export enum customersPaths {
