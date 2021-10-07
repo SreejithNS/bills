@@ -41,6 +41,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 function CustomerSelection(props: {
     customer: Customer | undefined;
     onChange: (value: Customer) => void;
+    disabled?: boolean;
 }) {
     const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([]);
     const [customerInputValue, setCustomerInputValue] = useState<Customer["name"]>("");
@@ -70,6 +71,7 @@ function CustomerSelection(props: {
             selectOnFocus
             freeSolo
             handleHomeEndKeys
+            disabled={props.disabled}
             fullWidth={true}
             renderInput={(params) => <TextField {...params} label="Customer Name" margin="dense" variant="outlined" size="small" />}
         />
@@ -79,6 +81,7 @@ function CustomerSelection(props: {
 function SalesmanSelection(props: {
     salesman: UserData | undefined;
     onChange: (value: UserData) => void;
+    disabled?: boolean;
 }) {
     const salesmenList = useSelector((state: RootState) => {
         const { usersUnderUser, userData } = state.auth;
@@ -96,6 +99,7 @@ function SalesmanSelection(props: {
             onChange={(_, newValue) => newValue && props.onChange(newValue as UserData)}
             selectOnFocus
             freeSolo
+            disabled={props.disabled}
             handleHomeEndKeys
             fullWidth={true}
             renderInput={(params) => <TextField {...params} label="Salesman" margin="dense" variant="outlined" size="small" />}
@@ -105,6 +109,8 @@ function SalesmanSelection(props: {
 
 
 type Props = {
+    disableSearch?: boolean;
+    expanded?: boolean;
     onSearchParamChange: (param: string) => void;
     onSearchValueChange: (param: string) => void;
     creditFilter: string;
@@ -116,10 +122,10 @@ type Props = {
     sortParam: string;
     sortDirection: "asc" | "desc";
     searchParam?: string;
-    pageSize: number;
-    onShowAllChange: (value: boolean) => void;
-    showAll: boolean;
-    onPageSizeChange: (pageSize: number) => void;
+    pageSize?: number;
+    onShowAllChange?: (value: boolean) => void;
+    showAll?: boolean;
+    onPageSizeChange?: (pageSize: number) => void;
     onSortParamChange: (param: keyof BillData) => void;
     onSortDirectionChange: (direction: Props["sortDirection"]) => void;
 };
@@ -131,7 +137,7 @@ export default function BillSearch(props: Props) {
     const [serialNumber, setserialNumber] = useState<number>();
     const [salesman, setSalesman] = useState<UserData>();
 
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(props.expanded ?? false);
 
     const onSearch = () => {
         const { onSearchValueChange } = props;
@@ -169,13 +175,15 @@ export default function BillSearch(props: Props) {
     }
 
     const { searchParam } = props;
+
+    const searchDisabled = props.disableSearch ?? false;
     return (
         <Card className={classes.root} variant="outlined" >
             <CardContent className={classes.content}>
                 <form onSubmit={e => { e.preventDefault(); onSearch(); }}>
                     <Grid container direction="row" justify="space-around" alignItems="center" spacing={2}>
                         <Grid item>
-                            <FormControl variant="outlined" size="small" margin="dense">
+                            <FormControl disabled={searchDisabled} variant="outlined" size="small" margin="dense">
                                 <InputLabel>Field</InputLabel>
                                 <Select
                                     labelId="demo-simple-select-outlined-label"
@@ -192,6 +200,7 @@ export default function BillSearch(props: Props) {
                         <Grid item xs>
                             {searchParam === "serial" &&
                                 <TextField
+                                    disabled={searchDisabled}
                                     value={serialNumber}
                                     margin="dense"
                                     onChange={(e) => setserialNumber(Math.abs(parseInt(e.target.value)))}
@@ -203,11 +212,13 @@ export default function BillSearch(props: Props) {
                                 />}
                             {searchParam === "customer" &&
                                 <CustomerSelection
+                                    disabled={searchDisabled}
                                     customer={customer}
                                     onChange={(value) => setCustomer(value ?? undefined)}
                                 />}
                             {searchParam === "soldBy" &&
                                 <SalesmanSelection
+                                    disabled={searchDisabled}
                                     salesman={salesman}
                                     onChange={(value) => setSalesman(value ?? undefined)}
                                 />}
@@ -271,15 +282,15 @@ export default function BillSearch(props: Props) {
                                 onChange={date => props.onSelectedToDateChange(parseInputDate("end")(date))}
                             />
                         </Grid>
-                        <Grid item>
+                        {(props.onPageSizeChange && props.pageSize) && <Grid item>
                             <TextField
                                 label="Page Size"
                                 type="number"
                                 variant="outlined" size="small"
-                                onChange={(v) => props.onPageSizeChange(parseInt(v.target.value))}
+                                onChange={(v) => props.onPageSizeChange && props.onPageSizeChange(parseInt(v.target.value))}
                                 value={props.pageSize}
                             />
-                        </Grid>
+                        </Grid>}
                         <Grid item>
                             <FormControl variant="outlined" size="small">
                                 <InputLabel id="demo-simple-select-outlined-label">Sort By</InputLabel>
@@ -318,12 +329,12 @@ export default function BillSearch(props: Props) {
                                 </RadioGroup>
                             </FormControl>
                         </Grid>
-                        <Grid item>
+                        {props.showAll !== undefined && props.onShowAllChange !== undefined && <Grid item>
                             <FormControlLabel
-                                control={<Checkbox checked={props.showAll} onChange={(e) => props.onShowAllChange(e.target.checked)} />}
+                                control={<Checkbox checked={props.showAll} onChange={(e) => props.onShowAllChange && props.onShowAllChange(e.target.checked)} />}
                                 label="Show all bills"
                             />
-                        </Grid>
+                        </Grid>}
                     </Grid>
                 </CardContent>
             </Collapse>
