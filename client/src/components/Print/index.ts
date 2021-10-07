@@ -57,7 +57,6 @@ export default class Print {
   private async print(arr: Uint8Array, n: number = 100) {
     const printer = (await Print.init()).printer;
 
-    let iteration = 0;
     let i = 0;
     while (true) {
       const data = arr.slice(i, i + n);

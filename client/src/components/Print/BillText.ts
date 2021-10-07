@@ -198,8 +198,13 @@ export default class BillText {
 
         //Organisation header
         p.boldOn().size(2, 2);
-        (new TextManipulator()).centerText("Jithu Appalam\nProducts", 18).map(line => p.text(line));
-        p.boldOff().size(1, 1).feed(2);
+        (new TextManipulator()).centerText("Jithu Appalam", 18).map(line => p.text(line));
+        p.boldOff().size(1, 1).feed(1);
+
+        //Subtitle
+        (new TextManipulator()).centerText("( Quotation )", 36).map(line => p.text(line));
+        p.feed(2);
+
         //Customer Name
         p.boldOn().text("Customer:" + customerName).boldOff().control("LF");
 
@@ -258,7 +263,7 @@ export default class BillText {
         p.boldOff().size(1, 1);
 
         //Tear space
-        p.feed(3);
+        p.feed(4);
 
         return p.flush();
     }
