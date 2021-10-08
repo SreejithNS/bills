@@ -310,9 +310,9 @@ exports.getAllBillsAsCSV = [
 				(bills) => {
 					bills = bills.map((doc) => {
 						return {
-							"Serial Number": doc.serialNumber,
+							"Bill Number": doc.serialNumber,
 							"Customer": doc.customer.name,
-							"Location": doc.customer.location || "",
+							"Location": doc.customer.place || "",
 							"Date": doc.createdAt,
 							"Sold By": doc.soldBy.name,
 							"Total Amount": doc.billAmount,
