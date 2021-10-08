@@ -198,7 +198,7 @@ export default class BillText {
 
         //Organisation header
         p.boldOn().size(2, 2);
-        (new TextManipulator()).centerText("Jithu Appalam", 18).map(line => p.text(line));
+        (new TextManipulator()).centerText("J.G", 18).map(line => p.text(line));
         p.boldOff().size(1, 1).feed(1);
 
         //Subtitle
@@ -251,9 +251,8 @@ export default class BillText {
         p.control("LF");
         //Discount
         if (this.discount) {
-            (new TextManipulator()).centerText("Total:  -" + (this.billAmount - this.discount), 36).map(line => p.text(line));
-            p.control("LF");
-            (new TextManipulator()).centerText("Discount:  -" + this.discount, 36).map(line => p.text(line));
+            (new TextManipulator()).centerText("Sum: " + (this.billAmount - this.discount), 36).map(line => p.text(line));
+            (new TextManipulator()).centerText("Discount: -" + this.discount, 36).map(line => p.text(line));
             p.control("LF");
         }
 
@@ -261,7 +260,7 @@ export default class BillText {
         //Organisation header
         p.boldOn().size(2, 2);
         // p.text("Total:\t" + this.billAmount)
-        (new TextManipulator()).centerText("Grand Total:\t" + this.billAmount, 18).map(line => p.text(line));
+        (new TextManipulator()).centerText("Total: " + this.billAmount, 18).map(line => p.text(line));
         p.boldOff().size(1, 1);
 
         //Tear space
