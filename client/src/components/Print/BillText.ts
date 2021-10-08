@@ -186,6 +186,7 @@ export default class BillText {
         private salesMan: string,
         private items: string[][],
         private billAmount: number,
+        private itemsTotalAmount: number,
         private discount?: number
     ) { }
 
@@ -202,8 +203,14 @@ export default class BillText {
         p.boldOff().size(1, 1).feed(1);
 
         //Subtitle
-        (new TextManipulator()).centerText("( Quotation )", 36).map(line => p.text(line));
-        p.feed(2);
+        (new TextManipulator()).centerText("( Quotation )", 34).map(line => p.text(line));
+        p.feed(1);
+
+        //Date
+        p.align("RT")
+            .text("Date: " + (new Date(this.date)).toLocaleDateString())
+            .feed(1)
+            .align("LT");
 
         //Customer Name
         p.boldOn().text("Customer:" + customerName).boldOff().control("LF");
@@ -214,12 +221,7 @@ export default class BillText {
         //Bill Serial
         p.control("CR")
             .text("Bill No.#" + this.billSerial)
-            .control("LF");
-
-        //Date
-        p.align("RT")
-            .text("Date: " + (new Date(this.date)).toLocaleDateString())
-            .feed(2);
+            .control("LF").feed(1);
 
         //Table
         this.table = new TextTable(this.lineWidth, 3);
@@ -251,8 +253,8 @@ export default class BillText {
         p.control("LF");
         //Discount
         if (this.discount) {
-            (new TextManipulator()).centerText("Sum: " + (this.billAmount - this.discount), 36).map(line => p.text(line));
-            (new TextManipulator()).centerText("Discount: -" + this.discount, 36).map(line => p.text(line));
+            (new TextManipulator()).centerText("Sum: " + (this.itemsTotalAmount), 33).map(line => p.text(line));
+            (new TextManipulator()).centerText("Discount: -" + this.discount, 35).map(line => p.text(line));
             p.control("LF");
         }
 

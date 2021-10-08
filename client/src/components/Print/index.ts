@@ -2,7 +2,7 @@
 import { BillData } from './../../reducers/bill.reducer';
 import BillText from "./BillText";
 
-type PrintBillData = Pick<BillData, "customer" | "soldBy" | "serialNumber" | "createdAt" | "billAmount" | "discountAmount" | "items">;
+type PrintBillData = Pick<BillData, "customer" | "soldBy" | "serialNumber" | "createdAt" | "billAmount" | "discountAmount" | "itemsTotalAmount" | "items">;
 
 export default class Print {
   private printBuffer: number[] = [];
@@ -67,7 +67,7 @@ export default class Print {
     return true;
   }
 
-  public async printBill({ customer, soldBy, serialNumber, createdAt, billAmount, discountAmount, items }: PrintBillData) {
+  public async printBill({ customer, soldBy, itemsTotalAmount, serialNumber, createdAt, billAmount, discountAmount, items }: PrintBillData) {
     try {
       const itemString = items.map(item => {
         return [item.name, item.quantity.toString() + (item.unit || ""), (item.quantity * item.rate).toString()]
@@ -75,7 +75,7 @@ export default class Print {
 
       const billText = new BillText(
         customer.name, serialNumber, (new Date(createdAt)).toDateString(), soldBy.name,
-        itemString, billAmount, discountAmount || undefined
+        itemString, billAmount, itemsTotalAmount, discountAmount || undefined
       );
 
       try {
