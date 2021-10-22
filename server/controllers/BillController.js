@@ -450,7 +450,10 @@ exports.getProductWiseSalesAsCSV = [
 				{
 					"$match": {
 						"month": parseInt(queryWithSearch.month),
-						"year": parseInt(queryWithSearch.year)
+						"year": parseInt(queryWithSearch.year),
+						...(queryWithSearch.soldBy && {
+							"soldBy": mongoose.Types.ObjectId(queryWithSearch.soldBy)
+						})
 					}
 				}
 			];
