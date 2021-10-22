@@ -78,7 +78,7 @@ function CustomerSelection(props: {
     );
 }
 
-function SalesmanSelection(props: {
+export function SalesmanSelection(props: {
     salesman: UserData | undefined;
     onChange: (value: UserData) => void;
     disabled?: boolean;
