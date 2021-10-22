@@ -5,7 +5,7 @@ var Schema = mongoose.Schema;
 const Payment = require("./PaymentSchema");
 
 const LocationSchema = require("./LocationSchema");
-const AutoIncrement = require('mongoose-sequence')(mongoose);
+const AutoIncrement = require("mongoose-sequence")(mongoose);
 
 const BillSchema = new Schema(
 	{
@@ -217,9 +217,9 @@ BillSchema.plugin(mongoosePaginate);
 BillSchema.index({ serialNumber: 1, belongsTo: 1 }, { unique: true });
 BillSchema.plugin(AutoIncrement,
 	{
-		id: 'bill_sequence',
-		inc_field: 'serialNumber',
-		reference_fields: ['belongsTo'],
+		id: "bill_sequence",
+		inc_field: "serialNumber",
+		reference_fields: ["belongsTo"],
 		start_seq: 1
 	}
 );

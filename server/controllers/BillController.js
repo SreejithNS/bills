@@ -326,8 +326,8 @@ exports.getAllBillsAsCSV = [
 					const csv = Papa.unparse(bills);
 					res.set("Access-Control-Expose-Headers", "x-bills-report-filename");
 					return apiResponse.successResponseWithFile(
-						res.set("x-bills-report-filename", (new Date()).toDateString() + ".csv"),
-						(new Date()).toDateString() + ".csv",
+						res.set("x-bills-report-filename", "bills_report_" + (new Date()).toDateString() + ".csv"),
+						"bills_report_" + (new Date()).toDateString() + ".csv",
 						csv
 					);
 				},
@@ -340,6 +340,152 @@ exports.getAllBillsAsCSV = [
 
 	},
 ];
+
+/**
+ * Get products wise sales report as CSV.
+ *
+ * @returns [Object] {Object}
+ */
+exports.getProductWiseSalesAsCSV = [
+	auth,
+	query("month").isInt({ max: 12, min: 1 }),
+	query("year").isInt({ min: 2021 }),
+	query("soldBy")
+		.optional()
+		.isMongoId(),
+	async function (req, res) {
+		try {
+			const validationError = validationResult(req);
+			if (!validationError.isEmpty())
+				return apiResponse.validationErrorWithData(
+					res,
+					"Query Validation Error",
+					validationError.array()
+				);
+
+			const authenticatedUser = await userData(req.user._id);
+
+			const query = {
+				"month": req.query.month,
+				"year": req.query.year
+			};
+			if (authenticatedUser.type === privilegeEnum.root) {
+				Object.assign(query, {});
+			} else if (authenticatedUser.type === privilegeEnum.admin) {
+				if (authenticatedUser.belongsTo) {
+					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+				} else {
+					Object.assign(query, { belongsTo: authenticatedUser._id })
+				}
+			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_BILL_GET")) {
+				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+			}
+
+			const queryWithSearch = {
+				...(req.query.soldBy && {
+					"soldBy": req.query.soldBy
+				}),
+				...query
+			};
+
+			const paginateOptions = { ...(new QueryParser(req.query)) };
+			const pipeline = [
+				{
+					"$match": {
+						"belongsTo": mongoose.Types.ObjectId(queryWithSearch.belongsTo)
+					}
+				}, {
+					"$unwind": {
+						"path": "$items",
+						"preserveNullAndEmptyArrays": false
+					}
+				}, {
+					"$group": {
+						"_id": {
+							"belongsTo": "$belongsTo",
+							"name": "$items.name",
+							"code": "$items.code",
+							"unit": "$items.unit",
+							"rate": "$items.rate",
+							"month": {
+								"$month": "$createdAt"
+							},
+							"year": {
+								"$year": "$createdAt"
+							}
+						},
+						"soldBy": {
+							"$addToSet": "$soldBy"
+						},
+						"quantity": {
+							"$sum": "$items.quantity"
+						},
+						"averageQuantity": {
+							"$avg": "$items.quantity"
+						},
+						"billCount": {
+							"$sum": 1
+						}
+					}
+				}, {
+					"$project": {
+						"_id": "$_id.code",
+						"belongsTo": "$_id.belongsTo",
+						"soldBy": 1,
+						"month": "$_id.month",
+						"year": "$_id.year",
+						"name": "$_id.name",
+						"unit": "$_id.unit",
+						"rate": "$_id.rate",
+						"quantity": 1,
+						"billCount": 1,
+						"averageQuantity": 1,
+						"amount": {
+							"$multiply": [
+								"$_id.rate", "$quantity"
+							]
+						}
+					}
+				},
+				{
+					"$match": {
+						"month": parseInt(queryWithSearch.month),
+						"year": parseInt(queryWithSearch.year)
+					}
+				}
+			];
+			return Bill.aggregate(pipeline).exec().then(
+				(bills) => {
+					bills = bills.map((doc) => {
+						return {
+							"Product Code": doc._id,
+							"Product Name": doc.name,
+							"Product Rate": doc.rate,
+							"Product Unit": doc.unit,
+							"Total Sold Quantity": doc.quantity,
+							"Bill Count": doc.billCount,
+							"Total Sales in Amount": doc.amount
+						};
+					});
+
+					const csv = Papa.unparse(bills);
+					res.set("Access-Control-Expose-Headers", "x-bills-report-filename");
+					return apiResponse.successResponseWithFile(
+						res.set("x-bills-report-filename", "product_sales_" + req.query.month + "_" + req.query.year + ".csv"),
+						"product_sales_" + req.query.month + "_" + req.query.year + ".csv",
+						csv
+					);
+				},
+				(err) => apiResponse.ErrorResponse(res, err)
+			);
+		} catch (err) {
+			//throw error in json response with status 500.
+			return apiResponse.ErrorResponse(res, err);
+		}
+
+	},
+];
+
 
 /**
  * Save a bill
@@ -595,154 +741,3 @@ exports.toggleBillCredit = [
 	}
 ];
 
-/**
- * Get all Bills List created by salesmen under the admin.
- *
- * @returns [Object] {Object}
- */
-// exports.getBillsFromSalesmen = [
-// 	auth,
-// 	function (req, res) {
-// 		try {
-// 			//TODO: Aggregate to lookup to the salesmen of the admin.
-// 			Bill.find({ soldBy: req.user._id }, (err, bills) => {
-// 				if (err) return apiResponse.ErrorResponse(res, err);
-
-// 				if (bills.length > 0) {
-// 					return apiResponse.successResponseWithData(
-// 						res,
-// 						"Operation success",
-// 						bills
-// 					);
-// 				} else {
-// 					return apiResponse.successResponseWithData(
-// 						res,
-// 						"Operation success",
-// 						[]
-// 					);
-// 				}
-// 			});
-// 		} catch (err) {
-// 			//throw error in json response with status 500.
-// 			return apiResponse.ErrorResponse(res, err);
-// 		}
-// 	},
-// ];
-// //For data analys
-// exports.itemsAndQuantities = [
-// 	auth,
-// 	function (req, res) {
-// 		Bill.aggregate([
-// 			{
-// 				$unwind: {
-// 					path: "$items",
-// 				},
-// 			},
-// 			{
-// 				$project: {
-// 					_id: "$_id",
-// 					itemName: "$items.name",
-// 					itemRate: "$items.rate",
-// 					itemMrp: "$items.mrp",
-// 					itemCode: "$items.code",
-// 					quantity: "$items.quantity",
-// 					createdAt: "$createdAt",
-// 				},
-// 			},
-// 			{
-// 				$group: {
-// 					_id: "$itemCode",
-// 					itemCode: {
-// 						$first: "$itemCode",
-// 					},
-// 					itemName: {
-// 						$first: "$itemName",
-// 					},
-// 					itemRate: {
-// 						$first: "$itemRate",
-// 					},
-// 					itemMrp: {
-// 						$first: "$itemMrp",
-// 					},
-// 					quantity: {
-// 						$sum: "$quantity",
-// 					},
-// 					billedAt: {
-// 						$first: "$createdAt",
-// 					},
-// 				},
-// 			},
-// 			{
-// 				$project: {
-// 					name: "$itemName",
-// 					code: "$itemCode",
-// 					quantity: "$quantity",
-// 					totalAmount: {
-// 						$multiply: ["$quantity", "$itemRate"],
-// 					},
-// 					profit: {
-// 						$subtract: [
-// 							{
-// 								$multiply: ["$quantity", "$itemMrp"],
-// 							},
-// 							{
-// 								$multiply: ["$quantity", "$itemRate"],
-// 							},
-// 						],
-// 					},
-// 				},
-// 			},
-// 			{
-// 				$sort: {
-// 					profit: -1,
-// 				},
-// 			},
-// 		]).exec((err, data) => {
-// 			if (err) return apiResponse.ErrorResponse(res, err);
-// 			return apiResponse.successResponseWithData(res, "Values of", data);
-// 		});
-// 	},
-// ];
-
-// exports.customerAndPurchases = [
-// 	auth,
-// 	function (req, res) {
-// 		Bill.aggregate([
-// 			{
-// 				$group: {
-// 					_id: "$customer",
-// 					totalAmount: {
-// 						$sum: "$billAmount",
-// 					},
-// 				},
-// 			},
-// 			{
-// 				$lookup: {
-// 					from: "customers",
-// 					localField: "_id",
-// 					foreignField: "_id",
-// 					as: "customerDetails",
-// 				},
-// 			},
-// 			{
-// 				$unwind: {
-// 					path: "$customerDetails",
-// 					preserveNullAndEmptyArrays: false,
-// 				},
-// 			},
-// 			{
-// 				$set: {
-// 					customerName: "$customerDetails.name",
-// 				},
-// 			},
-// 			{
-// 				$sort: {
-// 					totalAmount: -1,
-// 				},
-// 			},
-// 		]).exec((err, data) => {
-// 			if (err) return apiResponse.ErrorResponse(res, err);
-// 			return apiResponse.successResponseWithData(res, "Values of", data);
-// 		});
-// 	},
-// ];

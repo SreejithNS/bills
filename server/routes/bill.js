@@ -1,11 +1,12 @@
 var express = require("express");
-const { getAllBills, getBill, getAllBillsAsCSV, receivePayment, deletePayment, deleteBill, saveBill, toggleBillCredit } = require("../controllers/BillController");
+const { getAllBills, getBill, getProductWiseSalesAsCSV, getAllBillsAsCSV, receivePayment, deletePayment, deleteBill, saveBill, toggleBillCredit } = require("../controllers/BillController");
 
 var router = express.Router();
 
 router.post("/", saveBill);
 router.get("/", getAllBills);
 router.get("/asCSV", getAllBillsAsCSV);
+router.get("/productSalesAsCSV", getProductWiseSalesAsCSV);
 router.get("/id/:billId", getBill);
 router.delete("/id/:billId", deleteBill);
 
