@@ -395,7 +395,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						<FormControl variant="outlined" size="small" fullWidth>
 							<InputLabel>Unit</InputLabel>
 							<Select
-								value={selectedProductUnit?.name ?? ""}
+								value={selectedProductUnit?.name ?? selectedProduct.primaryUnit}
 								onChange={(event) => {
 									const value = event.target.value;
 									setSelectedProductUnit(
@@ -406,7 +406,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 								}}
 								label="Unit"
 							>
-								<MenuItem value={""}>GENERAL</MenuItem>
+								<MenuItem value={selectedProduct.primaryUnit}>{selectedProduct.primaryUnit}</MenuItem>
 								{selectedProduct.units.map((unit, key) => (
 									<MenuItem key={key} value={unit.name}>
 										{unit.name.toUpperCase()}

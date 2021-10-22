@@ -22,6 +22,7 @@ function ProductData(data) {
 	this.mrp = data.mrp;
 	this.units = data.units || [];
 	this.belongsTo = data.belongsTo;
+	this.primaryUnit = data.primaryUnit || "Unit";
 }
 
 function ProductCategoryData(data) {
@@ -139,7 +140,7 @@ async function getProductById(_id) {
  * @param {Unit[]=} units - Units array of the product
  * @returns 
  */
-async function createProduct(code, name, rate, mrp, categoryId, units, user) {
+async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, categoryId, units, user) {
 	try {
 		if (units && units.length)
 			units = unitSchemaValidation(
@@ -161,6 +162,7 @@ async function createProduct(code, name, rate, mrp, categoryId, units, user) {
 		units: units,
 		category: categoryId,
 		rate: rate,
+		primaryUnit: primaryUnit,
 		mrp: mrp,
 		belongsTo: user
 	})
@@ -371,6 +373,7 @@ exports.deleteProduct = [
  *
  * @param {string} name - Name of the product.
  * @param {string} code - Unique Code of the product.
+ * @param {string} primaryUnit - Primary Unit Name of the product.
  * @param {number} rate - Rate of the product.
  * @param {number} mrp - MRP of the product.
  * @param {number} [weight] - Weight of the product.
@@ -406,6 +409,7 @@ exports.createProductRequest = [
 			})
 		),
 	body("name").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
+	body("primaryUnit").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
 	body("rate").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
@@ -430,6 +434,7 @@ exports.createProductRequest = [
 			const newProduct = await createProduct(
 				req.body.code,
 				req.body.name,
+				req.body.primaryUnit,
 				req.body.rate,
 				req.body.mrp,
 				req.params.categoryId,
@@ -564,6 +569,7 @@ exports.updateProduct = [
 		.isMongoId(),
 	body("code").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
 	body("name").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
+	body("primaryUnit").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
 	body("rate").optional().escape().trim().isFloat({ min: 1 }),
 	body("mrp").optional().escape().trim().isFloat({ min: 1 }),
 	body("units").optional().isArray(),

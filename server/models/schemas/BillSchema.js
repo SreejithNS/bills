@@ -200,6 +200,8 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 					document.mrp = unit.mrp;
 					document.rate = unit.rate;
 				}
+			} else {
+				document.unit = document.primaryUnit;
 			}
 			populatedItems.push(document);
 		} else {

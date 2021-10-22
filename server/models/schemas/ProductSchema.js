@@ -7,6 +7,7 @@ const ProductSchema = new Schema(
 	{
 		code: { type: String, required: true, index: true },
 		name: { type: String, required: true },
+		primaryUnit: { type: String, default: "Unit", required: true },
 		units: {
 			type: [
 				{

@@ -110,6 +110,13 @@ const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; subm
                         label="Item Code ( UNIQUE )"
                     />
                 </Grid>
+                <Grid item xs={12}>
+                    <Field
+                        name="primaryUnit"
+                        component={ReduxTextField}
+                        label="Primary Unit Name"
+                    />
+                </Grid>
                 <Grid item xs={6}>
                     <Field name="rate" component={ReduxTextField} label="Item Rate" type="number" />
                 </Grid>

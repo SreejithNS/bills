@@ -3,6 +3,7 @@ export interface Product {
     _id: string;
     code: string;
     name: string;
+    primaryUnit: string;
     quantity?: number;
     rate: number;
     mrp: number;
