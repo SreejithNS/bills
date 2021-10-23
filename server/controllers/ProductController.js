@@ -61,7 +61,7 @@ function QueryParser(query) {
 	this.soldBy = query.soldBy;
 	this.sort = query.sort;
 	this.lean = true;
-	this.populate = ["category", "belongsTo"]
+	this.populate = ["category", "belongsTo"];
 }
 
 /**
@@ -126,7 +126,18 @@ async function getProductById(_id) {
 	return Product.findById(_id)
 		.populate("belongsTo")
 		.populate("category")
-		.exec()
+		.exec();
+}
+
+/**
+ * Get a product by its Id and category
+ * @param {Product._id} _id 
+ */
+async function getProductByIdAndCategory(_id, categoryId) {
+	return Product.findOne({ _id: _id, category: categoryId })
+		.populate("belongsTo")
+		.populate("category")
+		.exec();
 }
 
 /**
@@ -141,21 +152,13 @@ async function getProductById(_id) {
  * @returns 
  */
 async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, categoryId, units, user) {
-	try {
-		if (units && units.length)
-			units = unitSchemaValidation(
-				rate,
-				mrp,
-				units
-			);
-		else units = []
-	} catch (e) {
-		return apiResponse.validationErrorWithData(
-			res,
-			"Validation error",
-			e.message
+	if (units && units.length)
+		units = unitSchemaValidation(
+			rate,
+			mrp,
+			units
 		);
-	}
+	else units = [];
 	const productData = new Product({
 		code: code,
 		name: name,
@@ -165,7 +168,42 @@ async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, catego
 		primaryUnit: primaryUnit,
 		mrp: mrp,
 		belongsTo: user
-	})
+	});
+	await productData.populate("belongsTo").populate("category").execPopulate();
+	return await productData.save();
+}
+
+/**
+ * Update a Product within the category id
+ * 
+ * @param {string} id - Unique id of the existing Product
+ * @param {string} code - Unique code of the Product
+ * @param {string} name - Name of the Product
+ * @param {number} rate - Rate of the Product
+ * @param {number} mrp - MRP of the Product
+ * @param {ProductCategory._id} categoryId 
+ * @param {Unit[]=} units - Units array of the product
+ * @returns 
+ */
+async function updateProduct(id, code, name, primaryUnit = "Unit", rate, mrp, categoryId, units, user) {
+	if (units && units.length)
+		units = unitSchemaValidation(
+			rate,
+			mrp,
+			units
+		);
+	else units = [];
+
+	const productData = await Product.findOneAndUpdate({ _id: id }, {
+		code: code,
+		name: name,
+		units: units,
+		category: categoryId,
+		rate: rate,
+		primaryUnit: primaryUnit,
+		mrp: mrp,
+		belongsTo: user
+	}, { new: true });
 	await productData.populate("belongsTo").populate("category").execPopulate();
 	return await productData.save();
 }
@@ -180,9 +218,9 @@ async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, catego
 async function createCategory(name, belongsTo, hasAccess) {
 	const newCategory = new ProductCategory({
 		name, belongsTo, hasAccess
-	})
+	});
 
-	return await newCategory.save()
+	return await newCategory.save();
 }
 exports.createCategory = createCategory;
 
@@ -215,7 +253,7 @@ async function addMultipleProducts(newProductsArray, categoryId, user) {
 
 	session.endSession();
 
-	return { count: newCount - count }
+	return { count: newCount - count };
 }
 
 /**
@@ -255,8 +293,8 @@ exports.createCategoryRequest = [
 		.custom((value, { req }) => {
 			return ProductCategory
 				.findOne({ belongsTo: req.user._id, name: value }, (err, res) => {
-					if (err || res) return Promise.reject("This Product Category already present")
-				})
+					if (err || res) return Promise.reject("This Product Category already present");
+				});
 		}),
 	body("hasAccess")
 		.optional()
@@ -272,19 +310,19 @@ exports.createCategoryRequest = [
 		try {
 			const authenticatedUser = await userData(req.user._id);
 			if (authenticatedUser.type === privilegeEnum.admin || authenticatedUser.type === privilegeEnum.root) {
-				const newCategory = await createCategory(req.body.name, req.user._id, req.body.hasAccess || [])
-				return apiResponse.successResponseWithData(res, "Product category created", { _id: newCategory._id.toString() })
+				const newCategory = await createCategory(req.body.name, req.user._id, req.body.hasAccess || []);
+				return apiResponse.successResponseWithData(res, "Product category created", { _id: newCategory._id.toString() });
 			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_PRODUCTCATEGORY_POST")) {
-				const newCategory = await createCategory(req.body.name, authenticatedUser.belongsTo._id, req.body.hasAccess || [req.user._id])
-				return apiResponse.successResponseWithData(res, "Product category created", { _id: newCategory._id.toString() })
+				const newCategory = await createCategory(req.body.name, authenticatedUser.belongsTo._id, req.body.hasAccess || [req.user._id]);
+				return apiResponse.successResponseWithData(res, "Product category created", { _id: newCategory._id.toString() });
 			} else {
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to perform this action")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to perform this action");
 			}
 		} catch (e) {
 			return apiResponse.ErrorResponse(res, e.message || e);
 		}
 	}
-]
+];
 
 exports.getProductCategoriesList = [
 	auth,
@@ -308,16 +346,16 @@ exports.getProductCategoriesList = [
 						res,
 						"Product Categories List",
 						docs.map(productCategoryData => new ProductCategoryData(productCategoryData))
-					)
-				})
+					);
+				});
 			} else {
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to perform this action")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to perform this action");
 			}
 		} catch (e) {
 			return apiResponse.ErrorResponse(res, e.message || e);
 		}
 	}
-]
+];
 
 /**
  * To delete a bill created by the user.
@@ -338,7 +376,7 @@ exports.deleteProduct = [
 			);
 		try {
 			const authenticatedUser = await userData(req.user._id);
-			const product = await getProductById(req.params.productId)
+			const product = await getProductById(req.params.productId);
 
 			if (product === null) {
 				return apiResponse.notFoundResponse(
@@ -389,7 +427,7 @@ exports.createProductRequest = [
 				if (!doc) {
 					return Promise.reject(
 						"Product Category does not exists"
-					)
+					);
 				}
 			})
 		),
@@ -430,7 +468,7 @@ exports.createProductRequest = [
 				return apiResponse.unauthorizedResponse(
 					res,
 					"You are not authorised to add product"
-				)
+				);
 			const newProduct = await createProduct(
 				req.body.code,
 				req.body.name,
@@ -440,12 +478,12 @@ exports.createProductRequest = [
 				req.params.categoryId,
 				req.body.units,
 				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
-			)
+			);
 			return apiResponse.successResponseWithData(
 				res,
 				"Product Created",
 				new ProductData(newProduct)
-			)
+			);
 		} catch (e) {
 			return apiResponse.validationErrorWithData(
 				res,
@@ -466,7 +504,7 @@ exports.deleteProductCategory = [
 				if (!doc) {
 					return Promise.reject(
 						"Product Category does not exists"
-					)
+					);
 				}
 			})
 		),
@@ -487,11 +525,11 @@ exports.deleteProductCategory = [
 				return apiResponse.unauthorizedResponse(
 					res,
 					"You are not authorised to add product"
-				)
+				);
 			return deleteProductCategoryAndProducts(req.params.categoryId)
 				.then(response => {
 					return apiResponse.successResponseWithData(res, "Product Cateogory deleted", response);
-				})
+				});
 		} catch (e) {
 			return apiResponse.validationErrorWithData(
 				res,
@@ -500,7 +538,7 @@ exports.deleteProductCategory = [
 			);
 		}
 	}
-]
+];
 
 /**
  * Bulk Import Products.
@@ -516,7 +554,7 @@ exports.importProducts = [
 				if (!doc) {
 					return Promise.reject(
 						"Product Category does not exists"
-					)
+					);
 				}
 			})
 		),
@@ -538,13 +576,13 @@ exports.importProducts = [
 				return apiResponse.unauthorizedResponse(
 					res,
 					"You are not authorised for this operation"
-				)
+				);
 			}
 			const { count } = await addMultipleProducts(req.body.items, req.params.categoryId, authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString());
 			return apiResponse.successResponse(
 				res,
 				`Imported ${count} Products`
-			)
+			);
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err.message || err);
@@ -559,70 +597,92 @@ exports.importProducts = [
  */
 exports.updateProduct = [
 	auth,
-	param("categoryId")
+	param("categoryId", "Invalid category id")
+		.escape().trim().isMongoId()
+		.custom((value) =>
+			ProductCategory.findById(value, (err, doc) => {
+				if (err) Promise.reject(err);
+				if (!doc) {
+					return Promise.reject(
+						"Product Category does not exists"
+					);
+				}
+			})
+		),
+	param("productId", "Invalid Product id")
+		.escape().trim().isMongoId()
+		.custom((value) =>
+			Product.findById(value, (err, doc) => {
+				if (err) Promise.reject(err);
+				if (!doc) {
+					return Promise.reject(
+						"Product does not exists"
+					);
+				}
+			})
+		),
+	body("code")
 		.escape()
 		.trim()
-		.isMongoId(),
-	param("productId")
-		.escape()
-		.trim()
-		.isMongoId(),
-	body("code").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
-	body("name").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
-	body("primaryUnit").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
-	body("rate").optional().escape().trim().isFloat({ min: 1 }),
-	body("mrp").optional().escape().trim().isFloat({ min: 1 }),
+		.matches(/^[a-z0-9./\- ]+$/i)
+		.custom((value, { req }) =>
+			Product.findOne({
+				code: value,
+				category: req.params.categoryId,
+			}).then((doc) => {
+				if (doc._id.toString() !== req.params.productId)
+					return Promise.reject(
+						"Item with this code already exists."
+					);
+			})
+		),
+	body("name").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
+	body("primaryUnit").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
+	body("rate").escape().trim().isNumeric(),
+	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
 	async (req, res) => {
-		if (!validationResult(req).isEmpty())
+		const errors = validationResult(req);
+		if (!errors.isEmpty())
 			return apiResponse.validationErrorWithData(
 				res,
-				"Validation Error.",
-				validationResult(req).array()
+				"Validation Error",
+				errors.array()
 			);
 		try {
-			//Check for product category access rights
-			const authenticatedUser = await userData(_id);
-			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
-
-			const product = await Product.findById(req.params.id)
-			if (product) {
-				//Check for product modification rights
-				if (!hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_PUT"))
-					return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
-
-				if (Array.isArray(req.body.units)) {
-					const units = unitSchemaValidation(
-						req.body.rate || product.rate,
-						req.body.mrp || product.mrp,
-						req.body.units
-					)
-					product.units = units;
-					await product.save();
-				}
-
-				//Remove Units array from change request body
-				const execptUnits = Object.keys(req.body).reduce((acc, elem) => {
-					if (elem !== "units") acc[elem] = obj[elem]
-					return acc
-				}, {})
-
-				const updatedProduct = await Product.findByIdAndUpdate(req.body.productId, execptUnits, { new: true }).exec();
-
-				return apiResponse.successResponseWithData(
+			const authenticatedUser = await userData(req.user._id);
+			if (
+				!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
+				!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
+			)
+				return apiResponse.unauthorizedResponse(
 					res,
-					"Product Update Success",
-					new ProductData(updatedProduct)
-				)
-			} else {
-				return apiResponse.notFoundResponse(res, "Product not found");
-			}
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
+					"You are not authorised to add product"
+				);
+			const newProduct = await updateProduct(
+				req.params.productId,
+				req.body.code,
+				req.body.name,
+				req.body.primaryUnit,
+				req.body.rate,
+				req.body.mrp,
+				req.params.categoryId,
+				req.body.units,
+				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
+			);
+			return apiResponse.successResponseWithData(
+				res,
+				"Product Updated",
+				new ProductData(newProduct)
+			);
+		} catch (e) {
+			return apiResponse.validationErrorWithData(
+				res,
+				"Product Updation Error",
+				e.message || e
+			);
 		}
-	},
+	}
 ];
 
 /**
@@ -649,9 +709,9 @@ exports.updateProductCategory = [
 			//Check for product category access rights
 			const authenticatedUser = await userData(req.user._id);
 			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_PUT")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation");
 
-			const productCategory = await ProductCategory.findById(req.params.categoryId)
+			const productCategory = await ProductCategory.findById(req.params.categoryId);
 			if (productCategory) {
 				if (Array.isArray(req.body.hasAccess)) {
 					for (let userId of req.body.hasAccess) {
@@ -667,7 +727,7 @@ exports.updateProductCategory = [
 				return apiResponse.successResponse(
 					res,
 					"Product Category Update Success",
-				)
+				);
 			} else {
 				return apiResponse.notFoundResponse(res, "Product Category not found");
 			}
@@ -705,7 +765,7 @@ exports.getProductSuggestions = [
 				return apiResponse.unauthorizedResponse(
 					res,
 					"You are not authorised to access this product category"
-				)
+				);
 
 			return await Product.find(
 				{
@@ -728,7 +788,7 @@ exports.getProductSuggestions = [
 							products.map((product) => new ProductData(product))
 						);
 					}
-				)
+				);
 		} catch (e) {
 			return apiResponse.ErrorResponse(res, e.message || e);
 		}
@@ -764,7 +824,7 @@ exports.queryProduct = [
 			const authenticatedUser = await userData(req.user._id);
 			//Check product category access
 			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
 
 			const query = {
 				...(req.query.search && {
@@ -830,7 +890,7 @@ exports.productAvailability = [
 			const authenticatedUser = await userData(req.user._id);
 			//Check product category access
 			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
 
 			return Product.findOne(
 				{
@@ -879,9 +939,9 @@ exports.getProduct = [
 			const authenticatedUser = await userData(req.user._id);
 			//Check product category access
 			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
 
-			return Product.findOne({ _id: req.params.productId, category: req.params.categoryId }).then((product) => {
+			return getProductByIdAndCategory(req.params.productId, req.params.categoryId).then((product) => {
 				if (product) {
 					if (hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_GET")) {
 						let productData = new ProductData(product);
@@ -895,7 +955,7 @@ exports.getProduct = [
 						return apiResponse.unauthorizedResponse(
 							res,
 							"Not authorised to access this product"
-						)
+						);
 					}
 				} else {
 					return apiResponse.notFoundResponse(

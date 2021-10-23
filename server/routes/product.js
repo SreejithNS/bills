@@ -13,7 +13,7 @@ router.get("/:categoryId/query", queryProduct);
 router.post("/:categoryId", createProductRequest);
 router.post("/:categoryId/import", importProducts);
 router.get("/:categoryId.:productId", getProduct);
-router.put("/:categoryId.:productId", updateProduct);
+router.put("/:categoryId/:productId", updateProduct);
 
 router.get("/:categoryId/suggestion/:code", getProductSuggestions);
 router.get("/:categoryId/availability/:code", productAvailability);
