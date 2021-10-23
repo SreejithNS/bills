@@ -4,6 +4,7 @@ import {
 } from "react-router-dom";
 import NewItemModal from '../components/NewItemModal';
 import ProductCategoryEditModal from '../components/ProductCategoryEditModal';
+import ProductEditModal from '../components/ProductEditModal';
 import ItemsHomePage from '../pages/ItemsHomePage';
 import { itemPaths, paths } from './paths.enum';
 
@@ -18,6 +19,9 @@ export default function ItemsRoutes() {
             </Route>
             <Route path={paths.items + itemPaths.editCategory} >
                 <ProductCategoryEditModal />
+            </Route>
+            <Route path={paths.items + itemPaths.editProduct}>
+                <ProductEditModal />
             </Route>
         </React.Fragment>
     )

@@ -137,8 +137,8 @@ const ItemToolbar = () => {
                 <Tooltip title={(
                     <>
                         <strong>Import from CSV</strong><br />
-                    Add Multiple products to this category from Structured CSV File
-                </>
+                        Add Multiple products to this category from Structured CSV File
+                    </>
                 )} arrow>
                     <Button
                         startIcon={<SystemUpdateAltIcon />}
@@ -195,7 +195,7 @@ export default function ItemsHomePage() {
                     <Grid item xs={12}>
                         <Typography variant="h4">
                             Inventory
-                            </Typography>
+                        </Typography>
                     </Grid>
                     <Grid item xs={12} className={classes.cardPadding}>
                         <ItemToolbar />
@@ -288,8 +288,8 @@ export default function ItemsHomePage() {
             </PageContainer>
             {productCreatePermission && <Fab onClick={() => history.push(paths.items + itemPaths.addItem)} className={classes.fab} color="primary" variant="extended">
                 <AddIcon className={classes.fabIcon} />
-                        Add Item
-                </Fab>}
+                Add Item
+            </Fab>}
         </React.Fragment >
     )
 }
