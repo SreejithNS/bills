@@ -12,7 +12,8 @@ function validate(values: { [x: string]: any; }) {
         'name',
         'code',
         'mrp',
-        'rate'
+        'rate',
+        'primaryUniy'
     ];
     requiredFields.forEach(field => {
         if (!values[field]) {
