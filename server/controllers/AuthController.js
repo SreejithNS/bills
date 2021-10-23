@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticate = require("../middlewares/jwt");
 const { privilegeEnum, defaultSalesmanPermissions } = require("../helpers/privilegeEnum");
-const _ = require("lodash");
+const ProductCategory = require("../models/ProductCategoryModel");
 
 // Types
 /**
@@ -45,7 +45,7 @@ async function createUser(name, phone, password, permissions) {
 		bcrypt.hash(password, 10, function (err, hash) {
 			if (err) rej(err);
 			res(hash);
-		})
+		});
 	}));
 
 	const newUserData = {
@@ -70,9 +70,9 @@ async function createUser(name, phone, password, permissions) {
 async function createCategory(name, belongsTo, hasAccess) {
 	const newCategory = new ProductCategory({
 		name, belongsTo, hasAccess
-	})
+	});
 
-	return await newCategory.save()
+	return await newCategory.save();
 }
 
 /**
@@ -94,7 +94,7 @@ async function userAuthentication(phone, password) {
 					// Check User's account active or not.
 					if (user.status) {
 						//Prepare JWT token for authentication
-						const jwtPayload = { _id: user._id.toString() }
+						const jwtPayload = { _id: user._id.toString() };
 						const jwtData = {
 							expiresIn:
 								process.env
@@ -135,18 +135,8 @@ async function userData(_id) {
 	if (user) {
 		return new UserData(user);
 	} else {
-		return new Error("Authentication Details Tampered")
+		return new Error("Authentication Details Tampered");
 	}
-	// , async (err, res) => {
-	// if (err) return new Error(err);
-	// if (res) {
-	// 	await res.populate("belongsTo");
-
-	return new UserData(res);
-	// 	} else {
-	// 		return new Error("Authentication Details Tampered")
-	// 	}
-	// })
 }
 
 async function userAccountDetailsUpdate(userId, param, value) {
@@ -154,10 +144,10 @@ async function userAccountDetailsUpdate(userId, param, value) {
 		case "password":
 			value = await new Promise((resolve, reject) => {
 				bcrypt.hash(value, 10, async (err, hash) => {
-					if (err) reject(err)
-					resolve(hash)
+					if (err) reject(err);
+					resolve(hash);
 				});
-			})
+			});
 			break;
 		default:
 			break;
@@ -212,7 +202,7 @@ async function salesmanRegisterMiddleware(req, res) {
 				type: privilegeEnum.salesman,
 				permissions: req.body.permissions || defaultSalesmanPermissions,
 				belongsTo: req.user._id
-			}
+			};
 
 			const newUser = await createUser(req.body.name, req.body.phone, req.body.password, permissions);
 
@@ -327,7 +317,7 @@ const login = [
 				try {
 					const authenticationData = await userAuthentication(req.body.phone, req.body.password);
 					const date = new Date();
-					date.setMonth(date.getMonth() + 1)
+					date.setMonth(date.getMonth() + 1);
 					res.cookie("auth-token", authenticationData.token, {
 						httpOnly: true,
 						sameSite: "none",
@@ -372,7 +362,7 @@ const fetchUserData = [
 const logout = (req, res) => {
 	res.cookie("auth-token", { httpOnly: true, expires: Date.now() });
 	return apiResponse.successResponse(res, "Successfully logged out");
-}
+};
 
 const numberAvailability = [
 	authenticate,
@@ -462,7 +452,7 @@ const updateUserDetails = [
 			) {
 				const updatedDetails = await userAccountDetailsUpdate(req.params.userId, param, value);
 				return apiResponse.successResponseWithData(res, "User Details Updated", updatedDetails);
-			} else return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation")
+			} else return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation");
 		} catch (e) {
 			return apiResponse.ErrorResponse(res, e.message || e);
 		}
@@ -479,4 +469,4 @@ module.exports = {
 	numberAvailability,
 	salesmenList,
 	updateUserDetails
-}
+};
