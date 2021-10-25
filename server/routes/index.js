@@ -5,6 +5,9 @@ var apiRouter = require("../routes/api");
 var apiResponse = require("../helpers/apiResponse");
 
 /* GET home page. */
+app.all("/", function (req, res) {
+	return apiResponse.successResponse(res, "Bills Server is up and running smoothly");
+});
 app.all("/check", function (req, res) {
 	return apiResponse.successResponse(res, "Bills Server is up and running smoothly");
 });
