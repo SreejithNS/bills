@@ -119,6 +119,7 @@ export const parseCsvItemsArray = (csvArray: any[][]) => {
         const itemObject = {
             name: item.shift(),
             code: item.shift(),
+            primaryUnit: item.shift(),
             rate: item.shift(),
             mrp: item.shift(),
             units: item

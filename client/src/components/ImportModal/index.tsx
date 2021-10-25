@@ -102,6 +102,7 @@ export default function ImportModal(props: ModalProps) {
                         columns={[
                             { title: "Item Name", field: "name", editable: "never" },
                             { title: "Code", field: "code", editable: "never" },
+                            { title: "Primary Unit", field: "primaryUnit", editable: "never" },
                             { title: "Rate", field: "rate", type: "numeric", editable: "never" },
                             { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
                         ]}
