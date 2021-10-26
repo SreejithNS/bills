@@ -5,10 +5,8 @@ const auth = require("../middlewares/jwt");
 const { privilegeEnum } = require("../helpers/privilegeEnum.js");
 var mongoose = require("mongoose");
 const { Customer } = require("../models/CustomerModel");
-const _ = require("lodash");
 const { userData, UserData } = require("./AuthController");
 const Papa = require("papaparse");
-mongoose.set("useFindAndModify", false);
 
 
 //Types
@@ -42,7 +40,7 @@ function QueryParser(query) {
 	// this.soldBy = query.soldBy;
 	this.sort = query.sort;
 	this.lean = true;
-	this.populate = ["belongsTo", "soldBy", "customer"]
+	this.populate = ["belongsTo", "soldBy", "customer"];
 }
 
 // Function
@@ -115,10 +113,11 @@ exports.getBill = [
 						res,
 						"Bill Data",
 						new BillData(bill)
-					)
+					);
 				}
 			}
 		} catch (e) {
+			console.log(e);
 			return apiResponse.ErrorResponse(res, e.message || e);
 		}
 	}
@@ -148,7 +147,7 @@ exports.deleteBill = [
 					return apiResponse.successResponse(
 						res,
 						"Bill Deleted"
-					)
+					);
 				}
 			}
 		} catch (e) {
@@ -193,12 +192,12 @@ exports.getAllBills = [
 				Object.assign(query, {});
 			} else if (authenticatedUser.type === privilegeEnum.admin) {
 				if (authenticatedUser.belongsTo) {
-					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
 				} else {
-					Object.assign(query, { belongsTo: authenticatedUser._id })
+					Object.assign(query, { belongsTo: authenticatedUser._id });
 				}
 			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_BILL_GET")) {
-				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
 			}
 
 			const queryWithSearch = {
@@ -221,7 +220,7 @@ exports.getAllBills = [
 					}
 				}),
 				...query
-			}
+			};
 
 			const paginateOptions = new QueryParser(req.query);
 
@@ -277,12 +276,12 @@ exports.getAllBillsAsCSV = [
 				Object.assign(query, {});
 			} else if (authenticatedUser.type === privilegeEnum.admin) {
 				if (authenticatedUser.belongsTo) {
-					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
 				} else {
-					Object.assign(query, { belongsTo: authenticatedUser._id })
+					Object.assign(query, { belongsTo: authenticatedUser._id });
 				}
 			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_BILL_GET")) {
-				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
 			}
 
 			const queryWithSearch = {
@@ -302,7 +301,7 @@ exports.getAllBillsAsCSV = [
 					}
 				}),
 				...query
-			}
+			};
 
 			const paginateOptions = { ...(new QueryParser(req.query)) };
 
@@ -374,12 +373,12 @@ exports.getProductWiseSalesAsCSV = [
 				Object.assign(query, {});
 			} else if (authenticatedUser.type === privilegeEnum.admin) {
 				if (authenticatedUser.belongsTo) {
-					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
 				} else {
-					Object.assign(query, { belongsTo: authenticatedUser._id })
+					Object.assign(query, { belongsTo: authenticatedUser._id });
 				}
 			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_BILL_GET")) {
-				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id })
+				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
 			}
 
 			const queryWithSearch = {
@@ -389,7 +388,6 @@ exports.getProductWiseSalesAsCSV = [
 				...query
 			};
 
-			const paginateOptions = { ...(new QueryParser(req.query)) };
 			const pipeline = [
 				{
 					"$match": {
@@ -636,13 +634,13 @@ exports.receivePayment = [
 
 				const balance = bill.billAmount - bill.paidAmount;
 				if (balance < parseFloat(req.body.paidAmount)) {
-					return apiResponse.validationErrorWithData(res, "Validation Error.", [{ msg: "Paid amount is more than Balance" }])
+					return apiResponse.validationErrorWithData(res, "Validation Error.", [{ msg: "Paid amount is more than Balance" }]);
 				}
 
 				const paymentInfo = {
 					paidAmount: req.body.paidAmount,
 					paymentReceivedBy: req.user._id,
-				}
+				};
 
 				bill.payments.push(paymentInfo);
 
@@ -734,13 +732,13 @@ exports.toggleBillCredit = [
 					apiResponse.successResponse(res, "Bill credit toggled")
 				);
 			} else {
-				return apiResponse.unauthorizedResponse(res, "Not authorised to access this bill")
+				return apiResponse.unauthorizedResponse(res, "Not authorised to access this bill");
 			}
 		} catch (e) {
 			return apiResponse.ErrorResponse(
 				res,
 				e.message || e
-			)
+			);
 		}
 	}
 ];
