@@ -169,7 +169,7 @@ async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, catego
 		mrp: mrp,
 		belongsTo: user
 	});
-	await productData.populate("belongsTo").populate("category").execPopulate();
+	await productData.populate(["belongsTo", "category"]);
 	return await productData.save();
 }
 
@@ -204,7 +204,7 @@ async function updateProduct(id, code, name, primaryUnit = "Unit", rate, mrp, ca
 		mrp: mrp,
 		belongsTo: user
 	}, { new: true });
-	await productData.populate("belongsTo").populate("category").execPopulate();
+	await productData.populate(["belongsTo", "category"]);
 	return await productData.save();
 }
 

@@ -17,9 +17,9 @@ var MONGODB_URL = process.env.MONGODB_URL;
 var mongoose = require("mongoose");
 
 // Overcome collection.ensureIndex deprecation warning.
-mongoose.set('useNewUrlParser', true);
-mongoose.set('useFindAndModify', false);
-mongoose.set('useCreateIndex', true);
+// mongoose.set("useNewUrlParser", true);
+// mongoose.set("useFindAndModify", false);
+// mongoose.set("useCreateIndex", true);
 
 mongoose
 	.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
