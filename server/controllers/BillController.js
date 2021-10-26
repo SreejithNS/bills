@@ -315,8 +315,9 @@ exports.getAllBillsAsCSV = [
 							"Location": doc.customer.place || "",
 							"Date": doc.createdAt,
 							"Sold By": doc.soldBy.name,
-							"Total Amount": doc.billAmount,
+							"Total Amount": doc.itemsTotalAmount,
 							"Discount Amount": doc.discountAmount,
+							"Bill Amount": doc.billAmount,
 							"Paid Amount": doc.paidAmount,
 							"Status": doc.credit ? "IN CREDIT" : "CLOSED",
 							"Balance": doc.billAmount - doc.paidAmount
