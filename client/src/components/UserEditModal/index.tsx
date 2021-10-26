@@ -33,6 +33,7 @@ export default function UserEditModal() {
     const userData = usersUnderUser?.find(user => user._id === param.id);
     const [newSettings, setNewSettings] = useState(userData?.settings);
     const [newPassword, setNewPassword] = useState<string>();
+    const [newName, setNewName] = useState<string>();
     const [unSavedEdits, setUnSavedEdits] = useState(false);
     const { fetchUsersUnderAdmin } = useUsersUnderAdmin();
 
@@ -43,6 +44,24 @@ export default function UserEditModal() {
             data: { value: newPassword },
         }, { manual: true }
     )
+
+    const [{ loading: nameUpdateLoading, error: nameUpdateError, data: nameUpdateResponse }, updateName, resetNameUpdate] = useAxios<APIResponse<UserData>>(
+        {
+            url: `/auth/${param.id}.name`,
+            method: "PUT",
+            data: { value: newName },
+        }, { manual: true }
+    )
+    useEffect(() => {
+        if (nameUpdateResponse && !nameUpdateLoading) {
+            toast.success("User Name updated");
+            setNewPassword(undefined);
+            resetNameUpdate();
+            fetchUsersUnderAdmin();
+        }
+        if (nameUpdateError) handleAxiosError(nameUpdateError);
+        //eslint-disable-next-line
+    }, [nameUpdateLoading, nameUpdateError, nameUpdateResponse]);
 
     useEffect(() => {
         if (userData) {
@@ -138,6 +157,23 @@ export default function UserEditModal() {
                 <GrowableGrid item xs={12} md={6}>
                     <Paper>
                         <List subheader={<ListSubheader>Credentials</ListSubheader>}>
+                            <ListItem alignItems="flex-start">
+                                <TextField
+                                    variant="outlined"
+                                    label="Name"
+                                    onChange={(event) => {
+                                        const value = event.target.value;
+                                        setNewName(value === "" ? undefined : value);
+                                    }}
+                                    value={newName ?? ""}
+                                />
+                                <IconButton disabled={(!newName)} onClick={() => { setNewName(undefined); }}>
+                                    <Close />
+                                </IconButton>
+                                <IconButton disabled={newName === undefined || nameUpdateLoading} onClick={() => updateName()}>
+                                    <Check />
+                                </IconButton>
+                            </ListItem>
                             <ListItem alignItems="flex-start">
                                 <TextField
                                     variant="outlined"
