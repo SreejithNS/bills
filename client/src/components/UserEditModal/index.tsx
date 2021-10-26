@@ -160,7 +160,8 @@ export default function UserEditModal() {
                             <ListItem alignItems="flex-start">
                                 <TextField
                                     variant="outlined"
-                                    label="Name"
+                                    label="New Name"
+                                    placeholder={userData.name}
                                     onChange={(event) => {
                                         const value = event.target.value;
                                         setNewName(value === "" ? undefined : value);
