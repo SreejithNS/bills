@@ -735,7 +735,7 @@ const updateAccountDetails = [
 		} else if (authenticatedUser.type === privilegeEnum.root) {
 			return updateAccountDetailsAsRoot(req, res);
 		} else {
-			return apiResponse.unauthorizedResponse(res, "You cannot update user account details")
+			return apiResponse.unauthorizedResponse(res, "You cannot update user account details");
 		}
 	}
 ];
