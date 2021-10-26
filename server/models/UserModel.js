@@ -13,6 +13,14 @@ var UserSchema = new mongoose.Schema(
 		settings: {
 			type: UserSettingsSchema
 		},
+		organisation: {
+			type: {
+				name: { type: String, required: true },
+				printTitle: String,
+				tagline: String
+			},
+			required: false,
+		}
 	},
 	{ timestamps: true }
 );
