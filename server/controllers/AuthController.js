@@ -5,7 +5,11 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticate = require("../middlewares/jwt");
 const { privilegeEnum, defaultSalesmanPermissions } = require("../helpers/privilegeEnum");
-const ProductCategory = require("../models/ProductCategoryModel");
+const { ProductCategory } = require("../models/ProductCategoryModel");
+const { Product } = require("../models/ProductModel");
+const { Bill } = require("../models/BillModel");
+const { Customer } = require("../models/CustomerModel");
+const mongoose = require("mongoose");
 
 // Types
 /**
@@ -29,6 +33,7 @@ function UserData(params) {
 	this.type = params.type;
 	this.settings = params.settings;
 	this.belongsTo = params.belongsTo && new UserData(params.belongsTo);
+	this.organisation = params.organisation || undefined;
 }
 
 /**
@@ -65,6 +70,33 @@ async function createUser(name, phone, password, permissions) {
 	var newUser = new User(newUserData);
 
 	return await newUser.save();
+}
+
+/**
+ * Updates User Account with Password Encryption.
+ * 
+ * @param {string} name - User Name
+ * @param {number} phone - User Phone Number
+ * @param {string} password - User Account Password
+ * @param {Permissions=} permissions - Permissions and Account type Details if any.
+ * @returns {User}
+ */
+async function updateUserAccount(id, name, phone, organisation) {
+	const updatedUserData = {
+		name,
+		phone
+	};
+
+	if (organisation) {
+		updatedUserData.organisation = organisation;
+	}
+
+	console.log(updatedUserData);
+	var updatedUser = await User.findOneAndUpdate({ _id: id }, updatedUserData, {
+		new: true
+	});
+
+	return await updatedUser;
 }
 
 async function createCategory(name, belongsTo, hasAccess) {
@@ -122,6 +154,112 @@ async function userAuthentication(phone, password) {
 		);
 	} else {
 		throw new Error("User not found");
+	}
+}
+/**
+ * Deletes User and cascades the data that belonged to the user.
+ * @param {string} _id - User document id
+ */
+async function deleteUser(_id) {
+	if (mongoose.Types.ObjectId.isValid(_id)) {
+		const user = await User.findById(_id);
+		if (user) {
+
+			const session = await mongoose.startSession();
+			session.startTransaction();
+
+			if (user.type === privilegeEnum.admin || user.type === privilegeEnum.root) {
+				try {
+					//Delete Products
+					const deletedProducts = await Product.deleteMany({ belongsTo: _id }, { session });
+					if (!deletedProducts.ok) {
+						throw new Error("Couldn't delete Products");
+					}
+
+					//Delete Product Categories
+					const deletedProductCategories = await ProductCategory.deleteMany({ belongsTo: _id }, { session });
+					if (!deletedProductCategories.ok) {
+						throw new Error("Couldn't delete Product Categories");
+					}
+
+					//Delete Bills
+					const deletedBills = await Bill.deleteMany({ belongsTo: _id }, { session });
+					if (!deletedBills.ok) {
+						throw new Error("Couldn't delete Bills");
+					}
+
+					//Delete Customers
+					const deletedCustomers = await Customer.deleteMany({ belongsTo: _id }, { session });
+					if (!deletedCustomers.ok) {
+						throw new Error("Couldn't delete Customers");
+					}
+
+					//Delete Users
+					const deletedUsers = await User.deleteMany({ belongsTo: _id }, { session });
+					if (!deletedUsers.ok) {
+						throw new Error("Couldn't delete Users belonged to this user");
+					}
+
+					await User.findByIdAndDelete(_id, { session });
+					await session.commitTransaction();
+					session.endSession();
+					return {
+						deletedProductsCount: deletedProducts.deletedCount,
+						deletedProductCategoriesCount: deletedProductCategories.deletedCount,
+						deletedBillsCount: deletedBills.deletedCount,
+						deletedUsersCount: deletedUsers.deletedCount,
+						deletedCustomersCount: deletedCustomers.deletedCount,
+					};
+				} catch (e) {
+					await session.abortTransaction();
+					session.endSession();
+					throw e;
+				}
+			} else {
+				await user.populate("belongsTo");
+				const adminId = user.belongsTo._id.toString();
+
+				//Modify Product Categories
+				const modifiedProductCategories = await ProductCategory.updateMany({ hasAccess: _id }, {
+					$pull: {
+						hasAccess: _id,
+					},
+				}, { session, multi: true });
+				if (!modifiedProductCategories.acknowledged) {
+					throw new Error("Couldn't modify Product Categories");
+				}
+
+				//Modify Bills
+				const modifiedBills = await Bill.updateMany({ soldBy: _id }, {
+					soldBy: adminId,
+				}, { session, multi: true });
+				if (!modifiedBills.acknowledged) {
+					throw new Error("Couldn't modify Bills");
+				}
+
+				//Modify Payments
+				const modifiedPayments = await Bill.updateMany({ "payments.paymentReceivedB": _id }, {
+					$set: { "payments.$.paymentReceivedBy": mongoose.Types.ObjectId(adminId) },
+				}, { session, multi: true });
+				if (!modifiedPayments.acknowledged) {
+					throw new Error("Couldn't modify Bills Payments");
+				}
+
+				await User.findByIdAndDelete(_id, { session });
+				await session.commitTransaction();
+				session.endSession();
+				return {
+					modifiedProductCategoriesCount: modifiedProductCategories.modifiedCount,
+					modifiedBillsCount: modifiedBills.modifiedCount,
+					modifiedPayments: modifiedPayments.modifiedCount
+				};
+			}
+
+		} else {
+			throw new Error("User not found");
+		}
+	} else {
+		throw new Error("Invalid user id");
 	}
 }
 
@@ -359,6 +497,69 @@ const fetchUserData = [
 	},
 ];
 
+const deleteUserAccount = [
+	authenticate,
+	param("id", "Invalid user id").isMongoId(),
+	async (req, res) => {
+		try {
+			const errors = validationResult(req);
+			if (!errors.isEmpty()) {
+				return apiResponse.validationErrorWithData(
+					res,
+					"Validation Error.",
+					errors.array()
+				);
+			}
+			const authenticatedUser = await userData(req.user._id);
+			switch (authenticatedUser.type) {
+				case privilegeEnum.root: {
+					const result = await deleteUser(req.params.id);
+					return apiResponse.successResponseWithData(res, "User Account deleted", result);
+				}
+				case privilegeEnum.admin: {
+					const userDetails = await User.findOne({ _id: req.params.id, belongsTo: authenticatedUser._id.toString() });
+					if (userDetails && (
+						userDetails._id.toString() === authenticatedUser._id.toString() ||
+						userDetails.belongsTo.toString() === authenticatedUser._id.toString()
+					)) {
+						const result = await deleteUser(req.params.id);
+						return apiResponse.successResponseWithData(res, "User Account deleted", result);
+					} else if (userDetails) {
+						return apiResponse.unauthorizedResponse(res, "You are not authorized to delete this account");
+					} else {
+						return apiResponse.notFoundResponse(res, "User account not found");
+					}
+				}
+				case privilegeEnum.salesman: {
+					if (authenticatedUser.settings.permissions.includes("ALLOW_USER_DELETE")) {
+						const userDetails = await User.findById(req.params.id);
+						if (userDetails && (
+							userDetails._id.toString() === authenticatedUser._id.toString() ||
+							userDetails.belongsTo.toString() === authenticatedUser.belongsTo._id.toString()
+						)) {
+							const result = await deleteUser(req.params.id);
+							return apiResponse.successResponseWithData(res, "User Account deleted", result);
+						} else if (userDetails) {
+							return apiResponse.unauthorizedResponse(res, "You are not authorized to delete this account");
+						} else {
+							return apiResponse.notFoundResponse(res, "User account not found");
+						}
+					}
+				}
+					break;
+				default:
+					return apiResponse.notFoundResponse(res, "Invalid User account type");
+			}
+		} catch (e) {
+			console.error(e);
+			return apiResponse.ErrorResponse(
+				res,
+				e.message || e
+			);
+		}
+	},
+];
+
 const logout = (req, res) => {
 	res.cookie("auth-token", { httpOnly: true, expires: Date.now() });
 	return apiResponse.successResponse(res, "Successfully logged out");
@@ -459,6 +660,86 @@ const updateUserDetails = [
 	}
 ];
 
+async function updateAdminDetails(req, res) {
+	try {
+		console.log(req.body);
+		const update = await updateUserAccount(req.params.id, req.body.name, req.body.phone, req.body.organisation);
+		return apiResponse.successResponseWithData(res, "User Account Updated Successfull", update);
+	} catch (e) {
+		return apiResponse.ErrorResponse(res, e.message || e);
+	}
+}
+
+async function updateSalesmanDetails(req, res) {
+	try {
+		const update = await updateUserAccount(req.params.id, req.body.name, req.body.phone,);
+		return apiResponse.successResponseWithData(res, "User Account Updated Successfull", update);
+	} catch (e) {
+		return apiResponse.ErrorResponse(res, e.message || e);
+	}
+}
+
+async function updateAccountDetailsAsRoot(req, res) {
+	try {
+		const update = await updateUserAccount(req.params.id, req.body.name, req.body.phone, req.body.organisation);
+		return apiResponse.successResponseWithData(res, "User Account Updated Successfull", update);
+	} catch (e) {
+		return apiResponse.ErrorResponse(res, e.message || e);
+	}
+}
+
+const updateAccountDetails = [
+	authenticate,
+	param("id", "Invalid User ID").isMongoId(),
+	body("name")
+		.trim()
+		.isLength({ min: 1 })
+		.withMessage("Name must be specified.")
+		.matches(/^[a-z0-9 ]+$/i)
+		.withMessage("Name must contain only alphanumeric and spaces"),
+	body("phone")
+		.trim()
+		.isLength({ min: 10, max: 10 })
+		.isNumeric()
+		.withMessage("Phone must be 10 digits.")
+		.custom((value, { req }) => {
+			return User.findOne({ phone: value }).then(
+				(user) => {
+					if (user && user._id.toString() !== req.params.id.toString()) {
+						return Promise.reject("Phone Number already taken");
+					}
+				}
+			);
+		}),
+	body("organistaion").optional().isObject(),
+	async (req, res) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
+		const authenticatedUser = await userData(req.user._id);
+		if (authenticatedUser.type === privilegeEnum.admin) {
+			if (req.params.id === authenticatedUser._id.toString()) {
+				return await updateAdminDetails(req, res);
+			} else {
+				const user = await User.findOne({ _id: req.params.id, belongsTo: authenticatedUser._id.toString() });
+				if (user) {
+					return await updateSalesmanDetails(req, res);
+				} else {
+					return apiResponse.unauthorizedResponse(res, "You are not authorized to update this user");
+				}
+			}
+		} else if (authenticatedUser.type === privilegeEnum.root) {
+			return updateAccountDetailsAsRoot(req, res);
+		} else {
+			return apiResponse.unauthorizedResponse(res, "You cannot update user account details")
+		}
+	}
+];
+
 module.exports = {
 	UserData,
 	userData,
@@ -468,5 +749,7 @@ module.exports = {
 	logout,
 	numberAvailability,
 	salesmenList,
-	updateUserDetails
+	updateUserDetails,
+	updateAccountDetails,
+	deleteUserAccount
 };
