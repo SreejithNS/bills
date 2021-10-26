@@ -1,12 +1,10 @@
 const { Customer } = require("../models/CustomerModel");
 const { Bill } = require("../models/BillModel");
 const { body, param, query, validationResult } = require("express-validator");
-const { sanitizeBody } = require("express-validator");
 const apiResponse = require("../helpers/apiResponse");
 const auth = require("../middlewares/jwt");
 var mongoose = require("mongoose");
 const { privilegeEnum } = require("../helpers/privilegeEnum");
-mongoose.set("useFindAndModify", false);
 const _ = require("lodash");
 const { UserData, userData } = require("../controllers/AuthController");
 
@@ -50,7 +48,7 @@ function QueryParser(query) {
 	this.limit = Math.abs(parseInt(query.limit)) || 5;
 	this.sort = query.sort;
 	this.lean = true;
-	this.populate = ["belongsTo"]
+	this.populate = ["belongsTo"];
 }
 
 /**
@@ -108,7 +106,7 @@ async function createCustomer(name, phone, belongsTo, place, location) {
 		].map(parseFloat),
 	});
 
-	await newCustomer.save()
+	await newCustomer.save();
 	return newCustomer.populate("belongsTo");
 }
 
@@ -146,41 +144,41 @@ async function aggregateCustomerData(_id) {
 	return await Bill.aggregate(
 		[
 			{
-				'$facet': {
-					'byCredit': [
+				"$facet": {
+					"byCredit": [
 						{
-							'$match': {
-								'customer': mongoose.Types.ObjectId(_id)
+							"$match": {
+								"customer": mongoose.Types.ObjectId(_id)
 							}
 						}, {
-							'$group': {
-								'_id': '$credit',
-								'totalBillAmount': {
-									'$sum': '$billAmount'
+							"$group": {
+								"_id": "$credit",
+								"totalBillAmount": {
+									"$sum": "$billAmount"
 								},
-								'totalPaidAmount': {
-									'$sum': '$paidAmount'
+								"totalPaidAmount": {
+									"$sum": "$paidAmount"
 								},
-								'averageBillAmount': {
-									'$avg': '$billAmount'
+								"averageBillAmount": {
+									"$avg": "$billAmount"
 								},
-								'count': {
-									'$sum': 1
+								"count": {
+									"$sum": 1
 								}
 							}
 						}
 					]
 				}
 			}, {
-				'$addFields': {
-					'totalBillAmount': {
-						'$sum': '$byCredit.totalBillAmount'
+				"$addFields": {
+					"totalBillAmount": {
+						"$sum": "$byCredit.totalBillAmount"
 					},
-					'totalPaidAmount': {
-						'$sum': '$byCredit.totalPaidAmount'
+					"totalPaidAmount": {
+						"$sum": "$byCredit.totalPaidAmount"
 					},
-					'averageBillAmount': {
-						'$avg': '$byCredit.averageBillAmount'
+					"averageBillAmount": {
+						"$avg": "$byCredit.averageBillAmount"
 					}
 				}
 			}
@@ -214,7 +212,7 @@ exports.getAll = [
 			const authenticatedUser = await userData(req.user._id);
 			//Check product category access
 			if (!hasAccessPermission(authenticatedUser, null, "ALLOW_CUSTOMER_GET"))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation")
+				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
 
 			const query = {
 				...(req.query.search && {
@@ -245,49 +243,49 @@ exports.getAll = [
 
 			let agg = Customer.aggregate([
 				{
-					'$match': query
+					"$match": query
 				}, {
-					'$lookup': {
-						'from': 'bills',
-						'localField': '_id',
-						'foreignField': 'customer',
-						'as': 'bill'
+					"$lookup": {
+						"from": "bills",
+						"localField": "_id",
+						"foreignField": "customer",
+						"as": "bill"
 					}
 				}, {
-					'$unwind': {
-						'path': '$bill',
+					"$unwind": {
+						"path": "$bill",
 						preserveNullAndEmptyArrays: true
 					}
 				}, {
-					'$sort': {
-						'bill.createdAt': -1
+					"$sort": {
+						"bill.createdAt": -1
 					}
 				}, {
-					'$sort': {
-						'bill.createdAt': -1
+					"$sort": {
+						"bill.createdAt": -1
 					}
 				}, {
-					'$group': {
-						'_id': '$_id',
-						'doc': {
-							'$first': '$$ROOT'
+					"$group": {
+						"_id": "$_id",
+						"doc": {
+							"$first": "$$ROOT"
 						},
-						'recentBillCreatedAt': {
-							'$first': '$bill.createdAt'
+						"recentBillCreatedAt": {
+							"$first": "$bill.createdAt"
 						}
 					}
 				}, {
-					'$replaceRoot': {
-						'newRoot': {
-							'$mergeObjects': [
+					"$replaceRoot": {
+						"newRoot": {
+							"$mergeObjects": [
 								{
-									'recentBillCreatedAt': '$recentBillCreatedAt'
-								}, '$doc'
+									"recentBillCreatedAt": "$recentBillCreatedAt"
+								}, "$doc"
 							]
 						}
 					}
 				}
-			])
+			]);
 
 			return Customer.aggregatePaginate(agg, paginateOptions).then(
 				(items) => apiResponse.successResponseWithData(
@@ -334,7 +332,7 @@ exports.get = [
 				return apiResponse.unauthorizedResponse(
 					res,
 					"You are not authorised to do this operation"
-				)
+				);
 
 			const customer = await Customer.findOne({ _id: req.params.customerId, category: req.params.categoryId }).exec();
 
@@ -351,7 +349,7 @@ exports.get = [
 					return apiResponse.unauthorizedResponse(
 						res,
 						"Not authorised to access this customer"
-					)
+					);
 				}
 			} else {
 				return apiResponse.notFoundResponse(
@@ -427,7 +425,7 @@ exports.create = [
 				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id : authenticatedUser._id,
 				req.body.place,
 				req.body.location
-			)
+			);
 
 			//Save Customer.
 			return newCustomer.save(function (err) {
@@ -557,7 +555,7 @@ exports.update = [
 		try {
 			//Check for customer category access rights
 			const authenticatedUser = await userData(req.user._id);
-			const customer = await Customer.findById(req.params.customerId)
+			const customer = await Customer.findById(req.params.customerId);
 
 			if (!hasAccessPermission(authenticatedUser, customer, "ALLOW_CUSTOMER_PUT"))
 				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation");
@@ -570,7 +568,7 @@ exports.update = [
 				res,
 				"Customer Update Success",
 				new CustomerData(newCustomer)
-			)
+			);
 		} catch (err) {
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err.message);
@@ -607,7 +605,7 @@ exports.getSuggestions = [
 				return apiResponse.unauthorizedResponse(
 					res,
 					"You are not authorised to access Customers"
-				)
+				);
 
 			let belongsTo;
 			if (authenticatedUser.type === privilegeEnum.admin | authenticatedUser.type === privilegeEnum.root) {
