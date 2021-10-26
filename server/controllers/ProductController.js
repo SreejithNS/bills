@@ -263,7 +263,6 @@ async function addMultipleProducts(newProductsArray, categoryId, user) {
  */
 async function deleteProductCategoryAndProducts(_id) {
 	const session = await mognoose.startSession();
-	var error;
 	session.startTransaction();
 
 	try {
