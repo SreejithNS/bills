@@ -7,7 +7,7 @@ import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
 import AccountCircleRoundedIcon from '@material-ui/icons/AccountCircleRounded';
 import { IconButton, ListItemSecondaryAction } from "@material-ui/core";
-import { Edit } from "@material-ui/icons";
+import { DeleteForeverRounded, Edit } from "@material-ui/icons";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -21,7 +21,7 @@ const useStyles = makeStyles((theme: Theme) =>
     })
 );
 
-export default function SalesmenList(props: { firstName: string; phoneNumber: number; onEdit(): void }) {
+export default function SalesmenList(props: { firstName: string; phoneNumber: number; onEdit(): void; onDelete(): void }) {
     const classes = useStyles();
 
     return (
@@ -33,9 +33,12 @@ export default function SalesmenList(props: { firstName: string; phoneNumber: nu
                     </Avatar>
                 </ListItemAvatar>
                 <ListItemText primary={props.firstName} secondary={props.phoneNumber} />
-                <ListItemSecondaryAction onClick={props.onEdit}>
-                    <IconButton edge="end" aria-label="edit-password">
+                <ListItemSecondaryAction>
+                    <IconButton onClick={props.onEdit} aria-label="edit-password">
                         <Edit />
+                    </IconButton>
+                    <IconButton onClick={props.onDelete} edge="end" aria-label="edit-password">
+                        <DeleteForeverRounded />
                     </IconButton>
                 </ListItemSecondaryAction>
             </ListItem>
