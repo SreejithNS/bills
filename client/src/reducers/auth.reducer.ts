@@ -8,6 +8,12 @@ export interface UserSettings extends Object {
     permissions: UserPermissions[]
 }
 
+export interface OrganisationDetails extends Object {
+    name: string;
+    printTitle: string;
+    tagline: string;
+}
+
 export enum UserPermissions {
     "ALLOW_USER_POST",
     "ALLOW_USER_PUT",
@@ -36,32 +42,14 @@ export enum UserPermissions {
     "ALLOW_PAGE_HOME",
 }
 
-// export enum UserPermissions {
-//     ALLOW_USER_POST="USER_POST",
-//     ALLOW_USER_PUT="USER_PUT",
-//     ALLOW_USER_DELETE="USER_DELETE",
-//     ALLOW_USER_GET="USER_GET",
-//     ALLOW_CUSTOMER_POST="CUSTOMER_POST",
-//     ALLOW_CUSTOMER_GET="CUSTOMER_GET",
-//     ALLOW_CUSTOMER_DELETE="CUSTOMER_DELETE",
-//     ALLOW_CUSTOMER_PUT="CUSTOMER_PUT",
-//     ALLOW_PRODUCT_POST="PRODUCT_POST",
-//     ALLOW_PRODUCT_PUT="PRODUCT_PUT",
-//     ALLOW_PRODUCT_DELETE="PRODUCT_DELETE",
-//     ALLOW_PRODUCT_GET="PRODUCT_GET",
-//     ALLOW_BILL_POST="BILL_POST",
-//     ALLOW_BILL_PUT="BILL_PUT",
-//     ALLOW_BILL_DELETE="BILL_DELETE",
-//     ALLOW_BILL_GET="BILL_GET",
-// }
-
-export interface UserData extends Object {
+export interface UserData<T = boolean> extends Object {
     _id: string;
     name: string;
     phone: number;
     belongsTo?: UserData;
     type: UserTypes;
     settings: UserSettings;
+    organisation: T extends true ? OrganisationDetails : null;
 }
 
 export type ErrorStatus = 0 | 1;
@@ -73,6 +61,7 @@ export interface ErrorState extends Object {
 
 export interface AuthState {
     userData: UserData | null,
+    organistaionData: OrganisationDetails | null,
     loading: boolean,
     error: ErrorState,
     usersUnderUser: UserData[] | null;
@@ -80,6 +69,7 @@ export interface AuthState {
 
 const initialState: AuthState = {
     userData: null,
+    organistaionData: null,
     loading: false,
     error: {
         status: 0,
@@ -91,13 +81,23 @@ const initialState: AuthState = {
 export default function authReducer(state: AuthState = initialState, action: { type: any; payload: any; }): AuthState {
     switch (action.type) {
         case "USER_DATA": {
-            const payload = action.payload as UserData;
+            let payload = action.payload as UserData;
+            let organisation: OrganisationDetails | null;
+
+            if (payload.type !== 2) {
+                payload = payload as UserData<true>
+                organisation = payload.organisation;
+            } else {
+                organisation = payload.belongsTo?.organisation ?? null;
+            }
+
             if (payload.settings?.permissions?.length) {
                 payload.settings.permissions = payload.settings.permissions.map((permission: UserPermissions) => UserPermissions[permission]) as unknown as UserPermissions[]
             }
             return {
                 ...state,
                 userData: payload,
+                organistaionData: organisation,
                 ...(payload.type === UserTypes.salesman && { usersUnderUser: [] })
             };
         }
