@@ -390,7 +390,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						/>
 					</form>
 				</Grid>
-				{selectedProduct?.units.length && (
+				{!!(selectedProduct?.units.length) && (
 					<Grid item xs>
 						<FormControl variant="outlined" size="small" fullWidth>
 							<InputLabel>Unit</InputLabel>
