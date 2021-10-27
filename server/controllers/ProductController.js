@@ -124,9 +124,7 @@ async function hasProductCategoryAccess(authenticatedUser, categoryId, explicitP
  */
 async function getProductById(_id) {
 	return Product.findById(_id)
-		.populate("belongsTo")
-		.populate("category")
-		.exec();
+		.populate(["belongsTo", "category"]);
 }
 
 /**
@@ -135,9 +133,7 @@ async function getProductById(_id) {
  */
 async function getProductByIdAndCategory(_id, categoryId) {
 	return Product.findOne({ _id: _id, category: categoryId })
-		.populate("belongsTo")
-		.populate("category")
-		.exec();
+		.populate(["belongsTo", "category"]);
 }
 
 /**
@@ -289,8 +285,8 @@ exports.createCategoryRequest = [
 		.bail()
 		.custom((value, { req }) => {
 			return ProductCategory
-				.findOne({ belongsTo: req.user._id, name: value }, (err, res) => {
-					if (err || res) return Promise.reject("This Product Category already present");
+				.findOne({ belongsTo: req.user._id, name: value }).then((res) => {
+					if (res) return Promise.reject("This Product Category already present");
 				});
 		}),
 	body("hasAccess")
@@ -382,16 +378,12 @@ exports.deleteProduct = [
 				);
 			} else {
 				if (hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_DELETE")) {
-					return Product.findByIdAndRemove(req.params.productId, function (err) {
-						if (err) {
-							return apiResponse.ErrorResponse(res, err);
-						} else {
-							return apiResponse.successResponse(
-								res,
-								"Product deleted"
-							);
-						}
-					});
+					return Product.findByIdAndRemove(req.params.productId).then(() =>
+						apiResponse.successResponse(
+							res,
+							"Product deleted"
+						)
+					);
 				} else {
 					return apiResponse.unauthorizedResponse(res, "Not authorised for this action");
 				}
@@ -419,8 +411,7 @@ exports.createProductRequest = [
 	param("categoryId", "Invalid category id")
 		.escape().trim().isMongoId()
 		.custom((value) =>
-			ProductCategory.findById(value, (err, doc) => {
-				if (err) Promise.reject(err);
+			ProductCategory.findById(value).then((doc) => {
 				if (!doc) {
 					return Promise.reject(
 						"Product Category does not exists"
@@ -431,7 +422,6 @@ exports.createProductRequest = [
 	body("code")
 		.escape()
 		.trim()
-		.matches(/^[a-z0-9./\- ]+$/i)
 		.custom((value, { req }) =>
 			Product.findOne({
 				code: value,
@@ -443,8 +433,8 @@ exports.createProductRequest = [
 					);
 			})
 		),
-	body("name").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
-	body("primaryUnit").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
+	body("name").escape().isLength().trim(),
+	body("primaryUnit").escape().isLength().trim(),
 	body("rate").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
@@ -546,8 +536,7 @@ exports.importProducts = [
 	param("categoryId", "Invalid category id")
 		.escape().trim().isMongoId()
 		.custom((value) =>
-			ProductCategory.findById(value, (err, doc) => {
-				if (err) Promise.reject(err);
+			ProductCategory.findById(value).then((doc) => {
 				if (!doc) {
 					return Promise.reject(
 						"Product Category does not exists"
@@ -597,8 +586,7 @@ exports.updateProduct = [
 	param("categoryId", "Invalid category id")
 		.escape().trim().isMongoId()
 		.custom((value) =>
-			ProductCategory.findById(value, (err, doc) => {
-				if (err) Promise.reject(err);
+			ProductCategory.findById(value).then((doc) => {
 				if (!doc) {
 					return Promise.reject(
 						"Product Category does not exists"
@@ -609,8 +597,7 @@ exports.updateProduct = [
 	param("productId", "Invalid Product id")
 		.escape().trim().isMongoId()
 		.custom((value) =>
-			Product.findById(value, (err, doc) => {
-				if (err) Promise.reject(err);
+			Product.findById(value).then((doc) => {
 				if (!doc) {
 					return Promise.reject(
 						"Product does not exists"
@@ -621,7 +608,6 @@ exports.updateProduct = [
 	body("code")
 		.escape()
 		.trim()
-		.matches(/^[a-z0-9./\- ]+$/i)
 		.custom((value, { req }) =>
 			Product.findOne({
 				code: value,
@@ -633,8 +619,8 @@ exports.updateProduct = [
 					);
 			})
 		),
-	body("name").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
-	body("primaryUnit").escape().isLength().trim().matches(/^[a-z0-9./\- ]+$/i),
+	body("name").escape().isLength().trim(),
+	body("primaryUnit").escape().isLength().trim(),
 	body("rate").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
@@ -747,7 +733,7 @@ exports.getProductSuggestions = [
 		.escape()
 		.trim()
 		.isMongoId(),
-	param("code").escape().trim().matches(/^[a-z0-9./\- ]+$/i),
+	param("code").escape().trim(),
 	async (req, res) => {
 		const validation = validationResult(req);
 		if (!validation.isEmpty())
@@ -869,7 +855,7 @@ exports.queryProduct = [
  */
 exports.productAvailability = [
 	auth,
-	param("code").escape().trim().matches(/^[a-z0-9./\- ]+$/i),
+	param("code").escape().trim(),
 	param("categoryId")
 		.escape()
 		.trim()
