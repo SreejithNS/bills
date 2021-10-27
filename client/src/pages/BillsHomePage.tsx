@@ -199,7 +199,6 @@ export default function BillsHomePage() {
                     <Grid item xs={12}>
                         <Typography variant="h4">
                             Your Bills
-                            {hasAdminPermissions ? <Button onClick={() => history.push(paths.billsHome + billsPaths.exportBills)}>Reports</Button> : <></>}
                         </Typography>
                     </Grid>
                     <Grid item xs={12}>

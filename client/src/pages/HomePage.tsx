@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Typography } from '@material-ui/core';
+import { Box, Grid, IconButton, List, ListItem, ListItemSecondaryAction, ListItemText, Typography } from '@material-ui/core';
 import HomeCard from '../components/HomeCard';
 import { useHistory } from 'react-router-dom';
 import { paths, billsPaths, itemPaths, customersPaths } from '../routes/paths.enum';
@@ -11,16 +11,23 @@ import { Receipt } from '@material-ui/icons';
 import PostAddIcon from '@material-ui/icons/PostAdd';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import HelpIcon from '@material-ui/icons/Help';
+import AssessmentIcon from '@material-ui/icons/Assessment';
+import { useSelector } from 'react-redux';
+import { RootState } from '../reducers/rootReducer';
+import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 
 export default function HomePage() {
     const history = useHistory();
     const openLink = (link: string) => () => history.push(link);
+
+    const { userData, organistaionData } = useSelector((state: RootState) => state.auth);
 
     const itemsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_ITEMS);
     const createItemAccess = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
     const billsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_BILLS);
     const createBillAccess = useHasPermission(UserPermissions.ALLOW_BILL_POST);
     const customersPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_CUSTOMERS);
+    const hasAdminPermissions = useHasPermission();
 
     return (
         <PageContainer>
@@ -32,9 +39,27 @@ export default function HomePage() {
                 spacing={2}
             >
                 <Grid item xs={12}>
-                    <Typography variant="h4">
-                        Bills
-                    </Typography>
+                    <List disablePadding>
+                        <ListItem disableGutters dense>
+                            <ListItemText
+                                primary={<>
+                                    <Typography variant="body1" color="textSecondary" component="div" display="block">
+                                        Billz
+                                    </Typography>
+                                    <Typography variant="h4" component="div" display="block">
+                                        {organistaionData?.name}
+                                    </Typography></>}
+                                secondary={<Typography variant="body1" color="textSecondary" component="span" display="block">
+                                    Hi, {userData?.name}
+                                </Typography>}
+                            />
+                            <ListItemSecondaryAction>
+                                <IconButton edge="end" aria-label="account">
+                                    <AccountCircleRoundedIcon fontSize="large" />
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItem>
+                    </List>
                 </Grid>
                 {billsPageAccess && createBillAccess
                     && <Grid item xs={12} sm={6} md={4}>
@@ -79,6 +104,18 @@ export default function HomePage() {
                         />
                     </Grid>
                 }
+
+                {hasAdminPermissions
+                    && <Grid item xs={12} sm={6} md={4}>
+                        <HomeCard
+                            icon={<AssessmentIcon fontSize="large" />}
+                            onClick={openLink(paths.billsHome + billsPaths.exportBills)}
+                            title="Reports"
+                            content="Get customised reports from Bills generated and Products sold."
+                        />
+                    </Grid>
+                }
+
                 <Grid item xs={12} sm={6} md={4}>
                     <HomeCard
                         icon={<HelpIcon fontSize="large" />}
