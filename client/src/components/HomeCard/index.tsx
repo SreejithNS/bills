@@ -16,7 +16,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         },
         "&>*:first-child": {
             marginRight: theme.spacing(2)
-        }
+        },
+        flexGrow: 1,
     }
 }))
 
@@ -24,7 +25,7 @@ export default function HomeCard(props: { classes?: any; onClick: any; title?: a
     const classes = useStyles();
     return (
         <Card className={props.classes || ""} style={{ height: "100%" }}>
-            <CardActionArea onClick={props.onClick}>
+            <CardActionArea onClick={props.onClick} style={{ height: "100%" }}>
                 <CardContent className={classes.content}>
                     {props.icon &&
                         <div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Grid, IconButton, List, ListItem, ListItemSecondaryAction, ListItemText, Typography } from '@material-ui/core';
 import HomeCard from '../components/HomeCard';
 import { useHistory } from 'react-router-dom';
-import { paths, billsPaths, itemPaths, customersPaths } from '../routes/paths.enum';
+import { paths, billsPaths, itemPaths, customersPaths, accountPaths } from '../routes/paths.enum';
 import PageContainer from '../components/PageContainer';
 import { version as appVersion } from '../../package.json';
 import { useHasPermission } from '../actions/auth.actions';
@@ -15,10 +15,20 @@ import AssessmentIcon from '@material-ui/icons/Assessment';
 import { useSelector } from 'react-redux';
 import { RootState } from '../reducers/rootReducer';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
+import SystemUpdateIcon from '@material-ui/icons/SystemUpdate';
 
 export default function HomePage() {
     const history = useHistory();
     const openLink = (link: string) => () => history.push(link);
+    const update = () => {
+        const local = localStorage.getItem("updateAvailable");
+        if (local && appVersion === local) {
+            return { text: "Close and reopen the app to update.", updateAvailable: true }
+        } else {
+            if (local) localStorage.removeItem("updateAvailable");
+            return { text: "Latest Version", updateAvailable: false }
+        }
+    }
 
     const { userData, organistaionData } = useSelector((state: RootState) => state.auth);
 
@@ -54,7 +64,7 @@ export default function HomePage() {
                                 </Typography>}
                             />
                             <ListItemSecondaryAction>
-                                <IconButton edge="end" aria-label="account">
+                                <IconButton edge="end" aria-label="account" size="medium" onClick={() => history.push(paths.account + accountPaths.home)}>
                                     <AccountCircleRoundedIcon fontSize="large" />
                                 </IconButton>
                             </ListItemSecondaryAction>
@@ -118,9 +128,14 @@ export default function HomePage() {
 
                 <Grid item xs={12} sm={6} md={4}>
                     <HomeCard
-                        icon={<HelpIcon fontSize="large" />}
-                        onClick={() => console.log("Everything works fine")}
-                        content={"Bills WebApp: v" + appVersion}
+                        icon={update().updateAvailable ? <SystemUpdateIcon color="primary" fontSize="large" /> : <HelpIcon fontSize="large" />}
+                        {...(update().updateAvailable && { title: "Update Available" })}
+                        onClick={() => {
+                            console.log("Everything works fine", update())
+                            //eslint-disable-next-line
+                            if (update().updateAvailable) window.location.reload(true);
+                        }}
+                        content={<>Bills Web App: v{appVersion}<br />{update().text}</>}
                     />
                 </Grid>
             </Grid>
