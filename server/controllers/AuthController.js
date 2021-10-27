@@ -91,7 +91,6 @@ async function updateUserAccount(id, name, phone, organisation) {
 		updatedUserData.organisation = organisation;
 	}
 
-	console.log(updatedUserData);
 	var updatedUser = await User.findOneAndUpdate({ _id: id }, updatedUserData, {
 		new: true
 	});
@@ -172,31 +171,31 @@ async function deleteUser(_id) {
 				try {
 					//Delete Products
 					const deletedProducts = await Product.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedProducts.ok) {
+					if (!deletedProducts.acknowledged) {
 						throw new Error("Couldn't delete Products");
 					}
 
 					//Delete Product Categories
 					const deletedProductCategories = await ProductCategory.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedProductCategories.ok) {
+					if (!deletedProductCategories.acknowledged) {
 						throw new Error("Couldn't delete Product Categories");
 					}
 
 					//Delete Bills
 					const deletedBills = await Bill.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedBills.ok) {
+					if (!deletedBills.acknowledged) {
 						throw new Error("Couldn't delete Bills");
 					}
 
 					//Delete Customers
 					const deletedCustomers = await Customer.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedCustomers.ok) {
+					if (!deletedCustomers.acknowledged) {
 						throw new Error("Couldn't delete Customers");
 					}
 
 					//Delete Users
 					const deletedUsers = await User.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedUsers.ok) {
+					if (!deletedUsers.acknowledged) {
 						throw new Error("Couldn't delete Users belonged to this user");
 					}
 
@@ -662,7 +661,6 @@ const updateUserDetails = [
 
 async function updateAdminDetails(req, res) {
 	try {
-		console.log(req.body);
 		const update = await updateUserAccount(req.params.id, req.body.name, req.body.phone, req.body.organisation);
 		return apiResponse.successResponseWithData(res, "User Account Updated Successfull", update);
 	} catch (e) {

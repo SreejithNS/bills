@@ -117,7 +117,6 @@ exports.getBill = [
 				}
 			}
 		} catch (e) {
-			console.log(e);
 			return apiResponse.ErrorResponse(res, e.message || e);
 		}
 	}
@@ -478,7 +477,6 @@ exports.getProductWiseSalesAsCSV = [
 					}
 				}
 			];
-			console.log(pipeline);
 			return Bill.aggregate(pipeline).exec().then(
 				(bills) => {
 					bills = bills.map((doc) => {

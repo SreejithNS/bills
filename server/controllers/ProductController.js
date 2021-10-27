@@ -267,9 +267,7 @@ async function deleteProductCategoryAndProducts(_id) {
 
 	try {
 		const deletedProducts = await Product.deleteMany({ category: _id }, { session });
-		if (!deletedProducts.ok) {
-			throw new Error("Couldn't delete products");
-		}
+
 		await ProductCategory.findByIdAndDelete(_id, { session });
 		await session.commitTransaction();
 		session.endSession();
@@ -498,8 +496,7 @@ exports.deleteProductCategory = [
 	param("categoryId", "Invalid category id")
 		.escape().trim().isMongoId()
 		.custom((value) =>
-			ProductCategory.findById(value, (err, doc) => {
-				if (err) Promise.reject(err);
+			ProductCategory.findById(value).then((doc) => {
 				if (!doc) {
 					return Promise.reject(
 						"Product Category does not exists"
@@ -530,7 +527,8 @@ exports.deleteProductCategory = [
 					return apiResponse.successResponseWithData(res, "Product Cateogory deleted", response);
 				});
 		} catch (e) {
-			return apiResponse.validationErrorWithData(
+			console.error(e);
+			return apiResponse.ErrorResponse(
 				res,
 				"Product Deletion Error",
 				e.message || e

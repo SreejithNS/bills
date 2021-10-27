@@ -121,9 +121,7 @@ async function deleteCustomerAndBills(_id) {
 
 	try {
 		const deletedBills = await Bill.deleteMany({ customer: _id }, { session });
-		if (!deletedBills.ok) {
-			throw new Error("Couldn't delete bills");
-		}
+
 		await Customer.findByIdAndDelete(_id, { session });
 		await session.commitTransaction();
 		session.endSession();
@@ -486,6 +484,7 @@ exports.deleteCustomer = [
 				);
 			}
 		} catch (err) {
+			console.error(err);
 			//throw error in json response with status 500.
 			return apiResponse.ErrorResponse(res, err.message);
 		}
