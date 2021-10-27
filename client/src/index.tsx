@@ -12,6 +12,7 @@ import { createLogger } from 'redux-logger';
 import initAxios from './components/Axios';
 import 'react-toastify/dist/ReactToastify.css';
 import { toast, ToastContainer } from 'react-toastify';
+import { version as appVersion } from '../package.json';
 
 declare global {
   interface Window {
@@ -75,4 +76,12 @@ ReactDOM.render(
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.register({ onUpdate: () => toast.success("New Update Available! Refresh or click here to update", { onClick: () => window.location.reload() }) });
+serviceWorker.register({
+  onUpdate: () => {
+    localStorage.setItem("updateAvailable", appVersion);
+    toast.success("New Update Available! Close your app to Update", {
+      //eslint-disable-next-line
+      onClick: () => window.location.reload(true)
+    })
+  }
+});
