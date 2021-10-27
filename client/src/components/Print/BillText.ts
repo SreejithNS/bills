@@ -1,3 +1,6 @@
+import { store } from "../..";
+
+
 const escpos = require("escpos-commands");
 
 class TextManipulator {
@@ -191,6 +194,7 @@ export default class BillText {
     ) { }
 
     toPrintBuffer() {
+        const organisation = store.getState().auth.organistaionData;
         const { buffer: p, customerName } = this;
         //Reset Buffer
         p.flush();
@@ -199,7 +203,12 @@ export default class BillText {
 
         //Organisation header
         p.boldOn().size(2, 2);
-        (new TextManipulator()).centerText("J.G", 18).map(line => p.text(line));
+        if (organisation) {
+            (new TextManipulator()).centerText(organisation.printTitle, 18).map(line => p.text(line));
+        } else {
+            (new TextManipulator()).centerText("Billz App", 18).map(line => p.text(line));
+        }
+
         p.boldOff().size(1, 1).feed(1);
 
         //Subtitle
