@@ -385,6 +385,9 @@ exports.getProductWiseSalesAsCSV = [
 				...(req.query.soldBy && {
 					"soldBy": req.query.soldBy
 				}),
+				...(req.query.category && {
+					"category": req.query.category
+				}),
 				...query
 			};
 
@@ -406,6 +409,9 @@ exports.getProductWiseSalesAsCSV = [
 							"code": "$items.code",
 							"unit": "$items.unit",
 							"rate": "$items.rate",
+							"category": {
+								"$toObjectId": "$items.category"
+							},
 							"month": {
 								"$month": "$createdAt"
 							},
@@ -427,6 +433,13 @@ exports.getProductWiseSalesAsCSV = [
 						}
 					}
 				}, {
+					"$lookup": {
+						"from": "productcategories",
+						"localField": "_id.category",
+						"foreignField": "_id",
+						"as": "category"
+					}
+				}, {
 					"$project": {
 						"_id": "$_id.code",
 						"belongsTo": "$_id.belongsTo",
@@ -436,6 +449,12 @@ exports.getProductWiseSalesAsCSV = [
 						"name": "$_id.name",
 						"unit": "$_id.unit",
 						"rate": "$_id.rate",
+						"categoryId": "$_id.category",
+						"category": {
+							"$arrayElemAt": [
+								"$category.name", 0
+							]
+						},
 						"quantity": 1,
 						"billCount": 1,
 						"averageQuantity": 1,
@@ -452,10 +471,14 @@ exports.getProductWiseSalesAsCSV = [
 						"year": parseInt(queryWithSearch.year),
 						...(queryWithSearch.soldBy && {
 							"soldBy": mongoose.Types.ObjectId(queryWithSearch.soldBy)
+						}),
+						...(queryWithSearch.category && {
+							"categoryId": mongoose.Types.ObjectId(queryWithSearch.category.toString())
 						})
 					}
 				}
 			];
+			console.log(pipeline);
 			return Bill.aggregate(pipeline).exec().then(
 				(bills) => {
 					bills = bills.map((doc) => {
@@ -464,6 +487,7 @@ exports.getProductWiseSalesAsCSV = [
 							"Product Name": doc.name,
 							"Product Rate": doc.rate,
 							"Product Unit": doc.unit,
+							"Product Category": doc.category,
 							"Total Sold Quantity": doc.quantity,
 							"Bill Count": doc.billCount,
 							"Total Sales in Amount": doc.amount

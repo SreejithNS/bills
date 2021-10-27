@@ -10,6 +10,8 @@ import { useQueryStringKey } from 'use-route-as-state';
 import fileDownload from "js-file-download";
 import { Card, CardContent, Grid, FormControl, InputLabel, Select, MenuItem, TextField, Divider, Typography } from '@material-ui/core';
 import { UserData } from '../../reducers/auth.reducer';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../reducers/rootReducer';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -55,11 +57,12 @@ function ProductWiseSalesFilter() {
     const [salesman, setSalesman] = useState<UserData>();
     const [month, setMonth] = useState(1);
     const [year, setYear] = useState((new Date().getFullYear()));
-
+    const [productCategory, setProductCategory] = useState<string>("");
+    const productCategories = useSelector((state: RootState) => state.product.productCategoryList)
     const [{ loading, error, response }, execute, cancel] = useAxios<Blob>({
         url: "/bill/productSalesAsCSV",
         params: {
-            year, month, soldBy: salesman?._id
+            year, month, soldBy: salesman?._id, category: productCategory === "" ? undefined : productCategory,
         }, responseType: 'blob'
     }, { useCache: false, manual: true });
 
@@ -89,6 +92,19 @@ function ProductWiseSalesFilter() {
                                 salesman={salesman}
                                 onChange={(value) => setSalesman(value ?? undefined)}
                             />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <FormControl variant="outlined" size="small" margin="dense" fullWidth>
+                                <InputLabel>Product Category</InputLabel>
+                                <Select
+                                    value={productCategory}
+                                    onChange={(e) => setProductCategory(e.target.value as string)}
+                                    label="Product Category"
+                                >
+                                    <MenuItem value={""}>"ALL CATEGORIES"</MenuItem>
+                                    {productCategories.map((category) => <MenuItem value={category._id}>{category.name.toLocaleUpperCase()}</MenuItem>)}
+                                </Select>
+                            </FormControl>
                         </Grid>
                         <Grid item xs>
                             <FormControl variant="outlined" size="small" margin="dense" fullWidth>
