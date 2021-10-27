@@ -48,6 +48,11 @@ const theme = createMuiTheme({
           borderRadius: '4px'
         }
       }
+    },
+    MuiTableCell: {
+      sizeSmall: {
+        padding: "6px 3px 6px 3px"
+      }
     }
   },
 });
