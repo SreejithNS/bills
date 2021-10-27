@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 }));
 
 export default function AccountPage() {
-    const { userData, usersUnderUser } = useSelector((state: RootState) => state.auth);
+    const { userData, usersUnderUser, organistaionData } = useSelector((state: RootState) => state.auth);
     const { loading: usersListLoading } = useUsersUnderAdmin();
     const classes = useStyles();
 
@@ -69,6 +69,8 @@ export default function AccountPage() {
 
     const taglineUnderUsername = () => {
         const texts = [];
+
+        organistaionData && texts.push(organistaionData.name);
 
         switch (userData?.type) {
             case UserTypes.admin:
@@ -128,9 +130,11 @@ export default function AccountPage() {
                             content={<>
                                 {taglineUnderUsername()}<br />
 
-                                <Button startIcon={<EditRounded />} disabled={logoutLoading} color="default" onClick={() => editAccountDetails()}>
-                                    Edit Details
-                                </Button> |
+                                {hasAdminPermissions && <>
+                                    <Button startIcon={<EditRounded />} disabled={logoutLoading} color="default" onClick={() => editAccountDetails()}>
+                                        Edit Details
+                                    </Button> {" | "}
+                                </>}
                                 <Button startIcon={<PowerSettingsNewIcon />} disabled={logoutLoading} color="secondary" onClick={() => logout()}>
                                     Logout
                                 </Button>
