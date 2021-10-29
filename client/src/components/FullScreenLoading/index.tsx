@@ -1,5 +1,6 @@
 import React from "react";
 import { CircularProgress, Grid, Typography, Zoom } from '@material-ui/core';
+import logo from "../../assets/logo_blue.svg";
 
 export default function FullScreenLoading({ error }: { error?: any }) {
     return (
@@ -13,9 +14,10 @@ export default function FullScreenLoading({ error }: { error?: any }) {
                 style={{ minHeight: '100vh', textAlign: "center" }}
             >
                 <Grid item xs={6}>
+                    <img src={logo} style={{ width: "25vw" }} alt="Billz Logo" />
+                    <Typography variant="subtitle1" display="block"><b>Billz</b></Typography>
+                    <Typography variant="caption" display="block" style={{ marginBottom: "16px" }}>{error ? error.message : "Lead your business with Bills"}</Typography>
                     {!error && <Zoom in={true}><CircularProgress /></Zoom>}
-                    <Typography variant="subtitle1" display="block">Bills</Typography>
-                    <Typography variant="caption" display="block">{error ? error.message : "...sophisticated but simple..."}</Typography>
                 </Grid>
             </Grid>
         </div>

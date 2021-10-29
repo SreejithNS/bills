@@ -10,7 +10,7 @@ var cors = require("cors");
 const APP_LOG = "[ APP ] ";
 const origin = process.env.NODE_ENV === "development"
 	? "http://localhost:3000"
-	: "https://bills.sreejithofficial.in";
+	: process.env.API_URL || "https://bills.sreejithofficial.in";
 
 // DB connection
 var MONGODB_URL = process.env.MONGODB_URL;

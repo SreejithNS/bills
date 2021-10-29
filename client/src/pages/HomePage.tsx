@@ -10,12 +10,12 @@ import { UserPermissions } from '../reducers/auth.reducer';
 import { Receipt } from '@material-ui/icons';
 import PostAddIcon from '@material-ui/icons/PostAdd';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
-import HelpIcon from '@material-ui/icons/Help';
 import AssessmentIcon from '@material-ui/icons/Assessment';
 import { useSelector } from 'react-redux';
 import { RootState } from '../reducers/rootReducer';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import SystemUpdateIcon from '@material-ui/icons/SystemUpdate';
+import logo from "../assets/logo_blue.svg";
 
 export default function HomePage() {
     const history = useHistory();
@@ -128,7 +128,8 @@ export default function HomePage() {
 
                 <Grid item xs={12} sm={6} md={4}>
                     <HomeCard
-                        icon={update().updateAvailable ? <SystemUpdateIcon color="primary" fontSize="large" /> : <HelpIcon fontSize="large" />}
+                        icon={update().updateAvailable ? <SystemUpdateIcon color="primary" fontSize="large" /> :
+                            <img src={logo} style={{ width: "48px" }} alt="Billz Logo" />}
                         {...(update().updateAvailable && { title: "Update Available" })}
                         onClick={() => {
                             console.log("Everything works fine", update())
