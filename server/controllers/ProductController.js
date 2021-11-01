@@ -613,7 +613,7 @@ exports.updateProduct = [
 				code: value,
 				category: req.params.categoryId,
 			}).then((doc) => {
-				if (doc._id.toString() !== req.params.productId)
+				if (doc && doc._id.toString() !== req.params.productId)
 					return Promise.reject(
 						"Item with this code already exists."
 					);
