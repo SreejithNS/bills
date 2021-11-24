@@ -109,7 +109,7 @@ export default function HomePage() {
                         <HomeCard
                             icon={<Box fontSize="2.1875rem" width="2.1875rem" textAlign="center">₹</Box>}
                             onClick={openLink(paths.billsHome)}
-                            title="Receive Payment"
+                            title="Bills and Payments"
                             content="Receive Payments for Credit Bills by searching them with customer name or serial number."
                         />
                     </Grid>
