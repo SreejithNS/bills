@@ -16,6 +16,12 @@ const ProductSchema = new Schema(
 						type: Number,
 						default: 0,
 					},
+					cost: {
+						type: Number, default: 0
+					},
+					conversion: {
+						type: Number, default: 1
+					},
 					mrp: {
 						type: Number,
 						default: 0,
@@ -24,6 +30,9 @@ const ProductSchema = new Schema(
 			],
 			default: []
 		},
+		cost: { type: Number, default: 0 },
+		stocked: { type: Boolean, default: false },
+		stock: { type: Number, default: 0 },
 		quantity: { type: Number, default: 0 },
 		category: { type: Schema.Types.ObjectId, ref: "ProductCategory" },
 		rate: { type: Number, default: 0 },

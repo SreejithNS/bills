@@ -22,6 +22,8 @@ const BillSchema = new Schema(
 				quantity: { type: Number, required: true },
 				rate: { type: Number, default: 0 },
 				mrp: { type: Number, default: 0 },
+				converted: { type: Number, default: 1 },
+				cost: { type: Number, default: 0 },
 			},
 		],
 		customer: { type: Schema.Types.ObjectId, ref: "Customer" },
@@ -199,9 +201,12 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 					document.unit = unit.name;
 					document.mrp = unit.mrp;
 					document.rate = unit.rate;
+					document.converted = unit.conversion * item.quantity;
+					document.cost = unit.cost;
 				}
 			} else {
 				document.unit = document.primaryUnit;
+				document.converted = document.quantity;
 			}
 			populatedItems.push(document);
 		} else {
