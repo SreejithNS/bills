@@ -103,6 +103,8 @@ export const parseCsvItemsArray = (csvArray: any[][]) => {
 
                 if (!Object.keys(unit).includes("rate") || unit["rate"] === null) unit["rate"] = rate;
                 if (!Object.keys(unit).includes("mrp") || unit["mrp"] === null) unit["mrp"] = mrp;
+                if (!Object.keys(unit).includes("cost") || unit["cost"] === null) unit["cost"] = 0;
+                if (!Object.keys(unit).includes("conversion") || unit["conversion"] === null) unit["conversion"] = 1;
 
                 return unit;
             } catch (e) {
@@ -122,19 +124,22 @@ export const parseCsvItemsArray = (csvArray: any[][]) => {
             primaryUnit: item.shift(),
             rate: item.shift(),
             mrp: item.shift(),
+            cost: item.shift(),
             units: item
         };
 
-        //divide units array into chunks of 3 elements
-        itemObject.units = new Array(Math.ceil(itemObject.units.length / 3))
+        //divide units array into chunks of 5 elements
+        itemObject.units = new Array(Math.ceil(itemObject.units.length / 5))
             .fill(null)
-            .map(_ => itemObject.units.splice(0, 3))
+            .map(_ => itemObject.units.splice(0, 5))
 
         //create unit object for each chunk
         itemObject.units = itemObject.units.map(unit => ({
             name: unit.shift(),
             rate: unit.shift(),
             mrp: unit.shift(),
+            cost: unit.shift(),
+            conversion: unit.shift()
         }))
 
         //validate array of unit objects
@@ -149,9 +154,9 @@ export const parseCsvItemsArray = (csvArray: any[][]) => {
  * @param items {[Items]} - array of Items
  */
 export const itemsArrayToCsvArray = (items: any[]) => items.map(
-    ({ name, code, mrp, rate, units }) =>
-        [name, code, rate, mrp, ...units.map(
-            ({ name, rate, mrp }: { name: string; rate: number; mrp: number }) => [name, rate, mrp]).flat()
+    ({ name, code, mrp, rate, primaryUnit, cost, units }) =>
+        [name, code, primaryUnit, rate, mrp, cost, ...units.map(
+            ({ name, rate, mrp, cost, conversion }: { name: string; rate: number; mrp: number; conversion: number; cost: number }) => [name, rate, mrp, cost, conversion]).flat()
         ]
 )
 

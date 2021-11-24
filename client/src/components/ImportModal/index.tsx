@@ -105,6 +105,7 @@ export default function ImportModal(props: ModalProps) {
                             { title: "Primary Unit", field: "primaryUnit", editable: "never" },
                             { title: "Rate", field: "rate", type: "numeric", editable: "never" },
                             { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
+                            { title: "Cost", field: "cost", editable: "never" },
                         ]}
                         data={data}
                         isLoading={loading}
@@ -115,11 +116,11 @@ export default function ImportModal(props: ModalProps) {
                             render: (rowData: { units?: any[] }) => {
                                 return (rowData.units && rowData.units.length) ? (
                                     <List dense>
-                                        {rowData.units.map((unit: { name: string; rate: number; mrp: number; }, key) =>
+                                        {rowData.units.map((unit: { name: string; rate: number; mrp: number; conversion: number; cost: number }, key) =>
                                             <ListItem key={key}>
                                                 <ListItemText
                                                     primary={unit.name.toUpperCase()}
-                                                    secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate}`}
+                                                    secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate} \n COST:₹${unit.cost} CONVERSION:₹${unit.conversion}`}
                                                 />
                                             </ListItem>,
                                         )}
