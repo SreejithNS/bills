@@ -347,9 +347,10 @@ exports.getAllBillsAsCSV = [
  */
 exports.getProductWiseSalesAsCSV = [
 	auth,
-	query("month").isInt({ max: 12, min: 1 }),
-	query("year").isInt({ min: 2021 }),
-	query("soldBy")
+	query(["startDate", "endDate"])
+		.optional()
+		.isInt(),
+	query(["soldBy", "category"])
 		.optional()
 		.isMongoId(),
 	async function (req, res) {
@@ -364,28 +365,31 @@ exports.getProductWiseSalesAsCSV = [
 
 			const authenticatedUser = await userData(req.user._id);
 
-			const query = {
-				"month": req.query.month,
-				"year": req.query.year
-			};
+			const query = {};
 			if (authenticatedUser.type === privilegeEnum.root) {
 				Object.assign(query, {});
 			} else if (authenticatedUser.type === privilegeEnum.admin) {
 				if (authenticatedUser.belongsTo) {
-					Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
+					Object.assign(query, { belongsTo: mongoose.Types.ObjectId(authenticatedUser.belongsTo._id) });
 				} else {
-					Object.assign(query, { belongsTo: authenticatedUser._id });
+					Object.assign(query, { belongsTo: mongoose.Types.ObjectId(authenticatedUser._id) });
 				}
 			} else if (authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_BILL_GET")) {
-				Object.assign(query, { belongsTo: authenticatedUser.belongsTo._id });
+				Object.assign(query, { belongsTo: mongoose.Types.ObjectId(authenticatedUser.belongsTo._id) });
 			}
 
 			const queryWithSearch = {
 				...(req.query.soldBy && {
 					"soldBy": req.query.soldBy
 				}),
+				...((req.query.startDate || req.query.endDate) && {
+					"createdAt": {
+						...(req.query.startDate && { $gte: new Date(parseInt(req.query.startDate)) }),
+						...(req.query.endDate && { $lte: new Date(parseInt(req.query.endDate)) })
+					}
+				}),
 				...(req.query.category && {
-					"category": req.query.category
+					"category": mongoose.Types.ObjectId(req.query.category.toString())
 				}),
 				...query
 			};
@@ -393,7 +397,8 @@ exports.getProductWiseSalesAsCSV = [
 			const pipeline = [
 				{
 					"$match": {
-						"belongsTo": mongoose.Types.ObjectId(queryWithSearch.belongsTo)
+						"belongsTo": mongoose.Types.ObjectId(queryWithSearch.belongsTo),
+						...queryWithSearch
 					}
 				}, {
 					"$unwind": {
@@ -410,12 +415,6 @@ exports.getProductWiseSalesAsCSV = [
 							"rate": "$items.rate",
 							"category": {
 								"$toObjectId": "$items.category"
-							},
-							"month": {
-								"$month": "$createdAt"
-							},
-							"year": {
-								"$year": "$createdAt"
 							}
 						},
 						"soldBy": {
@@ -423,6 +422,9 @@ exports.getProductWiseSalesAsCSV = [
 						},
 						"quantity": {
 							"$sum": "$items.quantity"
+						},
+						"convertedQuantity": {
+							"$sum": "$items.converted"
 						},
 						"averageQuantity": {
 							"$avg": "$items.quantity"
@@ -443,8 +445,6 @@ exports.getProductWiseSalesAsCSV = [
 						"_id": "$_id.code",
 						"belongsTo": "$_id.belongsTo",
 						"soldBy": 1,
-						"month": "$_id.month",
-						"year": "$_id.year",
 						"name": "$_id.name",
 						"unit": "$_id.unit",
 						"rate": "$_id.rate",
@@ -455,6 +455,11 @@ exports.getProductWiseSalesAsCSV = [
 							]
 						},
 						"quantity": 1,
+						"convertedQuantity": {
+							"$round": [
+								"$convertedQuantity", 2
+							]
+						},
 						"billCount": 1,
 						"averageQuantity": 1,
 						"amount": {
@@ -463,22 +468,13 @@ exports.getProductWiseSalesAsCSV = [
 							]
 						}
 					}
-				},
-				{
-					"$match": {
-						"month": parseInt(queryWithSearch.month),
-						"year": parseInt(queryWithSearch.year),
-						...(queryWithSearch.soldBy && {
-							"soldBy": mongoose.Types.ObjectId(queryWithSearch.soldBy)
-						}),
-						...(queryWithSearch.category && {
-							"categoryId": mongoose.Types.ObjectId(queryWithSearch.category.toString())
-						})
-					}
 				}
 			];
 			return Bill.aggregate(pipeline).exec().then(
 				(bills) => {
+					if (bills.length === 0) {
+						return apiResponse.notFoundResponse(res, "No Bills Found");
+					}
 					bills = bills.map((doc) => {
 						return {
 							"Product Code": doc._id,
@@ -486,6 +482,7 @@ exports.getProductWiseSalesAsCSV = [
 							"Product Rate": doc.rate,
 							"Product Unit": doc.unit,
 							"Product Category": doc.category,
+							"Quantity in Primary Unit": doc.convertedQuantity,
 							"Total Sold Quantity": doc.quantity,
 							"Bill Count": doc.billCount,
 							"Total Sales in Amount": doc.amount
@@ -495,7 +492,7 @@ exports.getProductWiseSalesAsCSV = [
 					const csv = Papa.unparse(bills);
 					res.set("Access-Control-Expose-Headers", "x-bills-report-filename");
 					return apiResponse.successResponseWithFile(
-						res.set("x-bills-report-filename", "product_sales_" + req.query.month + "_" + req.query.year + ".csv"),
+						res.set("x-bills-report-filename", "product_sales_" + req.query.startDate + "_" + req.query.endDate + ".csv"),
 						"product_sales_" + req.query.month + "_" + req.query.year + ".csv",
 						csv
 					);
@@ -504,6 +501,7 @@ exports.getProductWiseSalesAsCSV = [
 			);
 		} catch (err) {
 			//throw error in json response with status 500.
+			console.error(err);
 			return apiResponse.ErrorResponse(res, err);
 		}
 
