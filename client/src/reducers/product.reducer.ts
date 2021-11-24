@@ -7,6 +7,9 @@ export interface Product {
     quantity?: number;
     rate: number;
     mrp: number;
+    cost: number;
+    stocked: boolean;
+    stock: number;
     units: Unit[];
 }
 
@@ -15,6 +18,8 @@ export interface Unit {
     name: string;
     rate: number;
     mrp: number;
+    cost: number;
+    conversion: number;
 }
 
 export interface ProductCategory {
