@@ -1,4 +1,4 @@
-module.exports = function (rate, mrp, units) {
+module.exports = function (rate, mrp, units, cost = 0) {
 	if (!units || !Array.isArray(units))
 		throw new TypeError("Unit is not an array");
 	for (let unit of units) {
@@ -11,8 +11,10 @@ module.exports = function (rate, mrp, units) {
 
 		unit["name"] = unit["name"].trim().toLowerCase();
 
-		if (!Object.keys(unit).includes("rate")) unit["rate"] = rate;
-		if (!Object.keys(unit).includes("mrp")) unit["mrp"] = mrp;
+		if (!Object.keys(unit).includes("conversion")) unit["conversion"] = 1;
+		if (!Object.keys(unit).includes("rate")) unit["rate"] = rate * unit["conversion"];
+		if (!Object.keys(unit).includes("mrp")) unit["mrp"] = mrp * unit["conversion"];
+		if (!Object.keys(unit).includes("cost")) unit["cost"] = cost * unit["conversion"];
 	}
 	return units;
 };
