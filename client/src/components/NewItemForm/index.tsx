@@ -5,6 +5,7 @@ import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import RemoveCircleOutlineRoundedIcon from '@material-ui/icons/RemoveCircleOutlineRounded';
 import { APIResponse, axios } from '../Axios';
 import { Unit } from '../../reducers/product.reducer';
+import ReduxCheckbox from '../ReduxEnabledFormControls/ReduxCheckBox';
 
 function validate(values: { [x: string]: any; }) {
     const errors: any = {};
@@ -13,7 +14,8 @@ function validate(values: { [x: string]: any; }) {
         'code',
         'mrp',
         'rate',
-        'primaryUniy'
+        'primaryUnit',
+        'cost',
     ];
     requiredFields.forEach(field => {
         if (!values[field]) {
@@ -28,6 +30,8 @@ function validate(values: { [x: string]: any; }) {
             if (!unit.name) Object.assign(unitError, { name: "Required" });
             if (!unit.rate || parseFloat(unit.rate + "") <= 0) Object.assign(unitError, { rate: "Must be greater than 0" });
             if (!unit.mrp || parseFloat(unit.mrp + "") <= 0) Object.assign(unitError, { mrp: "Must be greater than 0" });
+            if (!unit.cost || parseFloat(unit.cost + "") <= 0) Object.assign(unitError, { cost: "Must be greater than 0" });
+            if (!unit.conversion || parseFloat(unit.conversion + "") < 0) Object.assign(unitError, { conversion: "Must be greater than 0" });
 
             if (Object.entries(unitError).length) unitsErrors[index] = unitError;
         })
@@ -67,11 +71,17 @@ const renderUnits = ({ fields }: { fields: any }) => (
                         label="Unit Name"
                     />
                 </Grid>
-                <Grid item xs={5}>
+                <Grid item xs={6}>
                     <Field name={`${unit}.rate`} component={ReduxTextField} label="Unit Rate" type="number" />
                 </Grid>
-                <Grid item xs={5}>
+                <Grid item xs={6}>
                     <Field name={`${unit}.mrp`} component={ReduxTextField} label="Unit MRP" type="number" />
+                </Grid>
+                <Grid item xs={5}>
+                    <Field name={`${unit}.conversion`} component={ReduxTextField} defaultValue={1} label="Unit Conversion" type="number" />
+                </Grid>
+                <Grid item xs={5}>
+                    <Field name={`${unit}.cost`} component={ReduxTextField} defaultValue={0} label="Unit Cost Price" type="number" />
                 </Grid>
                 <Grid item xs={2}>
                     <IconButton
@@ -117,12 +127,16 @@ const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; subm
                         component={ReduxTextField}
                         label="Primary Unit Name"
                     />
+                    <Field name="stocked" component={(props: any) => <ReduxCheckbox {...props} label="Stock maintained" />} type="boolean" />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={4}>
                     <Field name="rate" component={ReduxTextField} label="Item Rate" type="number" />
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={4}>
                     <Field name="mrp" component={ReduxTextField} label="Item MRP" type="number" />
+                </Grid>
+                <Grid item xs={4}>
+                    <Field name="cost" component={ReduxTextField} label="Item Cost Price" type="number" />
                 </Grid>
                 <Grid item xs={12}
                     container
