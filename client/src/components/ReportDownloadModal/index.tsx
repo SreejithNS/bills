@@ -8,10 +8,12 @@ import { handleAxiosError } from '../Axios';
 import BillSearch, { SalesmanSelection } from '../BillSearch';
 import { useQueryStringKey } from 'use-route-as-state';
 import fileDownload from "js-file-download";
-import { Card, CardContent, Grid, FormControl, InputLabel, Select, MenuItem, TextField, Divider, Typography } from '@material-ui/core';
+import { Card, CardContent, Grid, FormControl, InputLabel, Select, MenuItem, Divider, Typography } from '@material-ui/core';
 import { UserData } from '../../reducers/auth.reducer';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../reducers/rootReducer';
+import moment, { Moment } from "moment";
+import { KeyboardDatePicker } from '@material-ui/pickers';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -55,14 +57,14 @@ const useProductSalesFilterStyles = makeStyles((theme: Theme) => ({
 function ProductWiseSalesFilter() {
     const classes = useProductSalesFilterStyles();
     const [salesman, setSalesman] = useState<UserData>();
-    const [month, setMonth] = useState(1);
-    const [year, setYear] = useState((new Date().getFullYear()));
+    const [startDate, setStartDate] = useState<string | null>(null);
+    const [endDate, setEndDate] = useState<string | null>(null);
     const [productCategory, setProductCategory] = useState<string>("");
     const productCategories = useSelector((state: RootState) => state.product.productCategoryList)
     const [{ loading, error, response }, execute, cancel] = useAxios<Blob>({
         url: "/bill/productSalesAsCSV",
         params: {
-            year, month, soldBy: salesman?._id, category: productCategory === "" ? undefined : productCategory,
+            startDate, endDate, soldBy: salesman?._id, category: productCategory === "" ? undefined : productCategory,
         }, responseType: 'blob'
     }, { useCache: false, manual: true });
 
@@ -79,6 +81,15 @@ function ProductWiseSalesFilter() {
     }, [error]);
 
     useEffect(() => () => cancel(), [cancel]);
+
+    const parseDTODate = (now: string | null) => {
+        if (now === null || !now) return null;
+        return moment(parseInt(now))
+    }
+    const parseInputDate = (period: "start" | "end") => (date: Moment | null) => {
+        if (date === null) return null;
+        return (date[period === "start" ? "startOf" : "endOf"]("day").valueOf() || "").toString();
+    }
 
     const onSearch = () => execute();
 
@@ -107,41 +118,29 @@ function ProductWiseSalesFilter() {
                             </FormControl>
                         </Grid>
                         <Grid item xs>
-                            <FormControl variant="outlined" size="small" margin="dense" fullWidth>
-                                <InputLabel>Month</InputLabel>
-                                <Select
-                                    value={month}
-                                    onChange={(e) => setMonth(parseInt((e.target.value as string).toString() as string))}
-                                    label="Month"
-                                >
-                                    <MenuItem value={1}>January</MenuItem>
-                                    <MenuItem value={2}>February</MenuItem>
-                                    <MenuItem value={3}>March</MenuItem>
-                                    <MenuItem value={4}>April</MenuItem>
-                                    <MenuItem value={5}>May</MenuItem>
-                                    <MenuItem value={6}>June</MenuItem>
-                                    <MenuItem value={7}>July</MenuItem>
-                                    <MenuItem value={8}>August</MenuItem>
-                                    <MenuItem value={9}>September</MenuItem>
-                                    <MenuItem value={10}>October</MenuItem>
-                                    <MenuItem value={11}>November</MenuItem>
-                                    <MenuItem value={12}>December</MenuItem>
-                                    <MenuItem value={"customer"}>Customer</MenuItem>
-                                    <MenuItem value={"soldBy"}>Sold By</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <KeyboardDatePicker
+                                autoOk
+                                inputVariant="outlined"
+                                size="small"
+                                label="Starting Date"
+                                disableFuture
+                                format="DD/MM/yyyy"
+                                InputAdornmentProps={{ position: "start" }}
+                                value={parseDTODate(startDate)}
+                                onChange={(date) => setStartDate(parseInputDate("start")(date))}
+                            />
                         </Grid>
                         <Grid item xs>
-                            <TextField
-                                label="Year"
-                                type="number"
-                                variant="outlined" size="small"
-                                inputProps={{
-                                    step: 1,
-                                    min: 2021
-                                }}
-                                onChange={(v) => setYear(parseInt(v.target.value))}
-                                value={year}
+                            <KeyboardDatePicker
+                                autoOk
+                                size="small"
+                                inputVariant="outlined"
+                                label="Ending Date"
+                                format="DD/MM/yyyy"
+                                disableFuture
+                                InputAdornmentProps={{ position: "start" }}
+                                value={parseDTODate(endDate)}
+                                onChange={date => setEndDate(parseInputDate("end")(date))}
                             />
                         </Grid>
                     </Grid>
