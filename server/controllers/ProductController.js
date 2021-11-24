@@ -4,7 +4,6 @@ const apiResponse = require("../helpers/apiResponse");
 const { Product } = require("../models/ProductModel");
 const { privilegeEnum } = require("../helpers/privilegeEnum.js");
 const unitSchemaValidation = require("./validators/unitsSchemaValidation");
-const paginationLabels = require("../helpers/paginationLabels");
 const { userData } = require("./AuthController");
 const { ProductCategory } = require("../models/ProductCategoryModel");
 const mognoose = require("mongoose");
@@ -15,8 +14,9 @@ function ProductData(data) {
 	this._id = data._id;
 	this.code = data.code;
 	this.name = data.name;
-	this.weight = data.weight;
-	this.weightUnit = data.weightUnit;
+	this.cost = data.cost;
+	this.stock = data.stock;
+	this.stocked = data.stocked;
 	this.quantity = data.quantity;
 	this.rate = data.rate;
 	this.mrp = data.mrp;
@@ -37,6 +37,8 @@ function ProductCategoryData(data) {
  * @param {string} name - Name of the Unit
  * @param {number} rate - Rate of the unit
  * @param {number} mrp - MRP of the Unit
+ * @param {number} cost - Cost of the Unit
+ * @param {number} conversion - Conversion of the Unit to primary unit
  */
 
 /**
@@ -46,6 +48,10 @@ function ProductCategoryData(data) {
  * @param {string} name - Name of the Product
  * @param {number} rate - Rate of the Product
  * @param {number} mrp - MRP of the Product
+ * @param {number} cost - Cost of the Product
+ * @param {string="Unit"} primaryUnit - Primary Unit of the Product
+ * @param {boolean} stocked - is the product being Stocked or not
+ * @param {number=0} initialStock - Initial Stock of the Product
  * @param {ProductCategory._id} category - Product Category Id
  * @param {Unit[]=} units - Units array of the product
  */
@@ -143,16 +149,21 @@ async function getProductByIdAndCategory(_id, categoryId) {
  * @param {string} name - Name of the Product
  * @param {number} rate - Rate of the Product
  * @param {number} mrp - MRP of the Product
+ * @param {number} cost - Cost of the Product
+ * @param {string="Unit"} primaryUnit - Primary Unit of the Product
+ * @param {boolean} stocked - is the product being Stocked or not
+ * @param {number=0} initialStock - Initial Stock of the Product
  * @param {ProductCategory._id} categoryId 
  * @param {Unit[]=} units - Units array of the product
  * @returns 
  */
-async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, categoryId, units, user) {
+async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, cost = 0, stocked = false, initialStock = 0, categoryId, units, user) {
 	if (units && units.length)
 		units = unitSchemaValidation(
 			rate,
 			mrp,
-			units
+			units,
+			cost
 		);
 	else units = [];
 	const productData = new Product({
@@ -162,6 +173,8 @@ async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, catego
 		category: categoryId,
 		rate: rate,
 		primaryUnit: primaryUnit,
+		stocked: stocked,
+		stock: initialStock,
 		mrp: mrp,
 		belongsTo: user
 	});
@@ -177,16 +190,20 @@ async function createProduct(code, name, primaryUnit = "Unit", rate, mrp, catego
  * @param {string} name - Name of the Product
  * @param {number} rate - Rate of the Product
  * @param {number} mrp - MRP of the Product
+ * @param {number} cost - Cost of the Product
+ * @param {string="Unit"} primaryUnit - Primary Unit of the Product
+ * @param {boolean} stocked - is the product being Stocked or not
  * @param {ProductCategory._id} categoryId 
  * @param {Unit[]=} units - Units array of the product
  * @returns 
  */
-async function updateProduct(id, code, name, primaryUnit = "Unit", rate, mrp, categoryId, units, user) {
+async function updateProduct(id, code, name, primaryUnit = "Unit", rate, mrp, cost = 0, stocked = false, categoryId, units, user) {
 	if (units && units.length)
 		units = unitSchemaValidation(
 			rate,
 			mrp,
-			units
+			units,
+			cost
 		);
 	else units = [];
 
@@ -197,6 +214,8 @@ async function updateProduct(id, code, name, primaryUnit = "Unit", rate, mrp, ca
 		category: categoryId,
 		rate: rate,
 		primaryUnit: primaryUnit,
+		stocked: stocked,
+		cost: cost,
 		mrp: mrp,
 		belongsTo: user
 	}, { new: true });
@@ -232,7 +251,8 @@ async function addMultipleProducts(newProductsArray, categoryId, user) {
 			product.units = unitSchemaValidation(
 				product.rate,
 				product.mrp,
-				product.units
+				product.units,
+				product.cost
 			);
 		product.category = categoryId;
 		product.belongsTo = user;
@@ -436,6 +456,8 @@ exports.createProductRequest = [
 	body("name").escape().isLength().trim(),
 	body("primaryUnit").escape().isLength().trim(),
 	body("rate").escape().trim().isNumeric(),
+	body("stocked").escape().trim().isBoolean(),
+	body("cost").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
 	async (req, res) => {
@@ -462,6 +484,9 @@ exports.createProductRequest = [
 				req.body.primaryUnit,
 				req.body.rate,
 				req.body.mrp,
+				req.body.cost,
+				req.body.stocked,
+				req.body.initialStock,
 				req.params.categoryId,
 				req.body.units,
 				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
@@ -622,6 +647,8 @@ exports.updateProduct = [
 	body("name").escape().isLength().trim(),
 	body("primaryUnit").escape().isLength().trim(),
 	body("rate").escape().trim().isNumeric(),
+	body("stocked").escape().trim().isBoolean(),
+	body("cost").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
 	async (req, res) => {
@@ -649,6 +676,8 @@ exports.updateProduct = [
 				req.body.primaryUnit,
 				req.body.rate,
 				req.body.mrp,
+				req.body.cost,
+				req.body.stocked,
 				req.params.categoryId,
 				req.body.units,
 				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
