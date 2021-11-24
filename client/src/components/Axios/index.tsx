@@ -84,7 +84,7 @@ export function handleAxiosError<T>(errorResponse: AxiosError<APIResponse<T>>, c
             }
         } else
             // Request made and server responded
-            toast.error(errorResponse.response.data.message);
+            toast.error(errorResponse.response.data.message || errorResponse.response.statusText || "Error! Please try again later");
     } else if (errorResponse.request) {
         // The request was made but no response was received
         // Something happened in setting up the request that triggered an Error
