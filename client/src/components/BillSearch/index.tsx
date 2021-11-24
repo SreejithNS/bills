@@ -301,6 +301,7 @@ export default function BillSearch(props: Props) {
                                     label="Sort By"
                                 >
                                     <MenuItem value={"createdAt"}>Created At</MenuItem>
+                                    <MenuItem value={"updatedAt"}>Payment Received</MenuItem>
                                     <MenuItem value={"paidAmount"}>Paid Amount</MenuItem>
                                     <MenuItem value={"billAmount"}>Bill Amount</MenuItem>
                                 </Select>
