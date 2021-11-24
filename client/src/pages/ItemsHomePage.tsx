@@ -51,12 +51,12 @@ const useStyles = makeStyles((theme: Theme) => ({
     }
 }))
 
-export function ProductCategorySelection() {
+export const ProductCategorySelection = React.forwardRef<HTMLDivElement>((_, ref) => {
     const { productCategoryList, productCategory } = useSelector((state: RootState) => state.product);
     const { loading, changeCategory, error } = useProductCategoryActions();
 
     return (
-        <FormControl variant="outlined">
+        <FormControl variant="outlined" ref={ref}>
             <InputLabel id="category-selection-label">Category</InputLabel>
             <Select
                 labelId="category-selection-label"
@@ -71,7 +71,7 @@ export function ProductCategorySelection() {
             </Select>
         </FormControl>
     )
-}
+});
 
 const ItemToolbar = () => {
     const [importModalOpen, toggleImportModal] = useState<boolean>(false);
