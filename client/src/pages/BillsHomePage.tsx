@@ -111,7 +111,7 @@ export default function BillsHomePage() {
     const [sortDirection, setSortDirection] = useQueryStringKey("sortDirection", "desc");
     const [pageNumber, setPageNumber] = useQueryStringKey("page", "1");
     const [limit, setLimit] = useQueryStringKey("limit", "10");
-    const [searchParam, setSearchParam] = useQueryStringKey("searchParam", "soldBy");
+    const [searchParam, setSearchParam] = useQueryStringKey("searchParam", "customer");
     const [searchValue, setSearchValue] = useQueryStringKey("searchValue");
     const [selectedFromDate, setSelectedFromDate] = useQueryStringKey("fromDate");
     const [selectedToDate, setSelectedToDate] = useQueryStringKey("toDate");
