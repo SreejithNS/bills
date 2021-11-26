@@ -37,6 +37,7 @@ export enum UserPermissions {
     "ALLOW_BILL_PUT",
     "ALLOW_BILL_DELETE",
     "ALLOW_BILL_GET",
+    "ALLOW_BILL_GET_ALL",
     "ALLOW_PAGE_ITEMS",
     "ALLOW_PAGE_BILLS",
     "ALLOW_PAGE_CUSTOMERS",

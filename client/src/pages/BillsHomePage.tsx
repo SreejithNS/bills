@@ -21,6 +21,7 @@ import { useQueryStringKey } from 'use-route-as-state';
 import { useHasPermission } from '../actions/auth.actions';
 import { useSelector } from 'react-redux';
 import { RootState } from '../reducers/rootReducer';
+import { UserPermissions } from '../reducers/auth.reducer';
 const Fade = require('react-reveal/Fade');
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -106,20 +107,19 @@ const StatPaper = ({
 };
 
 export default function BillsHomePage() {
+    const hasViewAllBillsPermissions = useHasPermission(UserPermissions["ALLOW_BILL_GET_ALL"]);
     const { userData } = useSelector((state: RootState) => state.auth);
     const [sortParam, setSortParam] = useQueryStringKey("sortParam", "createdAt");
     const [sortDirection, setSortDirection] = useQueryStringKey("sortDirection", "desc");
     const [pageNumber, setPageNumber] = useQueryStringKey("page", "1");
     const [limit, setLimit] = useQueryStringKey("limit", "10");
-    const [searchParam, setSearchParam] = useQueryStringKey("searchParam", "customer");
-    const [searchValue, setSearchValue] = useQueryStringKey("searchValue");
+    const [searchParam, setSearchParam] = useQueryStringKey("searchParam", hasViewAllBillsPermissions ? "customer" : "soldBy");
+    const [searchValue, setSearchValue] = useQueryStringKey("searchValue", hasViewAllBillsPermissions ? undefined : userData?._id);
     const [selectedFromDate, setSelectedFromDate] = useQueryStringKey("fromDate");
     const [selectedToDate, setSelectedToDate] = useQueryStringKey("toDate");
     const [creditFilter, setCreditFilter] = useQueryStringKey("credit");
     const [showAll, setShowAll] = useQueryStringKey("showAll");
     const [requestLoading, setRequestLoading] = useState(false);
-
-    const hasAdminPermissions = useHasPermission();
 
     type ResponseData = APIResponse<PaginateResult<BillData>>;
 
@@ -141,11 +141,16 @@ export default function BillsHomePage() {
     }, [execute, searchValue, showAll, searchParam]);
 
     useEffect(() => {
-        if (!hasAdminPermissions) {
+        if (!hasViewAllBillsPermissions) {
             setSearchParam("soldBy");
-            if (userData) setSearchValue(userData._id);
         }
-    }, [hasAdminPermissions, setSearchParam, setSearchValue, userData]);
+    }, [hasViewAllBillsPermissions, searchParam, setSearchParam]);
+
+    useEffect(() => {
+        if (!hasViewAllBillsPermissions && userData) {
+            setSearchValue(userData._id);
+        }
+    }, [hasViewAllBillsPermissions, searchValue, setSearchValue, userData]);
 
     const confirm = useConfirm();
     const deleteBill = useCallback(
@@ -203,7 +208,7 @@ export default function BillsHomePage() {
                     </Grid>
                     <Grid item xs={12}>
                         <BillSearch
-                            disableSearch={!hasAdminPermissions}
+                            disableSearch={!hasViewAllBillsPermissions}
                             showAll={showAll === "true"}
                             onShowAllChange={(value) => setShowAll(value.toString())}
                             creditFilter={creditFilter ?? ""}

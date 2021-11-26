@@ -237,6 +237,19 @@ export default function UserEditModal() {
                                     <Checkbox
                                         edge="start"
                                         disabled={settingsUpdateLoading}
+                                        onChange={togglePermission(UserPermissions.ALLOW_BILL_GET_ALL)}
+                                        checked={hasPermission(UserPermissions.ALLOW_BILL_GET_ALL)}
+                                        tabIndex={-1}
+                                        disableRipple
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary={"View all Bill(s) in the organisation"} />
+                            </ListItem>
+                            <ListItem dense button>
+                                <ListItemIcon>
+                                    <Checkbox
+                                        edge="start"
+                                        disabled={settingsUpdateLoading}
                                         onChange={togglePermission(UserPermissions.ALLOW_BILL_POST)}
                                         checked={hasPermission(UserPermissions.ALLOW_BILL_POST)}
                                         tabIndex={-1}
