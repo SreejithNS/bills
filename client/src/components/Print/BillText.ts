@@ -211,10 +211,6 @@ export default class BillText {
 
         p.boldOff().size(1, 1).feed(1);
 
-        //Subtitle
-        (new TextManipulator()).centerText("( Quotation )", 34).map(line => p.text(line));
-        p.feed(1);
-
         //Print Header
         if (organisation?.printHeader) {
             (new TextManipulator()).centerText(organisation.printHeader, 34).map(line => p.text(line));
