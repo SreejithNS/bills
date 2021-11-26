@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, CircularProgress, createStyles, Grid, makeStyles, Theme, Zoom } from '@material-ui/core';
+import { Button, CircularProgress, createStyles, Divider, Grid, makeStyles, Theme, Typography, Zoom } from '@material-ui/core';
 import { Field, reduxForm } from 'redux-form';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import { useSelector } from 'react-redux';
@@ -53,25 +53,56 @@ const AccountEditForm = (props: { handleSubmit: any; pristine: any; reset: any; 
                         label="User Name"
                     />
                 </Grid>
-                {(userData?.type === 0 || userData?.type === 1) ? <><Grid item xs={12}>
-                    <Field
-                        name="organisation.name"
-                        component={ReduxTextField}
-                        label="Organisation Name"
+                {(userData?.type === 0 || userData?.type === 1) ? <>
+                    <Grid item xs={12}>
+                        <Field
+                            name="organisation.name"
+                            component={ReduxTextField}
+                            label="Organisation Name"
 
-                    />
-                </Grid><Grid item xs={12}>
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
                         <Field
                             name="organisation.tagline"
                             component={ReduxTextField}
                             label="Organistaion Tagline"
-                        /></Grid><Grid item xs={12}>
+                        /></Grid>
+                    <Grid item xs={12}>
+                        <Divider /><br />
+                        <Typography variant="subtitle1">Print Settings</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
                         <Field
                             name="organisation.printTitle"
                             component={ReduxTextField}
                             label="Print Title"
                         />
-                    </Grid></> : <></>}
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Field
+                            name="organisation.printHeader"
+                            component={ReduxTextField}
+                            label="Print Header"
+                            multiline={true}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Field
+                            name="organisation.printFooter"
+                            component={ReduxTextField}
+                            label="Print Footer"
+                            multiline={true}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Field
+                            name="organisation.printTitle"
+                            component={ReduxTextField}
+                            label="Print Title"
+                        />
+                    </Grid>
+                </> : <></>}
                 <Grid item xs={12}>
                     <Field
                         name="phone"

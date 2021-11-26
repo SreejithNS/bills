@@ -12,6 +12,8 @@ export interface OrganisationDetails extends Object {
     name: string;
     printTitle: string;
     tagline: string;
+    printHeader: string;
+    printFooter: string;
 }
 
 export enum UserPermissions {

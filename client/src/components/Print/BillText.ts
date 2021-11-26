@@ -215,6 +215,12 @@ export default class BillText {
         (new TextManipulator()).centerText("( Quotation )", 34).map(line => p.text(line));
         p.feed(1);
 
+        //Print Header
+        if (organisation?.printHeader) {
+            (new TextManipulator()).centerText(organisation.printHeader, 34).map(line => p.text(line));
+            p.feed(1);
+        }
+
         //Date
         p.align("RT")
             .text("Date: " + (new Date(this.date)).toLocaleDateString())
@@ -273,6 +279,18 @@ export default class BillText {
         // p.text("Total:\t" + this.billAmount)
         (new TextManipulator()).centerText("Total: " + this.billAmount, 18).map(line => p.text(line));
         p.boldOff().size(1, 1);
+
+        //Print Footer
+        if (organisation?.printFooter) {
+            p.feed(2);
+            p.text("-".repeat(this.lineWidth - 12))
+                .boldOff()
+                .control("LF");
+            (new TextManipulator()).centerText(organisation.printFooter, 34).map(line => p.text(line));
+            p.feed(1);
+            p.text("-".repeat(this.lineWidth - 12))
+                .boldOff()
+        }
 
         //Tear space
         p.feed(4);

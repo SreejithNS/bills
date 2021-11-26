@@ -17,7 +17,9 @@ var UserSchema = new mongoose.Schema(
 			type: {
 				name: { type: String, required: true },
 				printTitle: String,
-				tagline: String
+				tagline: String,
+				printHeader: String,
+				printFooter: String,
 			},
 			required: false,
 		}
