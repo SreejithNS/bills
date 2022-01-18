@@ -1,3 +1,4 @@
+import { store } from '..';
 import { UserData } from './auth.reducer';
 export interface Product {
     _id: string;
@@ -11,6 +12,7 @@ export interface Product {
     stocked: boolean;
     stock: number;
     units: Unit[];
+    category: ProductCategory;
 }
 
 export interface Unit {
@@ -42,6 +44,7 @@ const initialState: ProductState = {
 export default function productReducer(state: ProductState = initialState, action: { type: string; payload: any }): ProductState {
     switch (action.type) {
         case "SET_ITEM_CATEGORY": {
+            localStorage.setItem("productCategoryId", action.payload?._id);
             return {
                 ...state,
                 productCategory: { ...action.payload },
