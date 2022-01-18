@@ -11,7 +11,7 @@ import Slide from '@material-ui/core/Slide';
 import { TransitionProps } from '@material-ui/core/transitions';
 import { Container } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
-import { billsPaths, itemPaths, paths } from '../../routes/paths.enum';
+import { itemPaths, paths } from '../../routes/paths.enum';
 import NewPurchaseBillForm from '../NewPurchaseBillForm';
 
 const useStyles = makeStyles((theme: Theme) =>
