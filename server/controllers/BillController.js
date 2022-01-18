@@ -213,13 +213,24 @@ exports.getAllBills = [
 					"credit": req.query.credit
 				}),
 				...((req.query.startDate || req.query.endDate) && {
-					"createdAt": {
+					["createdAt"]: {
 						...(req.query.startDate && { $gte: new Date(parseInt(req.query.startDate)) }),
 						...(req.query.endDate && { $lte: new Date(parseInt(req.query.endDate)) })
 					}
 				}),
 				...query
 			};
+
+			if (req.query.sort) {
+				const param = req.query.sort.match(/[a-zA-Z]+/g)[0];
+				if (param !== "createdAt" && param.includes("At")) {
+					if (queryWithSearch["createdAt"]) {
+						const createdAtQuery = { ...queryWithSearch["createdAt"] };
+						delete queryWithSearch["createdAt"];
+						queryWithSearch[param] = createdAtQuery;
+					}
+				}
+			}
 
 			const paginateOptions = new QueryParser(req.query);
 
@@ -380,16 +391,13 @@ exports.getProductWiseSalesAsCSV = [
 
 			const queryWithSearch = {
 				...(req.query.soldBy && {
-					"soldBy": req.query.soldBy
+					"soldBy": mongoose.Types.ObjectId(req.query.soldBy)
 				}),
 				...((req.query.startDate || req.query.endDate) && {
 					"createdAt": {
 						...(req.query.startDate && { $gte: new Date(parseInt(req.query.startDate)) }),
 						...(req.query.endDate && { $lte: new Date(parseInt(req.query.endDate)) })
 					}
-				}),
-				...(req.query.category && {
-					"category": mongoose.Types.ObjectId(req.query.category.toString())
 				}),
 				...query
 			};
@@ -405,7 +413,13 @@ exports.getProductWiseSalesAsCSV = [
 						"path": "$items",
 						"preserveNullAndEmptyArrays": false
 					}
-				}, {
+				},
+				...(req.query.category ? [{
+					"$match": {
+						"items.category": req.query.category
+					}
+				}] : [])
+				, {
 					"$group": {
 						"_id": {
 							"belongsTo": "$belongsTo",
