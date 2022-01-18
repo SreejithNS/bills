@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, Tooltip } from '@material-ui/core';
+import { Fab, Grid, Theme, Typography, List, ListItem, ListItemText, Paper, FormControl, InputLabel, MenuItem, Select, makeStyles, Button, Tooltip, Chip } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { useHistory } from 'react-router-dom';
@@ -22,6 +22,7 @@ import { useConfirm } from 'material-ui-confirm';
 import NewProductCategoryModal from '../components/NewProductCategoryModal';
 import { useHasPermission, useProductCategoryActions } from '../actions/auth.actions';
 import { UserPermissions } from '../reducers/auth.reducer';
+import PurchaseBillsFilter from '../components/PurchaseBillsFilter';
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -86,6 +87,9 @@ const ItemToolbar = () => {
     const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
     const productCategoryEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCTCATEGORY_PUT);
 
+    //admin permission
+    const isAdmin = useHasPermission();
+
     const handleProductCategoryDelete = () => {
         confirm({
             title: "Are you sure?",
@@ -122,6 +126,14 @@ const ItemToolbar = () => {
                         startIcon={<EditRoundedIcon />}
                         onClick={handleProductCategoryEdit}>
                         Edit</Button>
+                </Tooltip>
+            }
+            {isAdmin &&
+                <Tooltip title="Add stocks to this Category" arrow>
+                    <Button
+                        startIcon={<LineStyleIcon />}
+                        onClick={() => history.push(paths.items + itemPaths.addStock)}>
+                        Add Stock</Button>
                 </Tooltip>
             }
             {(productCategoryList.length > 1 && productCategoryDeletePermission)
@@ -162,6 +174,7 @@ export default function ItemsHomePage() {
     const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
     const productEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_PUT);
     const productDeletePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_DELETE);
+    const isAdmin = useHasPermission();
 
     useEffect(() => {
         tableRef?.current?.onQueryChange()
@@ -200,13 +213,24 @@ export default function ItemsHomePage() {
                     <Grid item xs={12} className={classes.cardPadding}>
                         <ItemToolbar />
                     </Grid>
-                    <Grid item xs={12} className={classes.cardPadding}>
+                    <Grid item xs={12} lg={isAdmin ? 8 : undefined} className={classes.cardPadding}>
                         <MaterialTable
                             tableRef={tableRef}
                             icons={tableIcons}
                             columns={[
                                 { title: "Item Name", field: "name", editable: "never" },
                                 { title: "Code", field: "code", editable: "never" },
+                                {
+                                    title: "Stock", field: "stock", editable: "never", align: "center",
+                                    render: (rowData: Product) => (<>
+                                        {rowData.stocked
+                                            ? rowData.stock > 0
+                                                ? <Chip label={`${rowData.stock} in Stock`} color="primary" size='small' variant='outlined' />
+                                                : <Chip label="Out of Stock" color="secondary" size='small' variant='outlined' />
+                                            : rowData.stock
+                                        }
+                                    </>)
+                                },
                                 { title: "Rate", field: "rate", type: "numeric", editable: "never" },
                                 { title: "MRP", field: "mrp", type: "numeric", editable: "never" },
                             ]}
@@ -283,6 +307,9 @@ export default function ItemsHomePage() {
                                 }
                             }]}
                         />
+                    </Grid>
+                    <Grid item xs={12} lg={isAdmin ? 4 : undefined} className={classes.cardPadding}>
+                        <PurchaseBillsFilter />
                     </Grid>
                 </Grid>
             </PageContainer>
