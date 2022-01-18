@@ -15,19 +15,33 @@ import {
 import { Add, DeleteRounded, InfoOutlined, RoomRounded } from "@material-ui/icons";
 import MaterialTable from "material-table";
 import * as React from "react";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { tableIcons } from "../MaterialTableIcons";
 import PaymentsList from "../PaymentsList";
 import moment from "moment";
 import { BillData } from "../../reducers/bill.reducer";
 import { useHistory } from "react-router";
-import { customersPaths, paths } from "../../routes/paths.enum";
+import { billsPaths, customersPaths, paths } from "../../routes/paths.enum";
 import Print from "../Print";
 import { toast } from "react-toastify";
 import PrintIcon from '@material-ui/icons/Print';
+import WirelessPrint from '@material-ui/icons/SettingsRemote';
+import PlainPrint from "../Print/PlainPrint";
+import { useReactToPrint } from "react-to-print";
+import { WhatsappShareButton } from 'react-share';
+import WhatsAppIcon from '@material-ui/icons/WhatsApp';
+import { useSelector } from "react-redux";
+import { RootState } from "../../reducers/rootReducer";
+import { useHasPermission } from "../../actions/auth.actions";
+import { UserPermissions } from "../../reducers/auth.reducer";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
+        printHide: {
+            "@media print": {
+                display: "none"
+            }
+        },
         alignRight: {
             textAlign: "right"
         },
@@ -62,13 +76,21 @@ interface AdditionalProps {
 export default function BillViewer(props: BillData & AdditionalProps) {
     const classes = useStyles();
     const history = useHistory();
+    const printRef = useRef<HTMLDivElement>(null);
+    const userData = useSelector((state: RootState) => state.auth.userData);
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+    });
+    const billUpdatePermission = useHasPermission(UserPermissions.ALLOW_BILL_PUT);
+    const billDeletePermission = useHasPermission(UserPermissions.ALLOW_BILL_DELETE);
 
     const print = useCallback(() => {
         Print.onDisconnect = () => toast.warn("Printer Disconnected")
         Print.init().then(instance => {
             return instance.printBill(props)
         }).then(() => toast.success("Bill Printed!")).catch((error) => toast.error(error.message));
-    }, [props])
+    }, [props]);
+
     return (
         <Paper>
             <Grid
@@ -76,7 +98,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                 direction="row"
                 justify="space-between"
                 alignItems="center"
-                className={classes.paddingGrid}
+                className={classes.paddingGrid + " " + classes.printHide}
             >
                 <Grid item className={classes.itemPadding} xs>
                     <Typography variant="h4">
@@ -105,10 +127,22 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                     </Tooltip>}
                     <Tooltip title="Print via Bluetooth">
                         <IconButton onClick={() => print()}>
-                            <PrintIcon />
+                            <WirelessPrint />
                         </IconButton>
                     </Tooltip>
-                    {props.onDelete && <Tooltip title="Delete Bill">
+                    {handlePrint ? <Tooltip title="Print">
+                        <IconButton onClick={() => handlePrint()}>
+                            <PrintIcon />
+                        </IconButton>
+                    </Tooltip> : <></>}
+                    <Tooltip title="Share on WhatsApp">
+                        <WhatsappShareButton title={`BillzApp | Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""}`} url={window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`} >
+                            <IconButton>
+                                <WhatsAppIcon />
+                            </IconButton>
+                        </WhatsappShareButton>
+                    </Tooltip>
+                    {(billDeletePermission && props.onDelete) && <Tooltip title="Delete Bill">
                         <IconButton color="secondary" onClick={() => props.onDelete && props.onDelete()}>
                             <DeleteRounded />
                         </IconButton>
@@ -195,7 +229,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                 <Typography variant="subtitle2" display="block">
                                     Balance: ₹ {(props.billAmount - props.paidAmount).toLocaleString()}
                                 </Typography>
-                                {(props.credit === null || props.credit === undefined)
+                                {billUpdatePermission && (props.credit === null || props.credit === undefined)
                                     ? <></>
                                     : !props.credit
                                         ? <Chip color="primary" onClick={props.creditAction} variant="outlined" style={{ color: "white" }} size="small" avatar={<Avatar>₹</Avatar>} label="Bill Closed" />
@@ -215,12 +249,13 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                 <Typography variant="h5" display="block" >
                                     <strong>₹{props?.paidAmount?.toLocaleString() || 0}</strong>
                                 </Typography>
-                                {props.credit && <Button variant="outlined" onClick={props.receivePayment} className={classes.button} size="small" startIcon={<Add />}>Receive Payment</Button>}
+                                {(props.credit && billUpdatePermission) && <Button variant="outlined" onClick={props.receivePayment} className={classes.button} size="small" startIcon={<Add />}>Receive Payment</Button>}
                             </Grid>
                         </Grid>
                     </Paper>
                 </Grid>
             </Grid>
+            <PlainPrint bill={props} ref={printRef} />
         </Paper >
     );
 }
