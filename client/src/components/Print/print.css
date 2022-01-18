@@ -1,0 +1,74 @@
+:root {
+	--base-size: 1.5vw;
+	--base-font-size: calc(var(--base-size) + 0.25em);
+	--print-margin: calc(var(--base-font-size) * 2);
+	--print-title-font-size: calc(var(--base-font-size) * 4);
+}
+
+@media screen {
+	#print-view {
+		display: none;
+		visibility: hidden;
+	}
+}
+
+@media print {
+	@page {
+		size: auto;
+		margin: var(--print-margin);
+	}
+	#print-view * {
+		box-sizing: border-box;
+	}
+	#print-view table {
+		padding: var(--print-margin);
+		width: 100%;
+		font-size: var(--base-font-size);
+		font-family: monospace;
+	}
+
+	#print-view table tr {
+		width: 100%;
+	}
+	#print-view table thead > tr {
+		text-align: center;
+	}
+	#print-view table thead > tr:first-child {
+		font-size: var(--print-title-font-size);
+	}
+	#print-view table thead > tr:last-child > th {
+		padding: calc(var(--base-size) * 1) 0pt;
+	}
+	#print-view table tbody tr:first-child > td {
+		padding-top: calc(var(--base-size) * 2);
+		border-top: calc(var(--base-size) * 0.5) dashed rgba(0, 0, 0, 0.5);
+	}
+	#print-view table tbody tr > td {
+		padding: calc(var(--base-size) * 1) 0pt;
+	}
+	#print-view table tbody tr > td {
+		text-align: center;
+	}
+	#print-view table tbody tr > td:first-child {
+		text-align: left;
+	}
+	#print-view table tbody tr > td:last-child {
+		text-align: right;
+	}
+	#print-view table tfoot > tr {
+		text-align: center;
+	}
+	.bill-total {
+		font-size: calc(var(--print-title-font-size) / 2);
+		font-weight: bold;
+	}
+	.text-right {
+		text-align: right;
+	}
+	.text-left {
+		text-align: left;
+	}
+	.text-center {
+		text-align: center !important;
+	}
+}
