@@ -8,6 +8,7 @@ const { privilegeEnum, defaultSalesmanPermissions } = require("../helpers/privil
 const { ProductCategory } = require("../models/ProductCategoryModel");
 const { Product } = require("../models/ProductModel");
 const { Bill } = require("../models/BillModel");
+const { PurchaseBill } = require("../models/PurchaseBillModel");
 const { Customer } = require("../models/CustomerModel");
 const mongoose = require("mongoose");
 
@@ -171,33 +172,21 @@ async function deleteUser(_id) {
 				try {
 					//Delete Products
 					const deletedProducts = await Product.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedProducts.acknowledged) {
-						throw new Error("Couldn't delete Products");
-					}
 
 					//Delete Product Categories
 					const deletedProductCategories = await ProductCategory.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedProductCategories.acknowledged) {
-						throw new Error("Couldn't delete Product Categories");
-					}
 
 					//Delete Bills
 					const deletedBills = await Bill.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedBills.acknowledged) {
-						throw new Error("Couldn't delete Bills");
-					}
 
 					//Delete Customers
 					const deletedCustomers = await Customer.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedCustomers.acknowledged) {
-						throw new Error("Couldn't delete Customers");
-					}
 
 					//Delete Users
 					const deletedUsers = await User.deleteMany({ belongsTo: _id }, { session });
-					if (!deletedUsers.acknowledged) {
-						throw new Error("Couldn't delete Users belonged to this user");
-					}
+
+					//Delete Purchase bills
+					const deletedPurchaseBills = await PurchaseBill.deleteMany({ belongsTo: _id }, { session });
 
 					await User.findByIdAndDelete(_id, { session });
 					await session.commitTransaction();
@@ -208,6 +197,7 @@ async function deleteUser(_id) {
 						deletedBillsCount: deletedBills.deletedCount,
 						deletedUsersCount: deletedUsers.deletedCount,
 						deletedCustomersCount: deletedCustomers.deletedCount,
+						deletedPurchaseBillsCount: deletedPurchaseBills.deletedCount
 					};
 				} catch (e) {
 					await session.abortTransaction();
@@ -236,8 +226,16 @@ async function deleteUser(_id) {
 					throw new Error("Couldn't modify Bills");
 				}
 
+				//Modify Purchase Bills
+				const modifiedPurchaseBills = await PurchaseBill.updateMany({ purchasedBy: _id }, {
+					purchasedBy: adminId,
+				}, { session, multi: true });
+				if (!modifiedPurchaseBills.acknowledged) {
+					throw new Error("Couldn't modify Purchase Bills");
+				}
+
 				//Modify Payments
-				const modifiedPayments = await Bill.updateMany({ "payments.paymentReceivedB": _id }, {
+				const modifiedPayments = await Bill.updateMany({ "payments.paymentReceivedBy": _id }, {
 					$set: { "payments.$.paymentReceivedBy": mongoose.Types.ObjectId(adminId) },
 				}, { session, multi: true });
 				if (!modifiedPayments.acknowledged) {
@@ -250,7 +248,8 @@ async function deleteUser(_id) {
 				return {
 					modifiedProductCategoriesCount: modifiedProductCategories.modifiedCount,
 					modifiedBillsCount: modifiedBills.modifiedCount,
-					modifiedPayments: modifiedPayments.modifiedCount
+					modifiedPayments: modifiedPayments.modifiedCount,
+					modifiedPurchaseBillsCount: modifiedPurchaseBills.modifiedCount
 				};
 			}
 
@@ -268,11 +267,11 @@ async function deleteUser(_id) {
  * @returns {UserData}
  */
 async function userData(_id) {
-	const user = await User.findById(_id).populate("belongsTo").exec();
+	const user = await User.findById(_id).populate("belongsTo");
 	if (user) {
 		return new UserData(user);
 	} else {
-		return new Error("Authentication Details Tampered");
+		throw new Error("Authentication Details Tampered");
 	}
 }
 
@@ -313,7 +312,7 @@ async function adminRegistrationMiddleware(req, res) {
 			return apiResponse.successResponseWithData(
 				res,
 				"Registration Success",
-				newUser._id
+				new UserData(newUser)
 			);
 		}
 	} catch (err) {
@@ -346,7 +345,7 @@ async function salesmanRegisterMiddleware(req, res) {
 			return apiResponse.successResponseWithData(
 				res,
 				"Registration Success",
-				newUser._id
+				new UserData(newUser)
 			);
 		}
 	} catch (err) {
@@ -367,7 +366,7 @@ async function salesmanRegisterMiddleware(req, res) {
 
 const userRegistration = [
 	authenticate,
-	query("type", "Not a valid user type").optional().isInt(),
+	body("type", "Not a valid user type").optional().isInt(),
 	body("name")
 		.trim()
 		.isLength({ min: 1 })
@@ -393,22 +392,28 @@ const userRegistration = [
 		.trim()
 		.withMessage("Password must be 6 characters or greater."),
 	async (req, res) => {
-		const authenticatedUser = await userData(req.user._id);
-		if (authenticatedUser.type === privilegeEnum.admin) {
-			return await salesmanRegisterMiddleware(req, res);
-		} else if (authenticatedUser.type === privilegeEnum.root) {
-			if (req.params.type !== undefined) {
-				switch (req.params.type) {
-					case 0:
-					case 1:
-						return await adminRegistrationMiddleware(req, res);
-					case 2:
-					default:
-						return await salesmanRegisterMiddleware(req, res);
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			if (authenticatedUser.type === privilegeEnum.admin) {
+				return await salesmanRegisterMiddleware(req, res);
+			} else if (authenticatedUser.type === privilegeEnum.root) {
+				if (req.body.type !== undefined) {
+					switch (req.body.type) {
+						case 0:
+						case 1:
+							return await adminRegistrationMiddleware(req, res);
+						case 2:
+						default:
+							return await salesmanRegisterMiddleware(req, res);
+					}
+				} else {
+					return await salesmanRegisterMiddleware(req, res);
 				}
 			} else {
-				return await salesmanRegisterMiddleware(req, res);
+				return apiResponse.unauthorizedResponse(res, "User not authorized to perform this action");
 			}
+		} catch (err) {
+			return apiResponse.ErrorResponse(res, err.message);
 		}
 	}
 ];
@@ -516,7 +521,7 @@ const deleteUserAccount = [
 					return apiResponse.successResponseWithData(res, "User Account deleted", result);
 				}
 				case privilegeEnum.admin: {
-					const userDetails = await User.findOne({ _id: req.params.id, belongsTo: authenticatedUser._id.toString() });
+					const userDetails = await User.findOne({ _id: req.params.id });
 					if (userDetails && (
 						userDetails._id.toString() === authenticatedUser._id.toString() ||
 						userDetails.belongsTo.toString() === authenticatedUser._id.toString()
@@ -547,7 +552,7 @@ const deleteUserAccount = [
 				}
 					break;
 				default:
-					return apiResponse.notFoundResponse(res, "Invalid User account type");
+					return apiResponse.unauthorizedResponse(res, "Invalid User account type");
 			}
 		} catch (e) {
 			console.error(e);
