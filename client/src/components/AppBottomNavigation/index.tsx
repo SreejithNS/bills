@@ -13,7 +13,10 @@ const useStyles = makeStyles({
     root: {
         position: "fixed",
         bottom: "0%",
-        width: "100%"
+        width: "100%",
+        "@media print": {
+            display: "none"
+        }
     }
 });
 
