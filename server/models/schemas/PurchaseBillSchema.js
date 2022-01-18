@@ -166,6 +166,38 @@ PurchaseBillSchema.methods.calculateBillAmount = function () {
 };
 
 /**
+ * To update the product stocks of items of the purchase bill that will deleted
+ */
+PurchaseBillSchema.pre("remove", async function () {
+    const items = this.items;
+    const exisitingSession = this.$session();
+    const session = exisitingSession || await mongoose.startSession();
+    if (!session.inTransaction()) session.startTransaction();
+    try {
+        for (let item of items) {
+            const product = await Product.findById(item._id);
+            if (product) {
+                if ((product.stock - item.instock) < 0) {
+                    product.stock = 0;
+                } else {
+                    product.stock -= item.instock;
+                    await product.save({ session: session });
+                }
+            }
+        }
+        if (!exisitingSession) {
+            await session.commitTransaction();
+        }
+    }
+    catch (err) {
+        if (session) {
+            await session.abortTransaction();
+        }
+        throw err;
+    }
+});
+
+/**
  * To update the product stocks of the items in the bill
  */
 PurchaseBillSchema.pre("save", async function (next) {
