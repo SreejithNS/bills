@@ -40,24 +40,24 @@ export default function BillViewerModal(props: ModalProps) {
         }
     }, [paymentError]);
 
-    // const deleteBill = useCallback(
-    //     (billId: PurchaseBillData["_id"]) => {
-    //         confirm({
-    //             title: "Are you sure?",
-    //             description: "Deleting a bill is not undoable. You cannot recover the bill data once deleted.",
-    //             confirmationText: "Delete",
-    //             confirmationButtonProps: {
-    //                 color: "secondary"
-    //             }
-    //         }).then(() => {
-    //             return axios.delete("/bill/id/" + billId).catch(handleAxiosError);
-    //         }).then(
-    //             () => { toast.success("Bill deleted successfully"); history.goBack() },
-    //             () => toast.info("Bill did not delete.")
-    //         )
-    //         //eslint-disable-next-line
-    //     }, [data]
-    // )
+    const deleteBill = useCallback(
+        (billId: PurchaseBillData["_id"]) => {
+            confirm({
+                title: "Are you sure?",
+                description: "Deleting a bill is not undoable. You cannot recover the bill data once deleted.",
+                confirmationText: "Delete",
+                confirmationButtonProps: {
+                    color: "secondary"
+                }
+            }).then(() => {
+                return axios.delete("/purchasebill/id/" + billId).catch(handleAxiosError);
+            }).then(
+                () => { toast.success("Bill deleted successfully"); history.goBack() },
+                () => toast.info("Bill did not delete.")
+            )
+            //eslint-disable-next-line
+        }, [data]
+    )
     const deletePayment = useCallback(
         (billId: PurchaseBillData["_id"]) => (paymentId: string) => {
             confirm({
@@ -108,6 +108,7 @@ export default function BillViewerModal(props: ModalProps) {
                 _id={data.data._id}
                 belongsTo={data.data.belongsTo}
                 itemsTotalAmount={data.data.itemsTotalAmount}
+                onDelete={(id) => deleteBill(id)}
                 location={data.data.location}
                 paymentDelete={deletePayment(data.data._id)}
                 payBalance={(balance) => receiveBalance({ data: { paidAmount: balance } })}

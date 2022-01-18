@@ -67,7 +67,7 @@ interface AdditionalProps {
     receivePayment(): void;
     payBalance(balance?: number): void;
     creditAction(): void;
-    onDelete?(): void;
+    onDelete?(id: string): void;
     paymentDelete?(id: string): void;
 }
 
@@ -129,7 +129,7 @@ export default function PurchaseBillViewer(props: BillData & AdditionalProps) {
                         </WhatsappShareButton>
                     </Tooltip>
                     {(billDeletePermission && props.onDelete) && <Tooltip title="Delete Bill">
-                        <IconButton color="secondary" onClick={() => props.onDelete && props.onDelete()}>
+                        <IconButton color="secondary" onClick={() => props.onDelete && props.onDelete(props._id)}>
                             <DeleteRounded />
                         </IconButton>
                     </Tooltip>}

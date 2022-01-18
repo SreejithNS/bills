@@ -120,7 +120,7 @@ export default function PurchaseBillsFilter() {
     const [creditFilter, setCreditFilter] = useQueryStringKey("credit");
     const [showAll, setShowAll] = useQueryStringKey("showAll");
     const productCategoryId = useSelector((state: RootState) => state.product.productCategory?._id ?? "");
-    // const [requestLoading, setRequestLoading] = useState(false);
+    const [requestLoading, setRequestLoading] = useState(false);
 
     type ResponseData = APIResponse<PaginateResult<PurchaseBillData>>;
 
@@ -154,28 +154,28 @@ export default function PurchaseBillsFilter() {
         }
     }, [hasViewAllBillsPermissions, searchValue, setSearchValue, userData]);
 
-    // const confirm = useConfirm();
-    // const deleteBill = useCallback(
-    //     (billId: PurchaseBillData["_id"]) => {
-    //         confirm({
-    //             title: "Are you sure?",
-    //             description: "Deleting a bill is not undoable. You cannot recover the bill data once deleted.",
-    //             confirmationText: "Delete",
-    //             confirmationButtonProps: {
-    //                 color: "secondary"
-    //             }
-    //         }).then(() => {
-    //             setRequestLoading(true);
-    //             return axios.delete("/bill/id/" + billId).catch(() => toast.info("Bill did not delete."));
-    //         }).then(
-    //             () => { toast.success("Bill deleted successfully"); execute() },
-    //             handleAxiosError
-    //         ).finally(() => setRequestLoading(false))
-    //         //eslint-disable-next-line
-    //     }, [data]
-    // )
+    const confirm = useConfirm();
+    const deleteBill = useCallback(
+        (billId: PurchaseBillData["_id"]) => {
+            confirm({
+                title: "Are you sure?",
+                description: "Deleting a bill is not undoable. You cannot recover the bill data once deleted.",
+                confirmationText: "Delete",
+                confirmationButtonProps: {
+                    color: "secondary"
+                }
+            }).then(() => {
+                setRequestLoading(true);
+                return axios.delete("/purchasebill/id/" + billId).catch(() => toast.info("Bill did not delete."));
+            }).then(
+                () => { toast.success("Bill deleted successfully"); execute() },
+                handleAxiosError
+            ).finally(() => setRequestLoading(false))
+            //eslint-disable-next-line
+        }, [data]
+    )
 
-    const loading = getLoading;//|| requestLoading;
+    const loading = getLoading || requestLoading;
 
     const history = useHistory();
     const classes = useStyles();
@@ -257,7 +257,7 @@ export default function PurchaseBillsFilter() {
                                     paidAmount: bill.paidAmount,
                                     refresh: () => execute()
                                 }}
-                                deleteAction={() => console.log(bill._id)}
+                                deleteAction={() => deleteBill(bill._id)}
                                 onClickAction={() => history.push((paths.items + itemPaths.purchase).replace(":purchaseBillId", bill._id))}
                             />
                         </Fade>
