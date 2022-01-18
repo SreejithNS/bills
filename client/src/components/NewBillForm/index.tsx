@@ -247,7 +247,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 
 	const [newCustomerModalOpen, setNewCustomerModalOpen] = useState(false);
 
-	const billData = (): BillPostData | null => {
+	const billData = useCallback((): BillPostData | null => {
 
 		const itemsData: BillPostData["items"] = items.map((item) => ({
 			_id: item._id,
@@ -264,7 +264,8 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				...(location && { location: { lat: location[0], lon: location[1] } })
 			};
 		else return null;
-	};
+		//eslint-disable-next-line
+	}, [customer, items, credit, discountAmount, paidAmount]);
 
 	const [{ error, loading, data }, saveBill] = useAxios<
 		APIResponse<{ _id: string; serialNumber: number }>
