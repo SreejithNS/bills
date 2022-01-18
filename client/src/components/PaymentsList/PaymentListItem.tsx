@@ -9,6 +9,8 @@ import AddCircleOutlineRoundedIcon from "@material-ui/icons/AddCircleOutlineRoun
 import moment from "moment";
 import { ListItemSecondaryAction, IconButton } from "@material-ui/core";
 import DeleteIcon from '@material-ui/icons/Delete';
+import { useHasPermission } from "../../actions/auth.actions";
+import { UserPermissions } from "../../reducers/auth.reducer";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -21,6 +23,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 export default function PaymentListItem(props: { payments: any[]; onDelete?: (_id: string) => void }) {
     const classes = useStyles();
+    const billUpdatePermission = useHasPermission(UserPermissions.ALLOW_BILL_PUT);
 
     return (
         <List dense={true} className={classes.root}>
@@ -40,7 +43,7 @@ export default function PaymentListItem(props: { payments: any[]; onDelete?: (_i
                                 primary={`₹${paidAmount}`}
                                 secondary={`${"Received by " + paymentReceivedBy?.name.toLocaleUpperCase()} at ${moment(updatedAt.toString()).format('MMM D YYYY, h:mm a')}`}
                             />
-                            {props.onDelete && <ListItemSecondaryAction>
+                            {(billUpdatePermission && props.onDelete) && <ListItemSecondaryAction>
                                 <IconButton edge="end" aria-label="delete" onClick={() => props.onDelete && props.onDelete(_id)}>
                                     <DeleteIcon />
                                 </IconButton>
