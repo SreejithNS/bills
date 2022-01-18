@@ -5,6 +5,7 @@
 	"scripts": {
 		"start": "migrate-mongo up && export NODE_ENV=production && node ./bin/www",
 		"dev": "export NODE_ENV=development && nodemon ./bin/www",
+		"debug": "export NODE_ENV=development && nodemon --inspect ./bin/www",
 		"test": "nyc _mocha --timeout 10000 --exit --report lcovonly -- -R spec",
 		"lint": "eslint --fix --config .eslintrc.json \"**/*.js\"",
 		"migrate": "migrate-mongo",
