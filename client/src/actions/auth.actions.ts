@@ -27,7 +27,10 @@ export function useProductCategoryActions() {
     const [{ loading, error, data }, fetchCategories] = useAxios<APIResponse<ProductCategory[]>>({ url: "/product/category" }, { manual: true });
     const dispatch = useDispatch();
 
-    const changeCategory = (payload: ProductCategory | undefined) => dispatch({ type: "SET_ITEM_CATEGORY", payload: payload ?? null });
+    const changeCategory = (payload: ProductCategory | undefined) => {
+        dispatch({ type: "SET_ITEM_CATEGORY", payload: payload ?? null });
+        dispatch({ type: "PURCHASE_BILL_RESET" });
+    };
 
     useEffect(() => {
         if (error) {
@@ -38,7 +41,14 @@ export function useProductCategoryActions() {
             dispatch({ type: "SET_ITEM_CATEGORY_LIST", payload: data.data ?? [] });
             if (data.data) {
                 if (!productCategory || data.data.findIndex(category => category._id === productCategory?._id) < 0) {
-                    dispatch({ type: "SET_ITEM_CATEGORY", payload: data.data[0] });
+                    const cachedProductCategoryId = localStorage.getItem("productCategoryId");
+                    const cachedProductCategory = data.data.find(category => category._id === cachedProductCategoryId);
+
+                    if (cachedProductCategory)
+                        dispatch({ type: "SET_ITEM_CATEGORY", payload: cachedProductCategory });
+                    else
+                        dispatch({ type: "SET_ITEM_CATEGORY", payload: data.data[0] });
+
                 } else {
                     dispatch({ type: "SET_ITEM_CATEGORY", payload: productCategory });
                 }
