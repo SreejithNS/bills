@@ -16,6 +16,9 @@ const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         appBar: {
             position: 'relative',
+            "@media print": {
+                display: "none"
+            }
         },
         title: {
             marginLeft: theme.spacing(2),
