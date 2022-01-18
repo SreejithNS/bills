@@ -219,15 +219,12 @@ export default class BillText {
 
         //Date
         p.align("RT")
-            .text("Date: " + (new Date(this.date)).toLocaleDateString())
+            .text("Date: " + (new Date(this.date)).toLocaleDateString("ca"))
             .feed(1)
             .align("LT");
 
         //Customer Name
         p.boldOn().text("Customer:" + customerName).boldOff().control("LF");
-
-        //Salesman
-        //p.text(this.salesMan);
 
         //Bill Serial
         p.control("CR")
