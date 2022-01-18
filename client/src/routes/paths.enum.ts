@@ -25,6 +25,8 @@ export enum itemPaths {
     addItem = '/create',
     editCategory = '/category/edit/:productCategoryId',
     editProduct = '/product/edit/:productId',
+    addStock = '/category/addStock',
+    purchase = '/purchase/:purchaseBillId',
     import = '/import'
 }
 
