@@ -95,13 +95,6 @@ const AccountEditForm = (props: { handleSubmit: any; pristine: any; reset: any; 
                             multiline={true}
                         />
                     </Grid>
-                    <Grid item xs={12}>
-                        <Field
-                            name="organisation.printTitle"
-                            component={ReduxTextField}
-                            label="Print Title"
-                        />
-                    </Grid>
                 </> : <></>}
                 <Grid item xs={12}>
                     <Field
