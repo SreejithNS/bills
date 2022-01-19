@@ -1,4 +1,3 @@
-import { store } from '..';
 import { UserData } from './auth.reducer';
 export interface Product {
     _id: string;
