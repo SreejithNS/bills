@@ -8,7 +8,7 @@ import MaterialTable, { Query, QueryResult } from 'material-table';
 import { tableIcons } from '../components/MaterialTableIcons';
 import { exportToCsv, itemsArrayToCsvArray } from '../actions/item.actions';
 import { toast } from 'react-toastify';
-import { Add, DeleteOutlineRounded, LineStyleTwoTone, Refresh } from '@material-ui/icons';
+import { Add, DeleteOutlineRounded, GetAppRounded, LineStyleTwoTone, Refresh } from '@material-ui/icons';
 import PageContainer from '../components/PageContainer';
 import LineStyleIcon from '@material-ui/icons/LineStyle';
 import EditRoundedIcon from '@material-ui/icons/EditRounded';
@@ -23,6 +23,8 @@ import NewProductCategoryModal from '../components/NewProductCategoryModal';
 import { useHasPermission, useProductCategoryActions } from '../actions/auth.actions';
 import { UserPermissions } from '../reducers/auth.reducer';
 import PurchaseBillsFilter from '../components/PurchaseBillsFilter';
+import useAxios from 'axios-hooks';
+import fileDownload from 'js-file-download';
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -51,6 +53,10 @@ const useStyles = makeStyles((theme: Theme) => ({
         }
     }
 }))
+
+function isFloat(n: number) {
+    return Number(n) === n && n % 1 !== 0;
+}
 
 export const ProductCategorySelection = React.forwardRef<HTMLDivElement>((_, ref) => {
     const { productCategoryList, productCategory } = useSelector((state: RootState) => state.product);
@@ -170,6 +176,26 @@ export default function ItemsHomePage() {
     const tableRef = useRef<any>(null);
     const { productCategory } = useSelector((state: RootState) => state.product);
 
+    const [{ loading, error, response }, execute, cancel] = useAxios<Blob>({
+        url: `/product/${productCategory?._id}/export`, responseType: 'blob'
+    }, { useCache: false, manual: true });
+
+    //cancel the request if component is unmounted
+    useEffect(() => {
+        return () => cancel();
+    }, [cancel]);
+
+    useEffect(() => {
+        if (response && !loading) {
+            const fileName = response.headers["x-bills-export-filename"];
+            fileDownload(response.data, fileName)
+        }
+    }, [response, loading]);
+
+    useEffect(() => {
+        if (error) handleAxiosError(error);
+    }, [error]);
+
     const confirm = useConfirm();
     const productCreatePermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_POST);
     const productEditPermission = useHasPermission(UserPermissions.ALLOW_PRODUCT_PUT);
@@ -217,6 +243,7 @@ export default function ItemsHomePage() {
                         <MaterialTable
                             tableRef={tableRef}
                             icons={tableIcons}
+                            isLoading={loading}
                             columns={[
                                 { title: "Item Name", field: "name", editable: "never" },
                                 { title: "Code", field: "code", editable: "never" },
@@ -225,7 +252,7 @@ export default function ItemsHomePage() {
                                     render: (rowData: Product) => (<>
                                         {rowData.stocked
                                             ? rowData.stock > 0
-                                                ? <Chip label={`${rowData.stock} in Stock`} color="primary" size='small' variant='outlined' />
+                                                ? <Chip label={`${isFloat(rowData.stock) ? rowData.stock.toFixed(2) : rowData.stock} in Stock`} color="primary" size='small' variant='outlined' />
                                                 : <Chip label="Out of Stock" color="secondary" size='small' variant='outlined' />
                                             : rowData.stock
                                         }
@@ -241,6 +268,12 @@ export default function ItemsHomePage() {
                                     tooltip: 'Refresh Data',
                                     isFreeAction: true,
                                     onClick: () => tableRef?.current?.onQueryChange(),
+                                },
+                                {
+                                    icon: () => <GetAppRounded />,
+                                    tooltip: 'Export to CSV',
+                                    isFreeAction: true,
+                                    onClick: () => execute(),
                                 },
                                 {
                                     icon: () => <Add />,

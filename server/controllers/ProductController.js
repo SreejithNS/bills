@@ -8,6 +8,7 @@ const { userData } = require("./AuthController");
 const { ProductCategory } = require("../models/ProductCategoryModel");
 const mognoose = require("mongoose");
 const { User } = require("../models/UserModel");
+const Papa = require("papaparse");
 
 //Types
 function ProductData(data) {
@@ -456,7 +457,7 @@ exports.createProductRequest = [
 	body("name").escape().isLength().trim(),
 	body("primaryUnit").escape().isLength().trim(),
 	body("rate").escape().trim().isNumeric(),
-	body("stocked").escape().trim().isBoolean(),
+	body("stocked").escape().trim().isBoolean().optional(),
 	body("cost").escape().trim().isNumeric(),
 	body("mrp").escape().trim().isNumeric(),
 	body("units").optional().isArray(),
@@ -593,6 +594,98 @@ exports.importProducts = [
 			return apiResponse.successResponse(
 				res,
 				`Imported ${count} Products`
+			);
+		} catch (err) {
+			//throw error in json response with status 500.
+			return apiResponse.ErrorResponse(res, err.message || err);
+		}
+	},
+];
+
+/**
+ * Bulk Export Products.
+ *
+ */
+exports.exportProducts = [
+	auth,
+	param("categoryId", "Invalid category id")
+		.escape().trim().isMongoId()
+		.custom((value) =>
+			ProductCategory.findById(value).then((doc) => {
+				if (!doc) {
+					return Promise.reject(
+						"Product Category does not exists"
+					);
+				}
+			})
+		),
+	async (req, res) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty())
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error",
+				errors.array()
+			);
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			if (
+				!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
+				!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
+			) {
+				return apiResponse.unauthorizedResponse(
+					res,
+					"You are not authorised for this operation"
+				);
+			}
+
+			const itemsArrayToCsvArray = (items) => items.map(
+				({ name,
+					code,
+					primaryUnit,
+					rate,
+					mrp,
+					cost,
+					units, }) =>
+					[name,
+						code,
+						primaryUnit,
+						rate,
+						mrp,
+						cost,
+						...units.map(
+							({ name, rate, mrp, cost, conversion }) => [name,
+								rate,
+								mrp,
+								cost,
+								conversion]).flat()
+					]
+			);
+
+			return Product.find({ category: req.params.categoryId }).exec().then(
+				(products) => {
+					if (products.length === 0) {
+						return apiResponse.notFoundResponse(res, "No Products Found");
+					}
+					products = itemsArrayToCsvArray(products);
+					products.unshift([
+						"Product Name",
+						"Product Code",
+						"Primary Unit",
+						"Product Rate",
+						"Product MRP",
+						"Product Cost",
+					]);
+
+					const csv = Papa.unparse(products);
+					res.set("Access-Control-Expose-Headers", "x-bills-export-filename");
+					return apiResponse.successResponseWithFile(
+						res.set("x-bills-export-filename", "category_" + req.params.categoryId + ".csv"),
+						"category_" + req.params.categoryId + ".csv",
+						csv
+					);
+				},
+				(err) => apiResponse.ErrorResponse(res, err)
 			);
 		} catch (err) {
 			//throw error in json response with status 500.

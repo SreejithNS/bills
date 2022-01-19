@@ -1,5 +1,5 @@
 var express = require("express");
-const { createCategoryRequest, deleteProductCategory, updateProductCategory, getProductCategoriesList, productAvailability, getProductSuggestions, createProductRequest, deleteProduct, updateProduct, queryProduct, importProducts, getProduct } = require("../controllers/ProductController");
+const { createCategoryRequest, exportProducts, deleteProductCategory, updateProductCategory, getProductCategoriesList, productAvailability, getProductSuggestions, createProductRequest, deleteProduct, updateProduct, queryProduct, importProducts, getProduct } = require("../controllers/ProductController");
 
 var router = express.Router();
 
@@ -9,6 +9,7 @@ router.put("/:categoryId", updateProductCategory);
 router.delete("/:categoryId.:productId", deleteProduct);
 router.delete("/:categoryId", deleteProductCategory);
 router.get("/:categoryId/query", queryProduct);
+router.get("/:categoryId/export", exportProducts);
 
 router.post("/:categoryId", createProductRequest);
 router.post("/:categoryId/import", importProducts);
