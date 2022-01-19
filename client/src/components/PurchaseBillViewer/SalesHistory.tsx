@@ -17,6 +17,7 @@ import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import { useHasPermission } from "../../actions/auth.actions";
 import { UserPermissions } from "../../reducers/auth.reducer";
 import { BillData } from '../../reducers/bill.reducer';
+import { DeleteOutlineRounded } from '@material-ui/icons';
 
 const useStylesForListItem = makeStyles((theme: Theme) =>
     createStyles({
@@ -27,24 +28,31 @@ const useStylesForListItem = makeStyles((theme: Theme) =>
     })
 );
 
-function SalesHistoryListItem(props: { sales: any[]; onOpen?: (_id: string) => void }) {
+function SalesHistoryListItem(props: { sales: any[]; onOpen?: (_id: string) => void; onDelete?: (_id: string) => void }) {
     const classes = useStylesForListItem();
     const billGetPermission = useHasPermission(UserPermissions.ALLOW_BILL_GET);
+    const billPutPermission = useHasPermission(UserPermissions.ALLOW_BILL_PUT);
 
     return (
         <List dense={true} className={classes.root}>
             {props.sales?.length &&
                 props.sales.map(
                     (
-                        { bill, items }: { bill: Pick<BillData, "_id" | "createdAt" | "serialNumber"> | null; items: { code: string; quantity: number; amount: number; }[] },
+                        { bill, items, _id }: { bill: Pick<BillData, "_id" | "createdAt" | "serialNumber"> | null; items: { code: string; quantity: number; amount: number; }[]; _id: string },
                         key: string | number | undefined
                     ) => (
                         <ListItem key={key}>
-                            <ListItemAvatar>
+                            {(billGetPermission && props.onOpen && bill) ? <ListItemAvatar>
+                                <Avatar>
+                                    <IconButton aria-label="open" onClick={() => props.onOpen && props.onOpen(bill._id)}>
+                                        <OpenInNewIcon />
+                                    </IconButton>
+                                </Avatar>
+                            </ListItemAvatar> : <ListItemAvatar>
                                 <Avatar>
                                     <AddCircleOutlineRoundedIcon />
                                 </Avatar>
-                            </ListItemAvatar>
+                            </ListItemAvatar>}
                             <ListItemText
                                 primary={bill ? "#" + bill.serialNumber : 'Deleted Bill'}
                                 secondary={<>
@@ -55,9 +63,9 @@ function SalesHistoryListItem(props: { sales: any[]; onOpen?: (_id: string) => v
                                     ))}
                                 </>}
                             />
-                            {(billGetPermission && props.onOpen && bill) && <ListItemSecondaryAction>
-                                <IconButton edge="end" aria-label="open" onClick={() => props.onOpen && props.onOpen(bill._id)}>
-                                    <OpenInNewIcon />
+                            {(billPutPermission && props.onDelete) && <ListItemSecondaryAction>
+                                <IconButton edge="end" aria-label="delete" onClick={() => props.onDelete && props.onDelete(_id)}>
+                                    <DeleteOutlineRounded />
                                 </IconButton>
                             </ListItemSecondaryAction>}
                         </ListItem>
@@ -79,7 +87,7 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-export default function SalesHistory(props: { sales: any[]; onOpen?(_id: string): void }) {
+export default function SalesHistory(props: { sales: any[]; onOpen?(_id: string): void; onDelete(_id: string): void }) {
     const classes = useStyles();
 
     return (
@@ -92,7 +100,7 @@ export default function SalesHistory(props: { sales: any[]; onOpen?(_id: string)
                 </Typography>
             </AccordionSummary>
             <AccordionDetails classes={{ root: classes.root }}>
-                <SalesHistoryListItem sales={props.sales} onOpen={props.onOpen} />
+                <SalesHistoryListItem sales={props.sales} onOpen={props.onOpen} onDelete={props.onDelete} />
             </AccordionDetails>
         </Accordion>
     );
