@@ -107,8 +107,8 @@ export const getBillAmount = (billState: PurchaseBillState) => {
 
 const calculateItemAmounts = (billState: PurchaseBillState) => {
     billState.items.forEach((item) => {
-        if (item.unit) item.amount = item.quantity * item.unit.rate;
-        else item.amount = item.quantity * item.rate;
+        if (item.unit) item.amount = item.quantity * item.unit.cost;
+        else item.amount = item.quantity * item.cost;
     });
     if (!billState.credit) {
         billState.paidAmount = getBillAmount(billState);
@@ -173,8 +173,8 @@ export default function purchaseBillReducer(state: PurchaseBillState = initialSt
                 items[index].quantity += payload.quantity;
             } else {
                 if (payload.unit) {
-                    payload.rate = payload.unit.rate;
-                    payload.mrp = payload.unit.mrp;
+                    payload.rate = payload.unit.cost;
+                    payload.mrp = payload.unit.cost;
                 }
                 items.push(payload);
             }
