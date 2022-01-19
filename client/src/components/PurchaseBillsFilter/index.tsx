@@ -1,13 +1,10 @@
 import * as React from 'react'
-import { CircularProgress, Fab, Grid, Theme, Zoom, Typography, Button, makeStyles, Box, Card, CardContent, Tooltip } from '@material-ui/core';
+import { CircularProgress, Grid, Theme, Zoom, Typography, Button, makeStyles, Box, Card, CardContent, Tooltip } from '@material-ui/core';
 import BillCard from '../BillCard';
 import ParagraphIconCard from "../ParagraphIconCard";
-import AddIcon from '@material-ui/icons/Add';
 import { useHistory } from 'react-router-dom';
-import { billsPaths, itemPaths, paths } from '../../routes/paths.enum';
+import { itemPaths, paths } from '../../routes/paths.enum';
 import { LineWeightRounded } from '@material-ui/icons';
-import BillSearch from '../BillSearch';
-import PageContainer from '../PageContainer';
 import { useCallback, useEffect, useState } from 'react';
 import useAxios from 'axios-hooks';
 import { APIResponse, axios, handleAxiosError } from '../Axios';
