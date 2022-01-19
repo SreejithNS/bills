@@ -77,6 +77,25 @@ export default function BillViewerModal(props: ModalProps) {
         }, [data]
     )
 
+    const deleteSales = useCallback(
+        (billId: PurchaseBillData["_id"]) => (saleId: string) => {
+            confirm({
+                title: "Are you sure?",
+                description: "Deleting a sale record is unrecoverable and will increase the stock as well. Do you want to continue deleting the record?",
+                confirmationText: "Delete",
+                confirmationButtonProps: {
+                    color: "secondary"
+                }
+            }).then(() => {
+                return axios.delete("/purchasebill/" + billId + "/sales/" + saleId).catch(handleAxiosError);
+            }).then(
+                () => { toast.success("Sale record Deleted successfully"); fetchAgain() },
+                () => toast.info("Sale record did not delete.")
+            )
+            //eslint-disable-next-line
+        }, [data]
+    )
+
 
     const handleCreditUpdate = () => {
         axios.put(`/purchasebill/${params.purchaseBillId}/credit`).then(() => fetchAgain()).catch(handleAxiosError);
@@ -111,6 +130,7 @@ export default function BillViewerModal(props: ModalProps) {
                 onDelete={(id) => deleteBill(id)}
                 location={data.data.location}
                 paymentDelete={deletePayment(data.data._id)}
+                deleteSales={deleteSales(data.data._id)}
                 payBalance={(balance) => receiveBalance({ data: { paidAmount: balance } })}
                 category={data.data.category}
                 sales={data.data.sales} />}
