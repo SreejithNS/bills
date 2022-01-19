@@ -1,5 +1,5 @@
 var express = require("express");
-const { getAllBills, getBill, getProductWiseSalesAsCSV, getAllBillsAsCSV, receivePayment, deletePayment, deleteBill, savePurchaseBill, toggleBillCredit } = require("../controllers/PurchaseBills/index");
+const { getAllBills, getBill, getProductWiseSalesAsCSV, deleteSales, getAllBillsAsCSV, receivePayment, deletePayment, deleteBill, savePurchaseBill, toggleBillCredit } = require("../controllers/PurchaseBills/index");
 
 var router = express.Router();
 
@@ -13,4 +13,5 @@ router.delete("/id/:billId", deleteBill);
 router.post("/:billId/payment", receivePayment);
 router.put("/:billId/credit", toggleBillCredit);
 router.delete("/:billId/payment/:paymentId", deletePayment);
+router.delete("/:billId/sales/:saleId", deleteSales);
 module.exports = router;

@@ -778,6 +778,54 @@ exports.deletePayment = [
 	},
 ];
 
+exports.deleteSales = [
+	auth,
+	param("billId", "Invalid Bill ID").escape().trim().isMongoId(),
+	param("saleId", "Invalid Payment ID").escape().trim().isMongoId(),
+	async (req, res) => {
+		const errors = validationResult(req);
+		if (!errors.isEmpty()) {
+			return apiResponse.validationErrorWithData(
+				res,
+				"Validation Error.",
+				errors.array()
+			);
+		}
+		try {
+			const authenticatedUser = await userData(req.user._id);
+			const bill = await getBillById(req.params.billId);
+			if (!bill) {
+				return apiResponse.notFoundResponse(res, "Bill Not Found");
+			} else {
+				if (!hasAccessPermission(authenticatedUser, bill, "ALLOW_BILL_PUT"))
+					return apiResponse.unauthorizedResponse(
+						res,
+						"You are not delete sales record for this bill."
+					);
+				const saleIndex = bill.sales.findIndex((sale) => sale._id.toString() === req.params.saleId);
+				if (saleIndex >= 0) {
+					const items = [...bill.sales[saleIndex].items];
+					for (const item of items) {
+						bill.items.find((billItem) => billItem.code === item.code).instock += item.quantity;
+					}
+					bill.sales.splice(saleIndex, 1);
+				} else {
+					return apiResponse.notFoundResponse(res, "Sales not found");
+				}
+
+				return bill.save().then(() =>
+					apiResponse.successResponse(res, "Sale record deleted")
+				);
+			}
+		} catch (e) {
+			return apiResponse.ErrorResponse(
+				res,
+				e.message || e
+			);
+		}
+	},
+];
+
 exports.toggleBillCredit = [
 	auth,
 	param("billId").escape().trim().isMongoId(),
