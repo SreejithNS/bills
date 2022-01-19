@@ -67,6 +67,7 @@ interface AdditionalProps {
     receivePayment(): void;
     payBalance(balance?: number): void;
     creditAction(): void;
+    deleteSales?: (id: string) => void;
     onDelete?(id: string): void;
     paymentDelete?(id: string): void;
 }
@@ -139,7 +140,7 @@ export default function PurchaseBillViewer(props: BillData & AdditionalProps) {
                 </Grid>
                 <Grid item xs={12} className={classes.itemPadding}>
                     <Typography variant="subtitle1" display="block">
-                        Sold by: {props?.soldBy?.name || "Salesman"}
+                        Purchased by: {props?.soldBy?.name || "Salesman"}
                     </Typography>
                 </Grid>
                 <Grid item className={classes.itemPadding} xs={12}>
@@ -168,8 +169,8 @@ export default function PurchaseBillViewer(props: BillData & AdditionalProps) {
                                 editable: "never"
                             },
                             {
-                                title: "Rate",
-                                field: "rate",
+                                title: "Cost",
+                                field: "cost",
                                 type: "numeric",
                                 editable: "never"
                             },
@@ -192,7 +193,7 @@ export default function PurchaseBillViewer(props: BillData & AdditionalProps) {
                 </Grid>
                 {(props.sales.length > 0) &&
                     <Grid item className={classes.itemPadding} xs={12}>
-                        <SalesHistory sales={props.sales} onOpen={(id) => history.push(paths.billsHome + billsPaths.billDetail.replace(":id", id))} />
+                        <SalesHistory sales={props.sales} onOpen={(id) => history.push(paths.billsHome + billsPaths.billDetail.replace(":id", id))} onDelete={(id) => props.deleteSales && props.deleteSales(id)} />
                     </Grid>
                 }
                 {(props.payments && props.payments.length)
