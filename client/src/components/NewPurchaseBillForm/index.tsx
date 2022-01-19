@@ -33,7 +33,6 @@ import { UserData, UserPermissions } from "../../reducers/auth.reducer";
 import { RootState } from "../../reducers/rootReducer";
 import { Product, Unit } from "../../reducers/product.reducer";
 import { useHasPermission } from "../../actions/auth.actions";
-import { ProductCategorySelection } from "../../pages/ItemsHomePage";
 import useAxios from "axios-hooks";
 import { BillItem } from "../../reducers/bill.reducer";
 
@@ -139,7 +138,7 @@ function CustomerSelection(props: {
 					)}
 				</React.Fragment>
 			)}
-			renderInput={(params) => <TextField {...params} label="Customer" variant="outlined" />}
+			renderInput={(params) => <TextField {...params} label="Supplier" variant="outlined" />}
 		/>
 	);
 }
@@ -453,7 +452,7 @@ export default function NewPurchaseBillForm(props: { closeModal: (id?: string) =
 								type: "numeric",
 								editable: "never",
 							},
-							{ title: "Rate", field: "rate", type: "numeric", editable: "never" },
+							{ title: "Cost", field: "cost", type: "numeric", editable: "never" },
 						]}
 						data={items ?? [] as PurchaseBillItem[]}
 						options={{
