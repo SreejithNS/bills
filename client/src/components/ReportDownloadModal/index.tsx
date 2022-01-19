@@ -216,7 +216,7 @@ export default function ReportDownloadModal(props: ModalProps) {
             <Divider style={{ margin: "1em 0em" }} />
             <div className={classes.root}>
                 <Typography variant="h5">
-                    Product-wise Sales Report
+                    Product-wise Sales Report with Profit Margin
                 </Typography>
                 <ProductWiseSalesFilter />
             </div>

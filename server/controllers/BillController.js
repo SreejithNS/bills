@@ -427,6 +427,7 @@ exports.getProductWiseSalesAsCSV = [
 							"code": "$items.code",
 							"unit": "$items.unit",
 							"rate": "$items.rate",
+							"cost": "$items.cost",
 							"category": {
 								"$toObjectId": "$items.category"
 							}
@@ -480,6 +481,11 @@ exports.getProductWiseSalesAsCSV = [
 							"$multiply": [
 								"$_id.rate", "$quantity"
 							]
+						},
+						"purchaseCost": {
+							"$multiply": [
+								"$_id.cost", "$quantity"
+							]
 						}
 					}
 				}
@@ -499,7 +505,9 @@ exports.getProductWiseSalesAsCSV = [
 							"Quantity in Primary Unit": doc.convertedQuantity,
 							"Total Sold Quantity": doc.quantity,
 							"Bill Count": doc.billCount,
-							"Total Sales in Amount": doc.amount
+							"Total Sales in Amount": doc.amount,
+							"Total Purchase Cost in Amount": doc.purchaseCost,
+							"Profit": doc.amount - doc.purchaseCost
 						};
 					});
 
