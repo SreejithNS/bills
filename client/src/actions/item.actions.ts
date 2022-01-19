@@ -115,7 +115,8 @@ export const parseCsvItemsArray = (csvArray: any[][]) => {
         })
             .filter(element => element !== undefined)
     };
-
+    //if first element of csvArray has "Product Name" remove that element
+    if (csvArray[0][0] === "Product Name") csvArray.shift();
     return csvArray.map((item: any[]) => {
         //Create item Object by splicing first 4 elements as name,code,rate,mrp
         const itemObject = {
@@ -154,9 +155,25 @@ export const parseCsvItemsArray = (csvArray: any[][]) => {
  * @param items {[Items]} - array of Items
  */
 export const itemsArrayToCsvArray = (items: any[]) => items.map(
-    ({ name, code, mrp, rate, primaryUnit, cost, units }) =>
-        [name, code, primaryUnit, rate, mrp, cost, ...units.map(
-            ({ name, rate, mrp, cost, conversion }: { name: string; rate: number; mrp: number; conversion: number; cost: number }) => [name, rate, mrp, cost, conversion]).flat()
+    ({ name,
+        code,
+        primaryUnit,
+        rate,
+        mrp,
+        cost,
+        units, }) =>
+        [name,
+            code,
+            primaryUnit,
+            rate,
+            mrp,
+            cost,
+            units, ...units.map(
+                ({ name, rate, mrp, cost, conversion }: { name: string; rate: number; mrp: number; conversion: number; cost: number }) => [name,
+                    rate,
+                    mrp,
+                    cost,
+                    conversion]).flat()
         ]
 )
 
