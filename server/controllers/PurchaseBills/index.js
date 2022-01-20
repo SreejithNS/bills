@@ -62,7 +62,7 @@ function BillData(doc) {
 	this._id = doc._id;
 	this.serialNumber = doc.serialNumber;
 	this.category = doc.category;
-	this.contact = doc.contact;
+	this.contact = doc.contact || { name: "Deleted contact", _id: "" };
 	this.purchasedBy = new UserData(doc.purchasedBy);
 	this.belongsTo = new UserData(doc.belongsTo);
 	this.items = doc.items;
@@ -353,7 +353,7 @@ exports.getAllBillsAsCSV = [
 
 			const paginateOptions = { ...(new QueryParser(req.query)) };
 
-			return PurchaseBill.find(queryWithSearch).sort(paginateOptions.sort).populate("purchasedBy", "name").populate("contact").exec().then(
+			return PurchaseBill.find(queryWithSearch).sort(paginateOptions.sort).populate("purchasedBy", "name").populate("contact", {}).exec().then(
 				(bills) => {
 					bills = bills.map((doc) => {
 						return {
