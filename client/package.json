@@ -1,6 +1,6 @@
 {
 	"name": "client",
-	"version": "2.0.2",
+	"version": "2.0.3",
 	"private": true,
 	"dependencies": {
 		"@date-io/moment": "1.x",
@@ -33,6 +33,7 @@
 		"react": "^16.13.1",
 		"react-dom": "^16.13.1",
 		"react-hook-geolocation": "^1.0.7",
+		"react-morph": "^0.4.0",
 		"react-papaparse": "^3.11.1",
 		"react-redux": "^7.2.2",
 		"react-reveal": "^1.2.2",
