@@ -7,9 +7,10 @@ var loginRouter = require("./routes/login");
 var apiResponse = require("./helpers/apiResponse");
 var cors = require("cors");
 
+
 const APP_LOG = "[ APP ] ";
 const origin = process.env.NODE_ENV === "development"
-	? "http://localhost:3000"
+	? process.env.API_URL || "http://localhost:3000"
 	: process.env.API_URL || "https://bills.sreejithofficial.in";
 
 // DB connection
@@ -20,6 +21,26 @@ var mongoose = require("mongoose");
 // mongoose.set("useNewUrlParser", true);
 // mongoose.set("useFindAndModify", false);
 // mongoose.set("useCreateIndex", true);
+
+var db = mongoose.connection;
+
+var app = express();
+
+//don't show the log when it is test
+if (process.env.NODE_ENV !== "test") {
+	app.use(logger("dev"));
+}
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+//To allow all cross-origin requests
+app.use(cors({
+	origin: true,
+	optionsSuccessStatus: 200,
+	credentials: true,
+})
+);
 
 mongoose
 	.connect(MONGODB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -36,27 +57,6 @@ mongoose
 		process.exit(1);
 	});
 
-var db = mongoose.connection;
-
-var app = express();
-
-//don't show the log when it is test
-if (process.env.NODE_ENV !== "test") {
-	app.use(logger("dev"));
-}
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-
-//To allow cross-origin requests
-app.use(
-	cors({
-		origin: origin,
-		optionsSuccessStatus: 200,
-		credentials: true,
-	})
-);
-
 //Route Prefixes
 app.use("/", indexRouter);
 
@@ -69,5 +69,6 @@ app.use("/", indexRouter);
 app.use(function (err, req, res, next) {
 	return apiResponse.ErrorResponse(res, err);
 });
+
 
 module.exports = app;
