@@ -69,12 +69,12 @@ export function handleAxiosError<T>(errorResponse: AxiosError<APIResponse<T>>, c
     if (errorResponse.response) {
         if (errorResponse.response.status === 401) { // Unauthorised Response
             toast.warn("You will be Session will be revoked");
-            axios.post("/auth/logout").finally(
-                () => {
-                    const url = new URL(process.env.REACT_APP_API_URL + "/login");
-                    window.location.href = url.toString();
-                }
-            )
+            // axios.post("/auth/logout").finally(
+            //     () => {
+            //if not in login page then redirect to login page
+            if (window.location.pathname !== "/login") window.location.href = "/login";
+            //     }
+            // )
         } else if (errorResponse.response.status === 400) {
             const data = errorResponse.response.data.data;
             if (Array.isArray(data)) {
