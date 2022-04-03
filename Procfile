@@ -1,1 +1,1 @@
-web: cd server && npm install && npm run start
+web: npm install --global yarn && yarn install && yarn build && yarn start
