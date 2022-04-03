@@ -6,10 +6,7 @@
 	"author": "SreejithNS <nssreejith229@gmail.com>",
 	"license": "MIT",
 	"private": false,
-	"devDependencies": {
-		"concurrently": "^7.1.0",
-		"cross-env": "^7.0.3"
-	},
+	"devDependencies": {},
 	"scripts": {
 		"install": "cd server && yarn && cd ../client && yarn",
 		"build": "cd client && yarn run build",
@@ -17,5 +14,9 @@
 		"dev:client": "cd client && cross-env NODE_ENV=development yarn start",
 		"dev": "concurrently -c \"greenBright,blueBright\" -n \"NODEJS,REACT \" \"yarn run dev:server --inspect\" \"yarn run dev:client --inspect\"",
 		"start": "cd server && cross-env NODE_ENV=production yarn start"
+	},
+	"dependencies": {
+		"concurrently": "^7.1.0",
+		"cross-env": "^7.0.3"
 	}
 }
