@@ -5,6 +5,11 @@ import {
 } from "react-router-dom";
 import AppBottomNavigation from '../components/AppBottomNavigation';
 import FullScreenLoading from '../components/FullScreenLoading';
+import QueryFilterUI from '../components/QueryFilterUI';
+import { QueryParams } from '../components/QueryFilterUI/useQueryParams';
+import PrivateRoute from '../components/RouteContainer/PrivateRoute';
+import QueryFilter from '../experimental/QueryFilter';
+import LoginPage from '../pages/LoginPage';
 import AccountRoutes from './account.routes';
 import { paths } from './paths.enum';
 
@@ -26,30 +31,40 @@ export default function Routes() {
     return (
         <>
             <Switch>
-                <Route exact path={paths.home}>
+                <PrivateRoute exact path={paths.home}>
                     <Suspense fallback={<FullScreenLoading />}>
                         <HomePage />
                     </Suspense>
-                </Route>
-                <Route path={paths.billsHome}>
+                </PrivateRoute>
+                <PrivateRoute path={paths.billsHome}>
                     <Suspense fallback={<FullScreenLoading />}>
                         <BillsRoutes />
                     </Suspense>
-                </Route>
-                <Route path={paths.customer}>
+                </PrivateRoute>
+                <PrivateRoute path={paths.customer}>
                     <Suspense fallback={<FullScreenLoading />}>
                         <CustomersRoutes />
                     </Suspense>
-                </Route>
-                <Route path={paths.items}>
+                </PrivateRoute>
+                <PrivateRoute path={paths.items}>
                     <Suspense fallback={<FullScreenLoading />}>
                         <ItemsRoutes />
                     </Suspense>
-                </Route>
-                <Route path={paths.account}>
+                </PrivateRoute>
+                <PrivateRoute path={paths.account}>
                     <Suspense fallback={<FullScreenLoading />}>
                         <AccountRoutes />
                     </Suspense>
+                </PrivateRoute>
+                <Route path={paths.login}>
+                    <Suspense fallback={<FullScreenLoading />}>
+                        <LoginPage />
+                    </Suspense>
+                </Route>
+                <Route path={"/test"}>
+                    {/* <QueryParams updateURL>
+                        <QueryFilter />
+                    </QueryParams> */}
                 </Route>
             </Switch>
             <AppBottomNavigation />

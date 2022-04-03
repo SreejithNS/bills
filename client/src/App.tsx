@@ -11,24 +11,15 @@ import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 
 export default function App() {
-  const { initiated: init1 } = useAuthActions();
-  const { initiated: init2 } = useUsersUnderAdmin();
-  const { initiated: init3 } = useProductCategoryActions();
-  const [init, setInit] = useState(false);
 
-  useEffect(() => {
-    if (!init && (init1 && init2 && init3)) {
-      setInit(true);
-    }
-  }, [init1, init2, init3, init]);
 
   return (
     <main style={{ height: "100vh" }}>
       <MuiPickersUtilsProvider utils={MomentUtils}>
         <ConfirmProvider>
-          {init ? <Router>
+          <Router>
             <Routes />
-          </Router> : <FullScreenLoading />}
+          </Router>
         </ConfirmProvider>
       </MuiPickersUtilsProvider>
     </main>

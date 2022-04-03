@@ -1,5 +1,6 @@
 export enum paths {
     home = '/',
+    login = '/login',
     customer = '/customers',
     billsHome = '/bills',
     items = "/items",
