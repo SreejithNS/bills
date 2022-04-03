@@ -11,7 +11,6 @@
 		"cross-env": "^7.0.3"
 	},
 	"scripts": {
-		"preinstall": "npm install --global yarn",
 		"install": "cd server && yarn && cd ../client && yarn",
 		"build": "cd client && yarn run build",
 		"dev:server": "cd server && cross-env NODE_ENV=development yarn dev",
