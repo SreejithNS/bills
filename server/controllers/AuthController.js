@@ -33,6 +33,7 @@ function UserData(params) {
 	this.phone = params.phone;
 	this.type = params.type;
 	this.settings = params.settings;
+	this.status = params.status;
 	this.belongsTo = params.belongsTo && new UserData(params.belongsTo);
 	this.organisation = params.organisation || undefined;
 }
@@ -487,6 +488,7 @@ const fetchUserData = [
 	async (req, res) => {
 		try {
 			const authenticatedUserData = await userData(req.user._id);
+			if (!authenticatedUserData.status) return apiResponse.unauthorizedResponse(res, "Authentication Failed: User blocked");
 			return apiResponse.successResponseWithData(
 				res,
 				"User Data fetched",
@@ -565,8 +567,18 @@ const deleteUserAccount = [
 ];
 
 const logout = (req, res) => {
-	res.cookie("auth-token", { httpOnly: true, expires: Date.now() });
-	return apiResponse.successResponse(res, "Successfully logged out");
+	try {
+		res.cookie("auth-token", "", {
+			httpOnly: true,
+			sameSite: "none",
+			secure: true,
+			maxAge: 0
+		});
+
+		return apiResponse.successResponse(res, "Successfully logged out");
+	} catch (e) {
+		console.error(e);
+	}
 };
 
 const numberAvailability = [
