@@ -5,10 +5,7 @@ import {
 } from "react-router-dom";
 import AppBottomNavigation from '../components/AppBottomNavigation';
 import FullScreenLoading from '../components/FullScreenLoading';
-import QueryFilterUI from '../components/QueryFilterUI';
-import { QueryParams } from '../components/QueryFilterUI/useQueryParams';
 import PrivateRoute from '../components/RouteContainer/PrivateRoute';
-import QueryFilter from '../experimental/QueryFilter';
 import LoginPage from '../pages/LoginPage';
 import AccountRoutes from './account.routes';
 import { paths } from './paths.enum';
