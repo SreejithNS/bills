@@ -34,7 +34,7 @@ if (process.env.NODE_ENV !== "development") {
 	server = https.createServer(
 		{
 			key: fs.readFileSync("./security/cert.key"),
-			cert: fs.readFileSync("./security/cert.pem"),
+			cert: fs.readFileSync("./security/cert.crt"),
 		},
 		app
 	);
