@@ -297,6 +297,293 @@
     "segments": [],
     "actions": []
   }, {
+    "name": "CheckIn",
+    "nameOld": "checkins",
+    "icon": null,
+    "integration": null,
+    "isReadOnly": false,
+    "isSearchable": true,
+    "isVirtual": false,
+    "onlyForRelationships": false,
+    "paginationType": "page",
+    "fields": [{
+      "field": "_id",
+      "type": "String",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": true,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "belongsTo",
+      "type": "String",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": true,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": "User._id",
+      "inverseOf": null,
+      "validations": [{
+        "message": null,
+        "type": "is present",
+        "value": null
+      }]
+    }, {
+      "field": "billAmount",
+      "type": "Number",
+      "defaultValue": 0,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "checkInLocation",
+      "type": {
+        "fields": [{
+          "field": "type",
+          "type": "Enum",
+          "enums": ["Point"]
+        }, {
+          "field": "coordinates",
+          "type": ["Number"]
+        }]
+      },
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": true,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": [{
+        "message": null,
+        "type": "is present",
+        "value": null
+      }]
+    }, {
+      "field": "checkedBy",
+      "type": "String",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": true,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": "User._id",
+      "inverseOf": null,
+      "validations": [{
+        "message": null,
+        "type": "is present",
+        "value": null
+      }]
+    }, {
+      "field": "contact",
+      "type": "String",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": "Customer._id",
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "createdAt",
+      "type": "Date",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "dates",
+      "type": [{
+        "fields": [{
+          "field": "name",
+          "type": "String"
+        }, {
+          "field": "label",
+          "type": "String"
+        }, {
+          "field": "value",
+          "type": "Date"
+        }]
+      }],
+      "defaultValue": [],
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "discountAmount",
+      "type": "Number",
+      "defaultValue": 0,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "distance",
+      "type": "Number",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "itemsTotalAmount",
+      "type": "Number",
+      "defaultValue": 0,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "note",
+      "type": "String",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "products",
+      "type": [{
+        "fields": [{
+          "field": "code",
+          "type": "String"
+        }, {
+          "field": "name",
+          "type": "String"
+        }, {
+          "field": "unit",
+          "type": "String"
+        }, {
+          "field": "category",
+          "type": "String"
+        }, {
+          "field": "quantity",
+          "type": "Number"
+        }, {
+          "field": "rate",
+          "type": "Number"
+        }, {
+          "field": "mrp",
+          "type": "Number"
+        }, {
+          "field": "converted",
+          "type": "Number"
+        }, {
+          "field": "cost",
+          "type": "Number"
+        }, {
+          "field": "stocked",
+          "type": "Boolean"
+        }]
+      }],
+      "defaultValue": [],
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "updatedAt",
+      "type": "Date",
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }],
+    "segments": [],
+    "actions": []
+  }, {
     "name": "Counter_bill_sequence",
     "nameOld": "counters",
     "icon": null,
@@ -1389,9 +1676,57 @@
         }, {
           "field": "printFooter",
           "type": "String"
+        }, {
+          "field": "checkInSettings",
+          "type": {
+            "fields": [{
+              "field": "customerRequired",
+              "type": "Boolean"
+            }, {
+              "field": "productsRequired",
+              "type": "Boolean"
+            }, {
+              "field": "noteRequired",
+              "type": "Boolean"
+            }, {
+              "field": "notePresets",
+              "type": ["String"]
+            }, {
+              "field": "distanceThreshold",
+              "type": "Number"
+            }, {
+              "field": "dateFields",
+              "type": [{
+                "fields": [{
+                  "field": "name",
+                  "type": "String"
+                }, {
+                  "field": "label",
+                  "type": "String"
+                }, {
+                  "field": "required",
+                  "type": "Boolean"
+                }]
+              }]
+            }]
+          }
         }]
       },
-      "defaultValue": null,
+      "defaultValue": {
+        "name": "Organisation",
+        "printTitle": "Billz App",
+        "tagline": "",
+        "printHeader": "( Quotation )",
+        "printFooter": "",
+        "checkInSettings": {
+          "customerRequired": false,
+          "productsRequired": false,
+          "noteRequired": false,
+          "notePresets": ["No Order"],
+          "dateFields": [],
+          "distanceThreshold": 5
+        }
+      },
       "enums": null,
       "integration": null,
       "isFilterable": true,
