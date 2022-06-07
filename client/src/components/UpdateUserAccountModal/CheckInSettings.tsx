@@ -8,7 +8,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import Switch from '@material-ui/core/Switch';
 import { Field } from 'redux-form';
-import { AddCircle, CancelRounded, CheckCircleOutlineRounded, EventNoteRounded, Note, RecentActors, ShoppingCart, SubjectOutlined } from '@material-ui/icons';
+import { AddCircle, CancelRounded, CheckCircleOutlineRounded, EventNoteRounded, LinearScaleRounded, Note, RecentActors, ShoppingCart, SubjectOutlined } from '@material-ui/icons';
 import { Chip, IconButton, Input, InputAdornment, InputBaseProps, TextField, useTheme, Tooltip, Box } from '@material-ui/core';
 import camelcase from 'camelcase';
 import StarRateIcon from '@material-ui/icons/StarRate';
@@ -201,7 +201,7 @@ export default function CheckInSettings() {
             </ListItem>
             <ListItem>
                 <ListItemIcon>
-                    <Note />
+                    <LinearScaleRounded />
                 </ListItemIcon>
                 <ListItemText primary="Threshold Distance" secondary={
                     <Field
