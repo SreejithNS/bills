@@ -28,12 +28,12 @@ import PrintIcon from '@material-ui/icons/Print';
 import WirelessPrint from '@material-ui/icons/SettingsRemote';
 import PlainPrint from "../Print/PlainPrint";
 import { useReactToPrint } from "react-to-print";
-import { WhatsappShareButton } from 'react-share';
 import WhatsAppIcon from '@material-ui/icons/WhatsApp';
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
 import { useHasPermission } from "../../actions/auth.actions";
 import { UserPermissions } from "../../reducers/auth.reducer";
+import {toBlob} from "html-to-image";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -59,7 +59,6 @@ const useStyles = makeStyles((theme: Theme) =>
         button: {
             color: theme.palette.common.white,
             borderColor: theme.palette.common.white,
-            fontWeight: theme.typography.fontWeightBold,
             marginTop: theme.spacing(1),
         }
     })
@@ -77,6 +76,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
     const classes = useStyles();
     const history = useHistory();
     const printRef = useRef<HTMLDivElement>(null);
+    const billRef = useRef<HTMLDivElement>(null);
     const userData = useSelector((state: RootState) => state.auth.userData);
     const handlePrint = useReactToPrint({
         content: () => printRef.current,
@@ -91,8 +91,31 @@ export default function BillViewer(props: BillData & AdditionalProps) {
         }).then(() => toast.success("Bill Printed!")).catch((error) => toast.error(error.message));
     }, [props]);
 
+    const handleWhatsAppShare = useCallback(async () => {
+        if (billRef.current) {
+            const blob = await toBlob(billRef.current, {
+                width: 896,
+                style: {
+                    width: "896px",
+                },
+                canvasWidth: 896,
+            });
+            const file = blob ? new File([blob], 'bill.png', { type: blob.type }) : null;
+            if (navigator.share) {
+                await navigator.share({
+                    title: `BillzApp | Bill#${props.serialNumber}`,
+                    text: `BillzApp | Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""}`,
+                    url: window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`,
+                    files: file ? [file] : []
+                })
+                    .then(() => console.log('Successful share'))
+                    .catch((error) => console.log('Error in sharing', error));
+            }
+        }
+    }, [props, userData, billRef]);
+
     return (
-        <Paper>
+        <Paper ref={billRef}>
             <Grid
                 container
                 direction="row"
@@ -136,11 +159,11 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                         </IconButton>
                     </Tooltip> : <></>}
                     <Tooltip title="Share on WhatsApp">
-                        <WhatsappShareButton title={`BillzApp | Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""}`} url={window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`} >
-                            <IconButton>
-                                <WhatsAppIcon />
-                            </IconButton>
-                        </WhatsappShareButton>
+                        {/* <WhatsappShareButton title={`BillzApp | Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""}`} url={window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`} > */}
+                        <IconButton onClick={handleWhatsAppShare}>
+                            <WhatsAppIcon />
+                        </IconButton>
+                        {/* </WhatsappShareButton> */}
                     </Tooltip>
                     {(billDeletePermission && props.onDelete) && <Tooltip title="Delete Bill">
                         <IconButton color="secondary" onClick={() => props.onDelete && props.onDelete()}>
