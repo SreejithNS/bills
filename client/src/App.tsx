@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { } from 'react';
 import {
   BrowserRouter as Router
   //Link
 } from "react-router-dom";
 import Routes from './routes';
-import FullScreenLoading from './components/FullScreenLoading';
 import { ConfirmProvider } from 'material-ui-confirm';
-import { useAuthActions, useProductCategoryActions, useUsersUnderAdmin } from './actions/auth.actions';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 
