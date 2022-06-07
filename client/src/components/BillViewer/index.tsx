@@ -28,7 +28,7 @@ import PrintIcon from '@material-ui/icons/Print';
 import WirelessPrint from '@material-ui/icons/SettingsRemote';
 import PlainPrint from "../Print/PlainPrint";
 import { useReactToPrint } from "react-to-print";
-import WhatsAppIcon from '@material-ui/icons/WhatsApp';
+import ShareIcon from '@material-ui/icons/Share';
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
 import { useHasPermission } from "../../actions/auth.actions";
@@ -158,10 +158,10 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                             <PrintIcon />
                         </IconButton>
                     </Tooltip> : <></>}
-                    <Tooltip title="Share on WhatsApp">
+                    <Tooltip title="Share this Bill">
                         {/* <WhatsappShareButton title={`BillzApp | Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""}`} url={window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`} > */}
                         <IconButton onClick={handleWhatsAppShare}>
-                            <WhatsAppIcon />
+                            <ShareIcon />
                         </IconButton>
                         {/* </WhatsappShareButton> */}
                     </Tooltip>
