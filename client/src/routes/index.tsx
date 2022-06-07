@@ -6,6 +6,7 @@ import {
 import AppBottomNavigation from '../components/AppBottomNavigation';
 import FullScreenLoading from '../components/FullScreenLoading';
 import PrivateRoute from '../components/RouteContainer/PrivateRoute';
+import CheckInsPage from '../pages/CheckInsPage';
 import LoginPage from '../pages/LoginPage';
 import AccountRoutes from './account.routes';
 import { paths } from './paths.enum';
@@ -51,6 +52,11 @@ export default function Routes() {
                 <PrivateRoute path={paths.account}>
                     <Suspense fallback={<FullScreenLoading />}>
                         <AccountRoutes />
+                    </Suspense>
+                </PrivateRoute>
+                <PrivateRoute path={paths.checkIn}>
+                    <Suspense fallback={<FullScreenLoading />}>
+                        <CheckInsPage />
                     </Suspense>
                 </PrivateRoute>
                 <Route path={paths.login}>

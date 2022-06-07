@@ -4,7 +4,8 @@ export enum paths {
     customer = '/customers',
     billsHome = '/bills',
     items = "/items",
-    account = "/account"
+    account = "/account",
+    checkIn = "/checkin",
 }
 
 export enum billsPaths {
@@ -36,4 +37,8 @@ export enum accountPaths {
     addSalesman = '/salesman/add',
     editSalesman = '/salesman/edit/:id',
     editAccount = '/edit',
+}
+
+export enum checkInPaths {
+    home = "/"
 }

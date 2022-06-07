@@ -7,7 +7,7 @@ import PageContainer from '../components/PageContainer';
 import { version as appVersion } from '../../package.json';
 import { useHasPermission } from '../actions/auth.actions';
 import { UserPermissions } from '../reducers/auth.reducer';
-import { Receipt } from '@material-ui/icons';
+import { Receipt, Room } from '@material-ui/icons';
 import PostAddIcon from '@material-ui/icons/PostAdd';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
 import AssessmentIcon from '@material-ui/icons/Assessment';
@@ -16,10 +16,12 @@ import { RootState } from '../reducers/rootReducer';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import SystemUpdateIcon from '@material-ui/icons/SystemUpdate';
 import logo from "../assets/logo_blue.svg";
+import CheckInEntryDialog from '../components/CheckIn/CheckInEntryDialog';
 
 export default function HomePage() {
     const history = useHistory();
     const openLink = (link: string) => () => history.push(link);
+    const [open, setOpen] = React.useState(false);
     const update = () => {
         const local = localStorage.getItem("updateAvailable");
         if (local && appVersion === local) {
@@ -37,6 +39,7 @@ export default function HomePage() {
     const billsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_BILLS);
     const createBillAccess = useHasPermission(UserPermissions.ALLOW_BILL_POST);
     const customersPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_CUSTOMERS);
+    const createCheckinAccess = useHasPermission(UserPermissions.ALLOW_CHECKIN_POST);
     const hasAdminPermissions = useHasPermission();
 
     return (
@@ -115,6 +118,17 @@ export default function HomePage() {
                     </Grid>
                 }
 
+                {createCheckinAccess
+                    && <Grid item xs={12} sm={6} md={4}>
+                        <HomeCard
+                            icon={<Room fontSize="large" />}
+                            onClick={()=>setOpen(true)}
+                            title="Add a CheckIn"
+                            content="Create a CheckIn record. Make sure your location is turned on for this."
+                        />
+                    </Grid>
+                }
+
                 {hasAdminPermissions
                     && <Grid item xs={12} sm={6} md={4}>
                         <HomeCard
@@ -140,6 +154,7 @@ export default function HomePage() {
                     />
                 </Grid>
             </Grid>
+            <CheckInEntryDialog title="Add a new CheckIn" onClose={() => setOpen(false)} open={open} />
         </PageContainer>
     )
 }
