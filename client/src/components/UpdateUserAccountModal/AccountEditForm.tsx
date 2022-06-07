@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, CircularProgress, createStyles, Divider, Grid, makeStyles, Theme, Zoom, List, ListItem, ListSubheader, ListItemText, ListItemIcon } from '@material-ui/core';
+import { Button, CircularProgress, createStyles, Divider, Grid, makeStyles, Theme, Zoom, List, ListItem, ListSubheader, ListItemIcon } from '@material-ui/core';
 import { Field, reduxForm } from 'redux-form';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import CheckInSettings from './CheckInSettings';

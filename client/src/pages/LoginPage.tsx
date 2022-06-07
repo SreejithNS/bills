@@ -11,7 +11,7 @@ import {
 } from "@material-ui/core";
 import LoginForm from "../components/Forms/Login";
 import { APIResponse, axios, handleAxiosError } from "../components/Axios";
-import { connect, ConnectedProps, MapDispatchToProps } from "react-redux";
+import { connect, ConnectedProps } from "react-redux";
 import { toast } from "react-toastify";
 import { RootState } from "../reducers/rootReducer";
 import { UserData } from "../reducers/auth.reducer";

@@ -30,6 +30,7 @@ function PrivateRoute(props: RouteProps): React.ReactElement {
         if (Component) {
             return <Component {...props} />;
         } else return <FullScreenLoading />;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [init, userData]);
 
     return <Route {...rest} render={render} />;

@@ -1,14 +1,13 @@
-import React, { FormEventHandler, PropsWithRef, ReactChild, ReactChildren, ReactElement, useCallback, useEffect, useState } from "react";
+import React, { FormEventHandler, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { BillItem } from "../../reducers/bill.reducer";
 import { Customer } from "../../reducers/customer.reducer";
 import { RootState } from "../../reducers/rootReducer";
 import { CustomerSelection } from "../NewBillForm";
-import { Chip, TextField, Paper, Box, Typography, Button, IconButton, InputAdornment, createStyles, makeStyles, Theme } from "@material-ui/core";
+import { Chip, TextField, Paper, Box, Typography, Button, IconButton, createStyles, makeStyles, Theme } from "@material-ui/core";
 import { getDistance } from "geolib";
 import moment from "moment";
 import CloseIcon from '@material-ui/icons/Close';
-import { config } from "process";
 
 interface FormState {
     contact: string | null;
@@ -43,7 +42,7 @@ export function CheckInForm(props: {
     // Form data handlers
     const [contact, setContact] = useState<Customer | null>(null);
     const [note, setNote] = useState("");
-    const [products, setProducts] = useState<BillItem[]>([]);
+    const [products] = useState<BillItem[]>([]);
     const [checkInLocation, setCheckInLocation] = useState<{
         type: string
         coordinates: [number, number]

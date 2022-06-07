@@ -106,16 +106,14 @@ const StatPaper = ({
 export default function PurchaseBillsFilter() {
     const hasViewAllBillsPermissions = useHasPermission(UserPermissions["ALLOW_BILL_GET_ALL"]);
     const { userData } = useSelector((state: RootState) => state.auth);
-    const [sortParam, setSortParam] = useQueryStringKey("sortParam", "createdAt");
-    const [sortDirection, setSortDirection] = useQueryStringKey("sortDirection", "desc");
     const [pageNumber, setPageNumber] = useQueryStringKey("page", "1");
     const [limit, setLimit] = useQueryStringKey("limit", "10");
     const [searchParam, setSearchParam] = useQueryStringKey("searchParam", hasViewAllBillsPermissions ? "customer" : "soldBy");
     const [searchValue, setSearchValue] = useQueryStringKey("searchValue", hasViewAllBillsPermissions ? undefined : userData?._id);
-    const [selectedFromDate, setSelectedFromDate] = useQueryStringKey("fromDate");
-    const [selectedToDate, setSelectedToDate] = useQueryStringKey("toDate");
-    const [creditFilter, setCreditFilter] = useQueryStringKey("credit");
-    const [showAll, setShowAll] = useQueryStringKey("showAll");
+    const [selectedFromDate] = useQueryStringKey("fromDate");
+    const [selectedToDate] = useQueryStringKey("toDate");
+    const [creditFilter] = useQueryStringKey("credit");
+    const [showAll] = useQueryStringKey("showAll");
     const productCategoryId = useSelector((state: RootState) => state.product.productCategory?._id ?? "");
     const [requestLoading, setRequestLoading] = useState(false);
 

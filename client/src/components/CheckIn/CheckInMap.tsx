@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Box, CircularProgress, Paper, PaperProps, useTheme } from "@material-ui/core";
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
 import { CheckInDTO } from "../../types/CheckIn";
@@ -97,6 +97,7 @@ function CheckInMarker({ data = [] }: { data: CheckInDTO[] }) {
                 ]);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, map, theme.palette.primary.main]);
 
     console.log(data)

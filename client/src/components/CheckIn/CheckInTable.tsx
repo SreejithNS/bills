@@ -116,7 +116,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     // Observe for table refresh
     useEffect(() => {
         refetch();
-        // react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [refetch, ...observe]);
 
     if (organistaionData === null || userData === null) {
