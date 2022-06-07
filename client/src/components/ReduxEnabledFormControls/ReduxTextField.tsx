@@ -2,7 +2,7 @@ import React from 'react';
 import TextField from '@material-ui/core/TextField';
 
 const ReduxTextField = (
-    { input, multiline, label, meta: { touched, error }, helperText, variant, type }: any
+    { input, multiline, label, meta: { touched, error }, helperText, variant, type, size }: any
 ) => (
     <TextField
         variant={variant || undefined}
@@ -15,6 +15,7 @@ const ReduxTextField = (
         onChange={input.onChange}
         value={input.value}
         helperText={error || helperText || ""}
+        size={size || undefined}
     />
 );
 
