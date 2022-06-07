@@ -15,13 +15,43 @@ var UserSchema = new mongoose.Schema(
 		},
 		organisation: {
 			type: {
-				name: { type: String, required: true },
+				name: { type: String, required: true, default: "Organisation" },
 				printTitle: { type: String, default: "Billz App" },
 				tagline: String,
 				printHeader: { type: String, default: "( Quotation )" },
 				printFooter: String,
+				checkInSettings: {
+					customerRequired: { type: Boolean, default: true },
+					productsRequired: { type: Boolean, default: true },
+					noteRequired: { type: Boolean, default: true },
+					notePresets: { type: [String], default: ["No Order"] },
+					distanceThreshold: { type: Number, default: 5 },
+					dateFields: {
+						type: [{
+							name: { type: String, required: true },
+							label: { type: String, required: true },
+							required: { type: Boolean, required: true },
+						}],
+						default: []
+					}
+				}
 			},
 			required: false,
+			default: {
+				name: "Organisation",
+				printTitle: "Billz App",
+				tagline: "",
+				printHeader: "( Quotation )",
+				printFooter: "",
+				checkInSettings: {
+					customerRequired: false,
+					productsRequired: false,
+					noteRequired: false,
+					notePresets: ["No Order"],
+					dateFields: [],
+					distanceThreshold: 5
+				}
+			}
 		}
 	},
 	{ timestamps: true }
