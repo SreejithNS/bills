@@ -32,7 +32,7 @@ export interface PurchaseBillState {
     billSaved: boolean;
     paidAmount: number;
     credit: boolean;
-    location: null | [GeolocationCoordinates["latitude"], GeolocationCoordinates["longitude"]]
+    location: null | [GeolocationCoordinates["longitude"], GeolocationCoordinates["latitude"]]
 }
 
 export interface BillPayments {
@@ -88,8 +88,8 @@ export interface PurchaseBillPostData extends Object {
     credit: PurchaseBillState["credit"];
     paidAmount: PurchaseBillState["paidAmount"];
     location?: {
-        lat: GeolocationCoordinates["latitude"],
-        lon: GeolocationCoordinates["longitude"]
+        lon: GeolocationCoordinates["longitude"],
+        lat: GeolocationCoordinates["latitude"]
     }
 }
 

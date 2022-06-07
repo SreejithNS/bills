@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import TextField from "@material-ui/core/TextField";
+import TextField, { TextFieldProps } from "@material-ui/core/TextField";
 import {
 	Button,
 	Checkbox,
@@ -67,10 +67,11 @@ const Autocomplete = withStyles((theme: Theme) => ({
 	}
 }))(AutocompleteBase) as typeof AutocompleteBase;
 
-function CustomerSelection(props: {
+export function CustomerSelection(props: {
 	customer: Customer | undefined;
 	onChange: (value: Customer | null) => void;
 	addNewCustomer: (customerName: Customer["name"]) => void;
+	inputProps?: TextFieldProps;
 }) {
 	const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([]);
 	const [customerInputValue, setCustomerInputValue] = useState<Customer["name"]>("");
@@ -139,7 +140,7 @@ function CustomerSelection(props: {
 					)}
 				</React.Fragment>
 			)}
-			renderInput={(params) => <TextField {...params} label="Customer" variant="outlined" />}
+			renderInput={(params) => <TextField  {...params} label="Customer" {...props.inputProps} />}
 		/>
 	);
 }
@@ -216,13 +217,13 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 		const handleGeoLocation = (data: GeolocationPosition) => {
 			if (!location) dispatch({
 				type: "BILL_SET_LOCATION", payload: [
-					data.coords.latitude, data.coords.longitude
+					data.coords.longitude, data.coords.latitude
 				]
 			})
 			if (location && (data.coords.latitude !== location[0] || data.coords.longitude !== location[1])) {
 				dispatch({
 					type: "BILL_SET_LOCATION", payload: [
-						data.coords.latitude, data.coords.longitude
+						data.coords.longitude, data.coords.latitude
 					]
 				})
 			}

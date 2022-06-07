@@ -30,7 +30,7 @@ export interface BillState {
 	billSaved: boolean;
 	paidAmount: number;
 	credit: boolean;
-	location: null | [GeolocationCoordinates["latitude"], GeolocationCoordinates["longitude"]]
+	location: null | [GeolocationCoordinates["longitude"], GeolocationCoordinates["latitude"]]
 }
 
 export interface BillPayments {

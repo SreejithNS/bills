@@ -62,7 +62,7 @@ export default function CustomerEditModal() {
                 const newData = { ...prevData as any }
                 newData.location = {
                     type: "Point",
-                    coordinates: [locationData.latitude, locationData.longitude]
+                    coordinates: [locationData.longitude,locationData.latitude]
                 }
                 return newData as any;
             })

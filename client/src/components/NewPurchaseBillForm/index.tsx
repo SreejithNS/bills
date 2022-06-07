@@ -216,13 +216,13 @@ export default function NewPurchaseBillForm(props: { closeModal: (id?: string) =
 		const handleGeoLocation = (data: GeolocationPosition) => {
 			if (!location) dispatch({
 				type: "PURCHASE_BILL_SET_LOCATION", payload: [
-					data.coords.latitude, data.coords.longitude
+					data.coords.longitude, data.coords.latitude,
 				]
 			})
 			if (location && (data.coords.latitude !== location[0] || data.coords.longitude !== location[1])) {
 				dispatch({
 					type: "PURCHASE_BILL_SET_LOCATION", payload: [
-						data.coords.latitude, data.coords.longitude
+						data.coords.longitude, data.coords.latitude,
 					]
 				})
 			}
