@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import MaterialTable from "material-table";
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
-import { Box, Chip, CircularProgress, Tooltip, useTheme } from "@material-ui/core";
+import { Box, Chip, CircularProgress, Input, Tooltip, useTheme } from "@material-ui/core";
 import useAxios from "axios-hooks";
 import { APIResponse, handleAxiosError } from "../Axios";
 import { PaginateResult } from "../../reducers/bill.reducer";
@@ -17,6 +17,8 @@ import AddIcon from "@material-ui/icons/Add";
 import { tableIcons } from "../MaterialTableIcons";
 import { useHasPermission } from "../../actions/auth.actions";
 import RefreshIcon from '@material-ui/icons/Refresh';
+import { toast } from "react-toastify";
+import { Delete } from "@material-ui/icons";
 
 interface CheckInTableProps {
     /**
@@ -62,6 +64,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     const [sort, setSort] = useState("");
     const [salesman, setSalesman] = useState<UserData | null>(null);
     const [customer, setCustomer] = useState<Customer | null>(null);
+    const [distanceFilter, setDistanceFilter] = useState<string>("");
 
     // Styles
     const theme = useTheme();
@@ -69,6 +72,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     //Permission To access
     const viewAllPermission = useHasPermission(UserPermissions.ALLOW_CHECKIN_GET_ALL);
     const createPermission = useHasPermission(UserPermissions.ALLOW_CHECKIN_POST);
+    const deletePermission = useHasPermission(UserPermissions.ALLOW_CHECKIN_DELETE);
 
     // Organisational Settings
     const { organistaionData, userData } = useSelector((state: RootState) => state.auth);
@@ -79,6 +83,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
             url: "/checkin?" + filter,
             params: {
                 page: page + 1,
+                distance: distanceFilter,
                 limit: rowsPerPage,
                 sort: sort || "-createdAt",
                 checkedBy: viewAllPermission
@@ -89,12 +94,38 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
         }, { manual: true }
     );
 
+    // Delete a checkin
+    const [{ loading: deleteLoading, data: deleteData, error: deleteError }, deleteCheckIn] = useAxios<APIResponse<CheckInDTO>>(
+        {
+            url: "/checkin",
+            method: "DELETE"
+        }, { manual: true }
+    );
+
+    const handleDelete = useCallback((id: string) => {
+        deleteCheckIn({
+            url: "/checkin",
+            params: {
+                id: id
+            },
+            method: "DELETE"
+        });
+    }, [deleteCheckIn]);
+
     // Load only when organisation data and user data are present
     useEffect(() => {
         if (organistaionData !== null || userData !== null) {
             refetch();
         }
     }, [organistaionData, refetch, userData]);
+
+    // Delete Success
+    useEffect(() => {
+        if (deleteData !== undefined) {
+            toast.success("Checkin deleted successfully");
+            refetch();
+        }
+    }, [deleteData, refetch]);
 
     // Export data to parent component
     useEffect(() => {
@@ -111,7 +142,10 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
         if (error) {
             handleAxiosError(error);
         }
-    }, [error]);
+        if (deleteError) {
+            handleAxiosError(deleteError);
+        }
+    }, [error, deleteError]);
 
     // Observe for table refresh
     useEffect(() => {
@@ -127,7 +161,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
 
     return (<MaterialTable
         icons={tableIcons}
-        isLoading={loading}
+        isLoading={loading || deleteLoading}
         data={data?.data?.docs ?? []}
         page={page}
         onChangePage={(page, pageSize) => { setPage(page); setRowsPerPage(pageSize) }}
@@ -153,7 +187,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                             onChange={(s) => {
                                 setSalesman(s)
                             }}
-                            disabled={loading}
+                            disabled={loading || deleteLoading}
                             inputProps={{
                                 variant: "standard",
                                 label: "",
@@ -187,6 +221,16 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                     hidden: !noteRequired,
                     render: ({ note }) => noteHighlighter(note, notePresets)
                 },
+                ...organistaionData.checkInSettings.dateFields.map((f: { label: any; name: any; }) => ({
+                    title: f.label,
+                    type: "date",
+                    sorting: false,
+                    render: (rowData: CheckInDTO) => {
+                        const data = rowData.dates.find(d => d.name === f.name)?.value;
+                        if (data === undefined) return "";
+                        return moment(data).format("DD/MM/YYYY");
+                    },
+                })) as any,
                 {
                     title: "Distance",
                     field: "distance",
@@ -196,6 +240,13 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                         if (distance > distanceThreshold) return <Chip label={distance + "m"} color="secondary" />;
                         return distance + "m";
                     },
+                    filterComponent: () => <Input
+                        type="text"
+                        value={distanceFilter}
+                        onChange={(e) => {
+                            setDistanceFilter(e.target.value);
+                        }
+                        } />
                 },
                 {
                     title: "Checked At",
@@ -238,6 +289,18 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                     disabled: !createPermission,
                     isFreeAction: true,
                     onClick: () => newEntry(),
+                },
+                {
+                    icon: () => <Delete />,
+                    tooltip: "Delete Check-In",
+                    disabled: !deletePermission,
+                    isFreeAction: false,
+                    onClick: (event, rows) => {
+                        if (Array.isArray(rows)) {
+                            const id = rows.map(r => r._id).join(",");
+                            handleDelete(id);
+                        }
+                    }
                 }
                 , {
                     icon: () => <RefreshIcon />,
