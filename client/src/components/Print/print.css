@@ -23,7 +23,7 @@
 	#print-view table {
 		padding: var(--print-margin);
 		width: 100%;
-		font-size: var(--base-font-size);
+		font-size: calc(1.5 * var(--base-font-size));
 		font-family: monospace;
 	}
 
