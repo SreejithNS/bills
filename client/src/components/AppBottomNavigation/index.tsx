@@ -8,6 +8,7 @@ import { paths } from '../../routes/paths.enum';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import { useHasPermission } from '../../actions/auth.actions';
 import { UserPermissions } from '../../reducers/auth.reducer';
+import RoomIcon from '@material-ui/icons/Room';
 
 const useStyles = makeStyles({
     root: {
@@ -35,6 +36,7 @@ export default function AppBottomNavigation() {
     const billsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_BILLS);
     const customersPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_CUSTOMERS);
     const accountsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_ACCOUNTS);
+    const checkInsPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_CHECKINS);
 
     return (
         <BottomNavigation
@@ -47,6 +49,7 @@ export default function AppBottomNavigation() {
             {itemsPageAccess && <BottomNavigationAction onClick={openLink(paths.items)} value={paths.items} label="Inventory" icon={<CalendarViewDay />} />}
             {homePageAccess && <BottomNavigationAction onClick={openLink(paths.billsHome)} value={paths.billsHome} label="Bills" icon={<Receipt />} />}
             {billsPageAccess && <BottomNavigationAction onClick={openLink(paths.home)} value={paths.home} label="Home" icon={<Home />} />}
+            {checkInsPageAccess && <BottomNavigationAction onClick={openLink(paths.checkIn)} value={paths.checkIn} label="CheckIns" icon={<RoomIcon />} />}
             {customersPageAccess && <BottomNavigationAction onClick={openLink(paths.customer)} value={paths.customer} label="Customer" icon={<RecentActors />} />}
             {accountsPageAccess && <BottomNavigationAction onClick={openLink(paths.account)} value={paths.account} label="Account" icon={<AccountCircleRoundedIcon />} />}
         </BottomNavigation>
