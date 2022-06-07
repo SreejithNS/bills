@@ -4,6 +4,7 @@ var customerRouter = require("./customer");
 var productRouter = require("./product");
 var billRouter = require("./bill");
 var purchasebillRouter = require("./purchasebill");
+var checkInController = require("../controllers/CheckIns/index");
 
 var app = express();
 
@@ -12,5 +13,6 @@ app.use("/customer/", customerRouter);
 app.use("/product/", productRouter);
 app.use("/bill/", billRouter);
 app.use("/purchasebill/", purchasebillRouter);
+app.use(checkInController.apiPath, checkInController.getRouter());
 
 module.exports = app;
