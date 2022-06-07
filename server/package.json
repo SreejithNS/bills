@@ -14,6 +14,7 @@
 	},
 	"dependencies": {
 		"@types/mongoose-aggregate-paginate-v2": "^1.0.3",
+		"api-query-params": "^5.3.1",
 		"bcrypt": "^5.0.1",
 		"codacy-coverage": "^3.4.0",
 		"cookie-parser": "^1.4.5",
@@ -24,6 +25,7 @@
 		"express-jwt": "^5.3.1",
 		"express-validator": "^6.2.0",
 		"forest-express-mongoose": "^8.6.5",
+		"geolib": "^3.3.3",
 		"jsonwebtoken": "^8.5.1",
 		"lodash": "^4.17.20",
 		"migrate-mongo": "^8.2.2",

@@ -65,5 +65,8 @@ security/
 # next.js build output
 .next
 
+# Experiments
+experiments/
+
 #vs code configurations
 .vscode/

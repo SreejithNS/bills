@@ -430,6 +430,11 @@ anymatch@^2.0.0:
     micromatch "^3.1.4"
     normalize-path "^2.1.1"
 
+api-query-params@^5.3.1:
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/api-query-params/-/api-query-params-5.3.1.tgz#3530590e979dee245596875ce678baad9a378042"
+  integrity sha512-1Y+iFakZhZ025kOQ7bAXNT1MdsqQl0a0c/maod/81Q9M3cVxUtxjN3L3oMwQwsKxyQi1kpBMkfcyB4mVdIcvtw==
+
 append-transform@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/append-transform/-/append-transform-1.0.0.tgz"
@@ -2129,6 +2134,11 @@ gauge@~2.7.3:
     string-width "^1.0.1"
     strip-ansi "^3.0.1"
     wide-align "^1.1.0"
+
+geolib@^3.3.3:
+  version "3.3.3"
+  resolved "https://registry.yarnpkg.com/geolib/-/geolib-3.3.3.tgz#17f5a0dcdc0b051bd631b66f7131d2c14c54a15b"
+  integrity sha512-YO704pzdB/8QQekQuDmFD5uv5RAwAf4rOUPdcMhdEOz+HoPWD0sC7Qqdwb+LAvwIjXVRawx0QgZlocKYh8PFOQ==
 
 get-caller-file@^2.0.1:
   version "2.0.5"
