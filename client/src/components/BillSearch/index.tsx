@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
-import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormLabel, Grid, IconButton, InputLabel, makeStyles, MenuItem, Radio, RadioGroup, Select, TextField, Theme, Tooltip } from "@material-ui/core";
+import { Button, Checkbox, Collapse, FormControl, FormControlLabel, FormLabel, Grid, IconButton, InputLabel, makeStyles, MenuItem, Radio, RadioGroup, Select, TextField, TextFieldProps, Theme, Tooltip } from "@material-ui/core";
 import { Autocomplete } from "@material-ui/lab";
 import { Customer } from "../../reducers/customer.reducer";
 import { APIResponse, axios, handleAxiosError } from "../Axios";
@@ -80,8 +80,9 @@ function CustomerSelection(props: {
 
 export function SalesmanSelection(props: {
     salesman: UserData | undefined;
-    onChange: (value: UserData) => void;
+    onChange: (value: UserData | null) => void;
     disabled?: boolean;
+    inputProps?: TextFieldProps
 }) {
     const salesmenList = useSelector((state: RootState) => {
         const { usersUnderUser, userData } = state.auth;
@@ -96,13 +97,14 @@ export function SalesmanSelection(props: {
             options={salesmenList ?? []}
             autoHighlight
             getOptionLabel={(option: UserData) => option.name}
-            onChange={(_, newValue) => newValue && props.onChange(newValue as UserData)}
+            onChange={(_, newValue) => props.onChange(newValue as unknown as UserData | null)}
             selectOnFocus
             freeSolo
             disabled={props.disabled}
             handleHomeEndKeys
             fullWidth={true}
-            renderInput={(params) => <TextField {...params} label="Salesman" margin="dense" variant="outlined" size="small" />}
+            size="small"
+            renderInput={(params) => <TextField {...params} label="Salesman" margin="dense" {...props.inputProps} />}
         />
     );
 }
@@ -220,6 +222,7 @@ export default function BillSearch(props: Props) {
                                 <SalesmanSelection
                                     disabled={searchDisabled}
                                     salesman={salesman}
+                                    inputProps={{ variant: "outlined" }}
                                     onChange={(value) => setSalesman(value ?? undefined)}
                                 />}
                         </Grid>
