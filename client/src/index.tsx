@@ -11,6 +11,7 @@ import { createMuiTheme, CssBaseline, ThemeProvider } from '@material-ui/core';
 import { createLogger } from 'redux-logger';
 import initAxios from './components/Axios';
 import 'react-toastify/dist/ReactToastify.css';
+import 'leaflet/dist/leaflet.css';
 import { toast, ToastContainer } from 'react-toastify';
 import { version as appVersion } from '../package.json';
 
