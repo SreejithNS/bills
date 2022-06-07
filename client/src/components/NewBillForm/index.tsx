@@ -362,6 +362,9 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				<Grid item xs>
 					<CustomerSelection
 						addNewCustomer={(newCustomerName) => setNewCustomerModalOpen(true)}
+						inputProps={{
+							variant: "outlined"
+						}}
 						customer={customer ?? undefined}
 						onChange={(customer) =>
 							dispatch({ type: "BILL_SET_CUSTOMER", payload: customer })
