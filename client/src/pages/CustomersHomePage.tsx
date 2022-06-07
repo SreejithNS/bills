@@ -65,11 +65,6 @@ const CustomersTable = () => {
             columns={[
                 { title: "Customer Name", field: "name", editable: "never" },
                 { title: "Phone Number", field: "phone", type: "numeric", sorting: false, editable: "never" },
-                {
-                    title: "Recent Bill Date", field: "recentBillCreatedAt", type: "date", editable: "never", dateSetting: {
-                        locale: "en-GB"
-                    }
-                },
                 { title: "Place", field: "place", editable: "never" }
             ]}
             data={fetchItems}
