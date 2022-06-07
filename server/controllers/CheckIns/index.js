@@ -201,6 +201,12 @@ class CheckInController {
                 action: this.update.bind(this),
             },
             {
+                path: "/",
+                method: "delete",
+                localMiddlewares: [authenticate],
+                action: this.deleteMany.bind(this),
+            },
+            {
                 path: "/:id",
                 method: "delete",
                 localMiddlewares: [authenticate],
@@ -302,6 +308,24 @@ class CheckInController {
         try {
             if (await this.checkPermission(req, this.permissions.delete)) {
                 await this.service.delete(req.params.id);
+
+                return apiResponse.successResponse(res, "Checkin deleted successfully");
+            } else {
+                return apiResponse.unauthorizedResponse(res);
+            }
+        } catch (error) {
+            return apiResponse.ErrorResponse(res, error);
+        }
+    }
+
+    async deleteMany(req, res) {
+        try {
+            if (await this.checkPermission(req, this.permissions.delete)) {
+                const ids = req.query.id.split(",") || [];
+                
+                for (let x = 0; x < ids.length; x++) {
+                    await this.service.delete(ids[x]);
+                }
 
                 return apiResponse.successResponse(res, "Checkin deleted successfully");
             } else {
