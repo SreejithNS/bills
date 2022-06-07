@@ -150,7 +150,7 @@ export default function HomePage() {
                             //eslint-disable-next-line
                             if (update().updateAvailable) window.location.reload(true);
                         }}
-                        content={<>Bills Web App: v{appVersion}<br />{update().text}</>}
+                        content={<>Billz Web App: v{appVersion}<br />{update().text}</>}
                     />
                 </Grid>
             </Grid>
