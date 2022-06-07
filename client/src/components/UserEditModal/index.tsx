@@ -1,7 +1,7 @@
 import { Checkbox, Divider, Grid, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, ListSubheader, Paper as BasePaper, Switch, TextField, Theme, withStyles } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import Modal from "../Modal";
-import { AccountCircleRounded, CalendarViewDay, Check, Close, Receipt, RecentActors } from "@material-ui/icons";
+import { AccountCircleRounded, CalendarViewDay, Check, Close, Receipt, RecentActors, Room } from "@material-ui/icons";
 import { UserData, UserPermissions } from "../../reducers/auth.reducer";
 import useAxios from "axios-hooks";
 import { APIResponse, handleAxiosError } from "../Axios";
@@ -112,6 +112,8 @@ export default function UserEditModal() {
                 return { page: "Customers", description: "Allow User to access Cutomers Page.", icon: <AccountCircleRounded /> };
             case UserPermissions.ALLOW_PAGE_ITEMS:
                 return { page: "Inventory", description: "Allow User to access Inventory Page.", icon: <CalendarViewDay /> };
+            case UserPermissions.ALLOW_PAGE_CHECKINS:
+                return { page: "Check-Ins", description: "Allow User to access Check-Ins Page.", icon: <Room /> };
             default:
                 return { page: "", description: "Allow User to access this page.", icon: <>No icon</> }
         }
@@ -195,7 +197,7 @@ export default function UserEditModal() {
                         </List>
                         <Divider />
                         <List subheader={<ListSubheader>Page Access</ListSubheader>}>
-                            {[UserPermissions.ALLOW_PAGE_BILLS, UserPermissions.ALLOW_PAGE_CUSTOMERS, UserPermissions.ALLOW_PAGE_ITEMS]
+                            {[UserPermissions.ALLOW_PAGE_BILLS, UserPermissions.ALLOW_PAGE_CUSTOMERS, UserPermissions.ALLOW_PAGE_ITEMS, UserPermissions.ALLOW_PAGE_CHECKINS]
                                 .map((item, key) =>
                                     <ListItem key={key}>
                                         <ListItemIcon>
@@ -399,6 +401,77 @@ export default function UserEditModal() {
                                     />
                                 </ListItemIcon>
                                 <ListItemText primary={"Edit Customer"} />
+                            </ListItem>
+                        </List>
+                    </Paper>
+                </GrowableGrid>
+                <GrowableGrid item xs>
+                    <Paper>
+                        <List subheader={<ListSubheader>Permitted CheckIn Actions</ListSubheader>}>
+                            <ListItem dense button>
+                                <ListItemIcon>
+                                    <Checkbox
+                                        edge="start"
+                                        disabled={settingsUpdateLoading}
+                                        onChange={togglePermission(UserPermissions.ALLOW_CHECKIN_GET_ALL)}
+                                        checked={hasPermission(UserPermissions.ALLOW_CHECKIN_GET_ALL)}
+                                        tabIndex={-1}
+                                        disableRipple
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary={"Get All CheckIn Record(s)"} />
+                            </ListItem>
+                            <ListItem dense button>
+                                <ListItemIcon>
+                                    <Checkbox
+                                        edge="start"
+                                        disabled={settingsUpdateLoading}
+                                        onChange={togglePermission(UserPermissions.ALLOW_CHECKIN_GET)}
+                                        checked={hasPermission(UserPermissions.ALLOW_CHECKIN_GET)}
+                                        tabIndex={-1}
+                                        disableRipple
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary={"Get CheckIn Record(s)"} />
+                            </ListItem>
+                            <ListItem dense button>
+                                <ListItemIcon>
+                                    <Checkbox
+                                        edge="start"
+                                        disabled={settingsUpdateLoading}
+                                        onChange={togglePermission(UserPermissions.ALLOW_CHECKIN_POST)}
+                                        checked={hasPermission(UserPermissions.ALLOW_CHECKIN_POST)}
+                                        tabIndex={-1}
+                                        disableRipple
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary={"Create CheckIn Record"} />
+                            </ListItem>
+                            <ListItem dense button>
+                                <ListItemIcon>
+                                    <Checkbox
+                                        edge="start"
+                                        disabled={settingsUpdateLoading}
+                                        onChange={togglePermission(UserPermissions.ALLOW_CHECKIN_DELETE)}
+                                        checked={hasPermission(UserPermissions.ALLOW_CHECKIN_DELETE)}
+                                        tabIndex={-1}
+                                        disableRipple
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary={"Delete CheckIn Record"} />
+                            </ListItem>
+                            <ListItem dense button>
+                                <ListItemIcon>
+                                    <Checkbox
+                                        edge="start"
+                                        disabled={settingsUpdateLoading}
+                                        onChange={togglePermission(UserPermissions.ALLOW_CUSTOMER_PUT)}
+                                        checked={hasPermission(UserPermissions.ALLOW_CUSTOMER_PUT)}
+                                        tabIndex={-1}
+                                        disableRipple
+                                    />
+                                </ListItemIcon>
+                                <ListItemText primary={"Edit CheckIn Record"} />
                             </ListItem>
                         </List>
                     </Paper>
