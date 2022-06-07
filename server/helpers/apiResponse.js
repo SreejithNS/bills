@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 const e = require("express");
 /**
  * 
@@ -27,8 +28,9 @@ exports.successResponse = function (res, msg) {
  * @param {e.Response} res 
  * @param {string} msg 
  * @param {*} data 
+ * @param {boolean} creation
  */
-exports.successResponseWithData = function (res, msg, data) {
+exports.successResponseWithData = function (res, msg, data, creation = false) {
 	/**
 	 * @type {ResponseData}
 	 */
@@ -37,7 +39,7 @@ exports.successResponseWithData = function (res, msg, data) {
 		message: msg,
 		data: data
 	};
-	return res.status(200).json(resData);
+	return res.status(creation ? 201 : 200).json(resData);
 };
 
 /**
@@ -61,7 +63,7 @@ exports.ErrorResponse = function (res, msg) {
 	 */
 	var data = {
 		status: 0,
-		message: msg,
+		message: msg instanceof Error ? msg.message : msg,
 	};
 	return res.status(500).json(data);
 };
@@ -104,7 +106,7 @@ exports.validationErrorWithData = function (res, msg, data) {
  * @param {e.Response} res 
  * @param {string} msg 
  */
-exports.unauthorizedResponse = function (res, msg) {
+exports.unauthorizedResponse = function (res, msg = "Unauthorized to perform this request") {
 	/**
 	 * @type {ResponseData}
 	 */
