@@ -8,6 +8,7 @@ import { Chip, TextField, Paper, Box, Typography, Button, IconButton, createStyl
 import { getDistance } from "geolib";
 import moment from "moment";
 import CloseIcon from '@material-ui/icons/Close';
+import { toast } from "react-toastify";
 
 interface FormState {
     contact: string | null;
@@ -27,7 +28,7 @@ interface FormState {
 const useStyles = makeStyles((theme: Theme) => createStyles({
     form: {
         "& > *": {
-            marginTop: theme.spacing(1),
+            marginTop: theme.spacing(2),
         }
     }
 })
@@ -66,7 +67,7 @@ export function CheckInForm(props: {
 
     // Geo Location
     useEffect(() => {
-        navigator.geolocation.watchPosition((data: GeolocationPosition) => {
+        const s = navigator.geolocation.watchPosition((data: GeolocationPosition) => {
             console.log("Location update")
             setCheckInLocation({
                 type: "Point",
@@ -75,6 +76,10 @@ export function CheckInForm(props: {
             setErrors(prev => prev.filter(e => e.field !== "checkInLocation"));
         }, (e) => {
             if (e) {
+                setCheckInLocation({
+                    type: "Point",
+                    coordinates: [0, 0],
+                });
                 setErrors(prev => [...prev, { field: "checkInLocation", message: "Could not get your location" }]);
             }
         }, {
@@ -82,10 +87,15 @@ export function CheckInForm(props: {
             timeout: 1000,
             maximumAge: 5000
         });
+        return () => navigator.geolocation.clearWatch(s);
     }, []);
 
     const onSubmit: FormEventHandler<HTMLFormElement> = useCallback((e) => {
         e.preventDefault();
+        if (errors.length > 0) {
+            toast.error(errors.map(e => e.message).join("\n"));
+            return false;
+        }
         props.onSubmit({
             contact: contact?._id ?? null,
             products,
@@ -93,7 +103,7 @@ export function CheckInForm(props: {
             note: note,
             dates,
         });
-    }, [props, contact?._id, products, checkInLocation, note, dates]);
+    }, [errors, props, contact?._id, products, checkInLocation, note, dates]);
 
     const getError = useCallback((field: string) => {
         return errors.find(e => e.field === field) ?? null;
@@ -165,6 +175,7 @@ export function CheckInForm(props: {
                 dateFields !== undefined && dateFields.length > 0
                     ? dateFields.map((field, key) =>
                         <TextField
+                            InputLabelProps={{ shrink: true }}
                             key={key}
                             value={moment(dates.find(d => d.name === field.name)?.value ?? "").format("YYYY-MM-DD")}
                             onChange={(e) => {
@@ -188,6 +199,9 @@ export function CheckInForm(props: {
                             type="date"
                             fullWidth
                             required={field.required}
+                            InputProps={{
+                                required: field.required,
+                            }}
                             inputProps={{
                                 endAdornment:
                                     <IconButton
@@ -202,6 +216,11 @@ export function CheckInForm(props: {
                             variant="outlined"
                         />
                     )
+                    : null
+            }
+            {
+                !!(getError("checkInLocation")?.message)
+                    ? <input type="hidden" name="checkInLocation" required value="" />
                     : null
             }
             <Paper elevation={1} style={{ width: "100%" }}>
