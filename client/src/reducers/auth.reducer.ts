@@ -8,12 +8,28 @@ export interface UserSettings extends Object {
     permissions: UserPermissions[]
 }
 
+export interface CustomDateFieldSettings {
+    label: string;
+    name: string;
+    required: boolean;
+}
+
+export interface CheckInSettings {
+    customerRequired: boolean;
+    productsRequired: boolean;
+    noteRequired: boolean;
+    notePresets: string[];
+    distanceThreshold: number;
+    dateFields: CustomDateFieldSettings[];
+};
+
 export interface OrganisationDetails extends Object {
     name: string;
     printTitle: string;
     tagline: string;
     printHeader: string;
     printFooter: string;
+    checkInSettings: CheckInSettings;
 }
 
 export enum UserPermissions {
@@ -38,18 +54,24 @@ export enum UserPermissions {
     "ALLOW_BILL_DELETE",
     "ALLOW_BILL_GET",
     "ALLOW_BILL_GET_ALL",
+    "ALLOW_CHECKIN_POST",
+    "ALLOW_CHECKIN_PUT",
+    "ALLOW_CHECKIN_DELETE",
+    "ALLOW_CHECKIN_GET",
+    "ALLOW_CHECKIN_GET_ALL",
     "ALLOW_PAGE_ITEMS",
     "ALLOW_PAGE_BILLS",
     "ALLOW_PAGE_CUSTOMERS",
     "ALLOW_PAGE_ACCOUNTS",
     "ALLOW_PAGE_HOME",
+    "ALLOW_PAGE_CHECKINS",
 }
 
 export interface UserData<T = boolean> extends Object {
     _id: string;
     name: string;
     phone: number;
-    belongsTo?: UserData;
+    belongsTo?: T extends true ? null : UserData<true>;
     type: UserTypes;
     settings: UserSettings;
     organisation: T extends true ? OrganisationDetails : null;

@@ -11,7 +11,7 @@ export interface Customer {
 	place: string;
 	phone: string;
 	location?: GeoLocation;
-	belongsTo: UserData;
+	belongsTo: UserData<true>;
 }
 
 const initialState = {
