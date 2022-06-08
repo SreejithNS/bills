@@ -68,7 +68,6 @@ export function CheckInForm(props: {
     // Geo Location
     useEffect(() => {
         const s = navigator.geolocation.watchPosition((data: GeolocationPosition) => {
-            console.log("Location update")
             setCheckInLocation({
                 type: "Point",
                 coordinates: [data.coords.longitude, data.coords.latitude],

@@ -22,7 +22,6 @@ export default function ProductCategoryEditModal() {
     const putData = (data: ProductCategory) => {
         const putData: any = { ...data };
         putData.hasAccess = data.hasAccess.map((user) => user._id);
-        console.log(putData)
         return putData;
     }
     const handleSubmit = (values: ProductCategory) => {

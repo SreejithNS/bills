@@ -120,7 +120,6 @@ const setPercentageFromDiscountAmount = (billState: BillState) => {
 	const itemsTotalAmount = getItemsTotalAmount(billState);
 	const discountAmount = billState.discountAmount;
 	const discountPercentage = (discountAmount / itemsTotalAmount) * 100;
-	console.log("update paid amount");
 	return calculateItemAmounts({
 		...billState,
 		discountPercentage: parseFloat(discountPercentage.toFixed(2)),

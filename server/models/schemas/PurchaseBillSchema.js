@@ -326,7 +326,6 @@ PurchaseBillSchema.statics.populateItemsWithQuantity = async function (items) {
         }
 
     }
-    console.log(populatedItems);
     return populatedItems;
 };
 
