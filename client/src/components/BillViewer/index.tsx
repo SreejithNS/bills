@@ -33,7 +33,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
 import { useHasPermission } from "../../actions/auth.actions";
 import { UserPermissions } from "../../reducers/auth.reducer";
-import {toBlob} from "html-to-image";
+import { toBlob } from "html-to-image";
+
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -92,15 +93,16 @@ export default function BillViewer(props: BillData & AdditionalProps) {
     }, [props]);
 
     const handleWhatsAppShare = useCallback(async () => {
-        if (billRef.current) {
-            const blob = await toBlob(billRef.current, {
-                width: 896,
-                style: {
-                    width: "896px",
-                },
-                canvasWidth: 896,
+        if (printRef.current) {
+            const display = { ...printRef.current.style };
+            printRef.current.style.display = "block";
+            printRef.current.style.visibility = "visible";
+            const blob = await toBlob(printRef.current, {
             });
             const file = blob ? new File([blob], 'bill.png', { type: blob.type }) : null;
+
+            printRef.current.style.display = display.display;
+            printRef.current.style.visibility = display.visibility;
             if (navigator.share) {
                 await navigator.share({
                     title: `BillzApp | Bill#${props.serialNumber}`,
@@ -112,7 +114,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                     .catch((error) => console.log('Error in sharing', error));
             }
         }
-    }, [props, userData, billRef]);
+    }, [props, userData, printRef]);
 
     return (
         <Paper ref={billRef}>

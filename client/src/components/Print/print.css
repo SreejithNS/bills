@@ -9,10 +9,11 @@
 	#print-view {
 		display: none;
 		visibility: hidden;
+		background-color: white;
 	}
 }
 
-@media print {
+@media print, screen {
 	@page {
 		size: auto;
 		margin: var(--print-margin);
