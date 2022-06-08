@@ -6,9 +6,10 @@ const { privilegeEnum } = require("../helpers/privilegeEnum.js");
 const unitSchemaValidation = require("./validators/unitsSchemaValidation");
 const { userData } = require("./AuthController");
 const { ProductCategory } = require("../models/ProductCategoryModel");
-const mognoose = require("mongoose");
+const mongoose = require("mongoose");
 const { User } = require("../models/UserModel");
 const Papa = require("papaparse");
+const { getAdmin } = require("../helpers/privilegedAccess");
 
 //Types
 function ProductData(data) {
@@ -279,7 +280,7 @@ async function addMultipleProducts(newProductsArray, categoryId, user) {
  * @returns {{deletedProductsCount:number}}
  */
 async function deleteProductCategoryAndProducts(_id) {
-	const session = await mognoose.startSession();
+	const session = await mongoose.startSession();
 	session.startTransaction();
 
 	try {
@@ -338,740 +339,778 @@ exports.createCategoryRequest = [
 	}
 ];
 
-exports.getProductCategoriesList = [
+exports.getCategoryStats = [
 	auth,
 	async (req, res) => {
 		try {
-			const authenticatedUser = await userData(req.user._id);
-			if (authenticatedUser.type === privilegeEnum.admin || authenticatedUser.type === privilegeEnum.root ||
-				(authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_PRODUCTCATEGORY_GET"))) {
-				await ProductCategory.find({
-					"$or": [
-						{
-							belongsTo: req.user._id
-						},
-						{
-							hasAccess: req.user._id
+			const admin = await getAdmin(req.user._id);
+			const stats = await Product.aggregate(
+				[
+					{
+						"$match": {
+							"belongsTo": new mongoose.Types.ObjectId(admin._id.toString()),
+							"category": new mongoose.Types.ObjectId(req.params.categoryId)
 						}
-					]
-				}).populate("belongsTo").populate("hasAccess").exec((err, docs) => {
-					if (err) return apiResponse.ErrorResponse(req, err);
-					return apiResponse.successResponseWithData(
-						res,
-						"Product Categories List",
-						docs.map(productCategoryData => new ProductCategoryData(productCategoryData))
-					);
-				});
-			} else {
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to perform this action");
-			}
+					}, {
+						"$group": {
+							"_id": {
+								"category": "$category"
+							},
+							"totalStock": {
+								"$sum": "$stock"
+							},
+							"totalValue": {
+								"$sum": {
+									"$multiply": [
+										"$cost", "$stock"
+									]
+								}
+							}
+						}
+					}
+				]);
+			return apiResponse.successResponseWithData(res, "Product category stats", stats[0]);
 		} catch (e) {
+			console.error(e)
 			return apiResponse.ErrorResponse(res, e.message || e);
 		}
 	}
 ];
 
-/**
- * To delete a bill created by the user.
- *
- * @param {Mongoose.Schema.Types.ObjectId} billId - ID of the bill to be deleted.
- */
-exports.deleteProduct = [
-	auth,
-	param("categoryId", "Invalid Product Id").escape().trim().isMongoId(),
-	param("productId", "Invalid Product Id").escape().trim().isMongoId(),
-	async (req, res) => {
-		const errors = validationResult(req);
-		if (!errors.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error.",
-				errors.array()
-			);
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			const product = await getProductById(req.params.productId);
+exports.getProductCategoriesList = [
+					auth,
+					async (req, res) => {
+						try {
+							const authenticatedUser = await userData(req.user._id);
+							if (authenticatedUser.type === privilegeEnum.admin || authenticatedUser.type === privilegeEnum.root ||
+								(authenticatedUser.settings && authenticatedUser.settings.permissions.includes("ALLOW_PRODUCTCATEGORY_GET"))) {
+								await ProductCategory.find({
+									"$or": [
+										{
+											belongsTo: req.user._id
+										},
+										{
+											hasAccess: req.user._id
+										}
+									]
+								}).populate("belongsTo").populate("hasAccess").exec((err, docs) => {
+									if (err) return apiResponse.ErrorResponse(req, err);
+									return apiResponse.successResponseWithData(
+										res,
+										"Product Categories List",
+										docs.map(productCategoryData => new ProductCategoryData(productCategoryData))
+									);
+								});
+							} else {
+								return apiResponse.unauthorizedResponse(res, "You are not authorised to perform this action");
+							}
+						} catch (e) {
+							return apiResponse.ErrorResponse(res, e.message || e);
+						}
+					}
+				];
 
-			if (product === null) {
-				return apiResponse.notFoundResponse(
-					res,
-					"Product does not exist"
-				);
-			} else {
-				if (hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_DELETE")) {
-					return Product.findByIdAndRemove(req.params.productId).then(() =>
-						apiResponse.successResponse(
+			/**
+			 * To delete a bill created by the user.
+			 *
+			 * @param {Mongoose.Schema.Types.ObjectId} billId - ID of the bill to be deleted.
+			 */
+			exports.deleteProduct = [
+				auth,
+				param("categoryId", "Invalid Product Id").escape().trim().isMongoId(),
+				param("productId", "Invalid Product Id").escape().trim().isMongoId(),
+				async (req, res) => {
+					const errors = validationResult(req);
+					if (!errors.isEmpty())
+						return apiResponse.validationErrorWithData(
 							res,
-							"Product deleted"
+							"Validation Error.",
+							errors.array()
+						);
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						const product = await getProductById(req.params.productId);
+
+						if (product === null) {
+							return apiResponse.notFoundResponse(
+								res,
+								"Product does not exist"
+							);
+						} else {
+							if (hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_DELETE")) {
+								return Product.findByIdAndRemove(req.params.productId).then(() =>
+									apiResponse.successResponse(
+										res,
+										"Product deleted"
+									)
+								);
+							} else {
+								return apiResponse.unauthorizedResponse(res, "Not authorised for this action");
+							}
+						}
+					} catch (err) {
+						//throw error in json response with status 500.
+						return apiResponse.ErrorResponse(res, err.message);
+					}
+				}
+			];
+
+			/**
+			 * Create a Product.
+			 *
+			 * @param {string} name - Name of the product.
+			 * @param {string} code - Unique Code of the product.
+			 * @param {string} primaryUnit - Primary Unit Name of the product.
+			 * @param {number} rate - Rate of the product.
+			 * @param {number} mrp - MRP of the product.
+			 * @param {number} [weight] - Weight of the product.
+			 * @param {string} weightUnit - Unit of weight/quantity of the product. For eg. kg, g, pkt, box.
+			 */
+			exports.createProductRequest = [
+				auth,
+				param("categoryId", "Invalid category id")
+					.escape().trim().isMongoId()
+					.custom((value) =>
+						ProductCategory.findById(value).then((doc) => {
+							if (!doc) {
+								return Promise.reject(
+									"Product Category does not exists"
+								);
+							}
+						})
+					),
+				body("code")
+					.escape()
+					.trim()
+					.custom((value, { req }) =>
+						Product.findOne({
+							code: value,
+							category: req.params.categoryId,
+						}).then((doc) => {
+							if (doc)
+								return Promise.reject(
+									"Item with this code already exists."
+								);
+						})
+					),
+				body("name").escape().isLength().trim(),
+				body("primaryUnit").escape().isLength().trim(),
+				body("rate").escape().trim().isNumeric(),
+				body("stocked").escape().trim().isBoolean().optional(),
+				body("cost").escape().trim().isNumeric(),
+				body("mrp").escape().trim().isNumeric(),
+				body("units").optional().isArray(),
+				async (req, res) => {
+					const errors = validationResult(req);
+					if (!errors.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							errors.array()
+						);
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						if (
+							!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
+							!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
 						)
-					);
-				} else {
-					return apiResponse.unauthorizedResponse(res, "Not authorised for this action");
+							return apiResponse.unauthorizedResponse(
+								res,
+								"You are not authorised to add product"
+							);
+						const newProduct = await createProduct(
+							req.body.code,
+							req.body.name,
+							req.body.primaryUnit,
+							req.body.rate,
+							req.body.mrp,
+							req.body.cost,
+							req.body.stocked,
+							req.body.initialStock,
+							req.params.categoryId,
+							req.body.units,
+							authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
+						);
+						return apiResponse.successResponseWithData(
+							res,
+							"Product Created",
+							new ProductData(newProduct)
+						);
+					} catch (e) {
+						return apiResponse.validationErrorWithData(
+							res,
+							"Product Creation Error",
+							e.message || e
+						);
+					}
 				}
-			}
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err.message);
-		}
-	}
-];
+			];
 
-/**
- * Create a Product.
- *
- * @param {string} name - Name of the product.
- * @param {string} code - Unique Code of the product.
- * @param {string} primaryUnit - Primary Unit Name of the product.
- * @param {number} rate - Rate of the product.
- * @param {number} mrp - MRP of the product.
- * @param {number} [weight] - Weight of the product.
- * @param {string} weightUnit - Unit of weight/quantity of the product. For eg. kg, g, pkt, box.
- */
-exports.createProductRequest = [
-	auth,
-	param("categoryId", "Invalid category id")
-		.escape().trim().isMongoId()
-		.custom((value) =>
-			ProductCategory.findById(value).then((doc) => {
-				if (!doc) {
-					return Promise.reject(
-						"Product Category does not exists"
-					);
+			exports.deleteProductCategory = [
+				auth,
+				param("categoryId", "Invalid category id")
+					.escape().trim().isMongoId()
+					.custom((value) =>
+						ProductCategory.findById(value).then((doc) => {
+							if (!doc) {
+								return Promise.reject(
+									"Product Category does not exists"
+								);
+							}
+						})
+					),
+				async (req, res) => {
+					const errors = validationResult(req);
+					if (!errors.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							errors.array()
+						);
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						if (
+							!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCTCATEGORY_DELETE") ||
+							!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_DELETE"))
+						)
+							return apiResponse.unauthorizedResponse(
+								res,
+								"You are not authorised to add product"
+							);
+						return deleteProductCategoryAndProducts(req.params.categoryId)
+							.then(response => {
+								return apiResponse.successResponseWithData(res, "Product Cateogory deleted", response);
+							});
+					} catch (e) {
+						console.error(e);
+						return apiResponse.ErrorResponse(
+							res,
+							"Product Deletion Error",
+							e.message || e
+						);
+					}
 				}
-			})
-		),
-	body("code")
-		.escape()
-		.trim()
-		.custom((value, { req }) =>
-			Product.findOne({
-				code: value,
-				category: req.params.categoryId,
-			}).then((doc) => {
-				if (doc)
-					return Promise.reject(
-						"Item with this code already exists."
-					);
-			})
-		),
-	body("name").escape().isLength().trim(),
-	body("primaryUnit").escape().isLength().trim(),
-	body("rate").escape().trim().isNumeric(),
-	body("stocked").escape().trim().isBoolean().optional(),
-	body("cost").escape().trim().isNumeric(),
-	body("mrp").escape().trim().isNumeric(),
-	body("units").optional().isArray(),
-	async (req, res) => {
-		const errors = validationResult(req);
-		if (!errors.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				errors.array()
-			);
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			if (
-				!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
-				!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
-			)
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised to add product"
-				);
-			const newProduct = await createProduct(
-				req.body.code,
-				req.body.name,
-				req.body.primaryUnit,
-				req.body.rate,
-				req.body.mrp,
-				req.body.cost,
-				req.body.stocked,
-				req.body.initialStock,
-				req.params.categoryId,
-				req.body.units,
-				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
-			);
-			return apiResponse.successResponseWithData(
-				res,
-				"Product Created",
-				new ProductData(newProduct)
-			);
-		} catch (e) {
-			return apiResponse.validationErrorWithData(
-				res,
-				"Product Creation Error",
-				e.message || e
-			);
-		}
-	}
-];
+			];
 
-exports.deleteProductCategory = [
-	auth,
-	param("categoryId", "Invalid category id")
-		.escape().trim().isMongoId()
-		.custom((value) =>
-			ProductCategory.findById(value).then((doc) => {
-				if (!doc) {
-					return Promise.reject(
-						"Product Category does not exists"
-					);
-				}
-			})
-		),
-	async (req, res) => {
-		const errors = validationResult(req);
-		if (!errors.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				errors.array()
-			);
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			if (
-				!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCTCATEGORY_DELETE") ||
-				!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_DELETE"))
-			)
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised to add product"
-				);
-			return deleteProductCategoryAndProducts(req.params.categoryId)
-				.then(response => {
-					return apiResponse.successResponseWithData(res, "Product Cateogory deleted", response);
-				});
-		} catch (e) {
-			console.error(e);
-			return apiResponse.ErrorResponse(
-				res,
-				"Product Deletion Error",
-				e.message || e
-			);
-		}
-	}
-];
+			/**
+			 * Bulk Import Products.
+			 *
+			 */
+			exports.importProducts = [
+				auth,
+				param("categoryId", "Invalid category id")
+					.escape().trim().isMongoId()
+					.custom((value) =>
+						ProductCategory.findById(value).then((doc) => {
+							if (!doc) {
+								return Promise.reject(
+									"Product Category does not exists"
+								);
+							}
+						})
+					),
+				body("items").isArray(),
+				async (req, res) => {
+					const errors = validationResult(req);
+					if (!errors.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							errors.array()
+						);
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						if (
+							!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
+							!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
+						) {
+							return apiResponse.unauthorizedResponse(
+								res,
+								"You are not authorised for this operation"
+							);
+						}
+						const { count } = await addMultipleProducts(req.body.items, req.params.categoryId, authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString());
+						return apiResponse.successResponse(
+							res,
+							`Imported ${count} Products`
+						);
+					} catch (err) {
+						//throw error in json response with status 500.
+						return apiResponse.ErrorResponse(res, err.message || err);
+					}
+				},
+			];
 
-/**
- * Bulk Import Products.
- *
- */
-exports.importProducts = [
-	auth,
-	param("categoryId", "Invalid category id")
-		.escape().trim().isMongoId()
-		.custom((value) =>
-			ProductCategory.findById(value).then((doc) => {
-				if (!doc) {
-					return Promise.reject(
-						"Product Category does not exists"
-					);
-				}
-			})
-		),
-	body("items").isArray(),
-	async (req, res) => {
-		const errors = validationResult(req);
-		if (!errors.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				errors.array()
-			);
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			if (
-				!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
-				!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
-			) {
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised for this operation"
-				);
-			}
-			const { count } = await addMultipleProducts(req.body.items, req.params.categoryId, authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString());
-			return apiResponse.successResponse(
-				res,
-				`Imported ${count} Products`
-			);
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err.message || err);
-		}
-	},
-];
+			/**
+			 * Bulk Export Products.
+			 *
+			 */
+			exports.exportProducts = [
+				auth,
+				param("categoryId", "Invalid category id")
+					.escape().trim().isMongoId()
+					.custom((value) =>
+						ProductCategory.findById(value).then((doc) => {
+							if (!doc) {
+								return Promise.reject(
+									"Product Category does not exists"
+								);
+							}
+						})
+					),
+				async (req, res) => {
+					const errors = validationResult(req);
+					if (!errors.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							errors.array()
+						);
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						if (
+							!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
+							!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
+						) {
+							return apiResponse.unauthorizedResponse(
+								res,
+								"You are not authorised for this operation"
+							);
+						}
 
-/**
- * Bulk Export Products.
- *
- */
-exports.exportProducts = [
-	auth,
-	param("categoryId", "Invalid category id")
-		.escape().trim().isMongoId()
-		.custom((value) =>
-			ProductCategory.findById(value).then((doc) => {
-				if (!doc) {
-					return Promise.reject(
-						"Product Category does not exists"
-					);
-				}
-			})
-		),
-	async (req, res) => {
-		const errors = validationResult(req);
-		if (!errors.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				errors.array()
-			);
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			if (
-				!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
-				!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
-			) {
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised for this operation"
-				);
-			}
-
-			const itemsArrayToCsvArray = (items) => items.map(
-				({ name,
-					code,
-					primaryUnit,
-					rate,
-					mrp,
-					cost,
-					units, }) =>
-					[name,
-						code,
-						primaryUnit,
-						rate,
-						mrp,
-						cost,
-						...units.map(
-							({ name, rate, mrp, cost, conversion }) => [name,
+						const itemsArrayToCsvArray = (items) => items.map(
+							({ name,
+								code,
+								primaryUnit,
 								rate,
 								mrp,
 								cost,
-								conversion]).flat()
-					]
-			);
+								units, }) =>
+								[name,
+									code,
+									primaryUnit,
+									rate,
+									mrp,
+									cost,
+									...units.map(
+										({ name, rate, mrp, cost, conversion }) => [name,
+											rate,
+											mrp,
+											cost,
+											conversion]).flat()
+								]
+						);
 
-			return Product.find({ category: req.params.categoryId }).exec().then(
-				(products) => {
-					if (products.length === 0) {
-						return apiResponse.notFoundResponse(res, "No Products Found");
+						return Product.find({ category: req.params.categoryId }).exec().then(
+							(products) => {
+								if (products.length === 0) {
+									return apiResponse.notFoundResponse(res, "No Products Found");
+								}
+								products = itemsArrayToCsvArray(products);
+								products.unshift([
+									"Product Name",
+									"Product Code",
+									"Primary Unit",
+									"Product Rate",
+									"Product MRP",
+									"Product Cost",
+								]);
+
+								const csv = Papa.unparse(products);
+								res.set("Access-Control-Expose-Headers", "x-bills-export-filename");
+								return apiResponse.successResponseWithFile(
+									res.set("x-bills-export-filename", "category_" + req.params.categoryId + ".csv"),
+									"category_" + req.params.categoryId + ".csv",
+									csv
+								);
+							},
+							(err) => apiResponse.ErrorResponse(res, err)
+						);
+					} catch (err) {
+						//throw error in json response with status 500.
+						return apiResponse.ErrorResponse(res, err.message || err);
 					}
-					products = itemsArrayToCsvArray(products);
-					products.unshift([
-						"Product Name",
-						"Product Code",
-						"Primary Unit",
-						"Product Rate",
-						"Product MRP",
-						"Product Cost",
-					]);
-
-					const csv = Papa.unparse(products);
-					res.set("Access-Control-Expose-Headers", "x-bills-export-filename");
-					return apiResponse.successResponseWithFile(
-						res.set("x-bills-export-filename", "category_" + req.params.categoryId + ".csv"),
-						"category_" + req.params.categoryId + ".csv",
-						csv
-					);
 				},
-				(err) => apiResponse.ErrorResponse(res, err)
-			);
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err.message || err);
-		}
-	},
-];
+			];
 
-/**
- * Update any fields of the product
- *
- * @param {Mongoose.Schema.Types.ObjectId} [id] - ID of the product to be updated.
- */
-exports.updateProduct = [
-	auth,
-	param("categoryId", "Invalid category id")
-		.escape().trim().isMongoId()
-		.custom((value) =>
-			ProductCategory.findById(value).then((doc) => {
-				if (!doc) {
-					return Promise.reject(
-						"Product Category does not exists"
-					);
-				}
-			})
-		),
-	param("productId", "Invalid Product id")
-		.escape().trim().isMongoId()
-		.custom((value) =>
-			Product.findById(value).then((doc) => {
-				if (!doc) {
-					return Promise.reject(
-						"Product does not exists"
-					);
-				}
-			})
-		),
-	body("code")
-		.escape()
-		.trim()
-		.custom((value, { req }) =>
-			Product.findOne({
-				code: value,
-				category: req.params.categoryId,
-			}).then((doc) => {
-				if (doc && doc._id.toString() !== req.params.productId)
-					return Promise.reject(
-						"Item with this code already exists."
-					);
-			})
-		),
-	body("name").escape().isLength().trim(),
-	body("primaryUnit").escape().isLength().trim(),
-	body("rate").escape().trim().isNumeric(),
-	body("stocked").escape().trim().isBoolean(),
-	body("cost").escape().trim().isNumeric(),
-	body("mrp").escape().trim().isNumeric(),
-	body("units").optional().isArray(),
-	async (req, res) => {
-		const errors = validationResult(req);
-		if (!errors.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				errors.array()
-			);
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			if (
-				!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
-				!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
-			)
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised to add product"
-				);
-			const newProduct = await updateProduct(
-				req.params.productId,
-				req.body.code,
-				req.body.name,
-				req.body.primaryUnit,
-				req.body.rate,
-				req.body.mrp,
-				req.body.cost,
-				req.body.stocked,
-				req.params.categoryId,
-				req.body.units,
-				authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
-			);
-			return apiResponse.successResponseWithData(
-				res,
-				"Product Updated",
-				new ProductData(newProduct)
-			);
-		} catch (e) {
-			return apiResponse.validationErrorWithData(
-				res,
-				"Product Updation Error",
-				e.message || e
-			);
-		}
-	}
-];
-
-/**
- * Update any fields of the Product Category
- *
- * @param {Mongoose.Schema.Types.ObjectId} [id] - ID of the product category to be updated.
- */
-exports.updateProductCategory = [
-	auth,
-	param("categoryId")
-		.escape()
-		.trim()
-		.isMongoId(),
-	body("name").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
-	body("hasAccess").optional().isArray(),
-	async (req, res) => {
-		if (!validationResult(req).isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error.",
-				validationResult(req).array()
-			);
-		try {
-			//Check for product category access rights
-			const authenticatedUser = await userData(req.user._id);
-			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_PUT")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation");
-
-			const productCategory = await ProductCategory.findById(req.params.categoryId);
-			if (productCategory) {
-				if (Array.isArray(req.body.hasAccess)) {
-					for (let userId of req.body.hasAccess) {
-						const user = await User.findOne({ belongsTo: productCategory.belongsTo, _id: userId }).exec();
-						if (!user) return apiResponse.unauthorizedResponse(res, "You cannot add this user");
-					}
-					productCategory.hasAccess = req.body.hasAccess;
-				}
-				if (req.body.name) {
-					productCategory.name = req.body.name;
-				}
-				await productCategory.save();
-				return apiResponse.successResponse(
-					res,
-					"Product Category Update Success",
-				);
-			} else {
-				return apiResponse.notFoundResponse(res, "Product Category not found");
-			}
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err.message);
-		}
-	},
-];
-
-/**
- * Get suggestions for the matching Product CODE.
- *
- * @param {string} code - Phrase or parts of a product's code
- * @returns {Products[]} products - Array of products that matches the code phrase
- */
-exports.getProductSuggestions = [
-	auth,
-	param("categoryId")
-		.escape()
-		.trim()
-		.isMongoId(),
-	param("code").escape().trim(),
-	async (req, res) => {
-		const validation = validationResult(req);
-		if (!validation.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				validation.array()
-			);
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(
-					res,
-					"You are not authorised to access this product category"
-				);
-
-			return await Product.find(
-				{
-					code: {
-						$regex: new RegExp(`${req.params.code}`, "i"),
-					},
-					category: req.params.categoryId,
-				}).limit(10).lean().exec(
-					(err, products) => {
-						if (err) return apiResponse.ErrorResponse(res, err);
-						if (products.length === 0)
-							return apiResponse.successResponseWithData(
+			/**
+			 * Update any fields of the product
+			 *
+			 * @param {Mongoose.Schema.Types.ObjectId} [id] - ID of the product to be updated.
+			 */
+			exports.updateProduct = [
+				auth,
+				param("categoryId", "Invalid category id")
+					.escape().trim().isMongoId()
+					.custom((value) =>
+						ProductCategory.findById(value).then((doc) => {
+							if (!doc) {
+								return Promise.reject(
+									"Product Category does not exists"
+								);
+							}
+						})
+					),
+				param("productId", "Invalid Product id")
+					.escape().trim().isMongoId()
+					.custom((value) =>
+						Product.findById(value).then((doc) => {
+							if (!doc) {
+								return Promise.reject(
+									"Product does not exists"
+								);
+							}
+						})
+					),
+				body("code")
+					.escape()
+					.trim()
+					.custom((value, { req }) =>
+						Product.findOne({
+							code: value,
+							category: req.params.categoryId,
+						}).then((doc) => {
+							if (doc && doc._id.toString() !== req.params.productId)
+								return Promise.reject(
+									"Item with this code already exists."
+								);
+						})
+					),
+				body("name").escape().isLength().trim(),
+				body("primaryUnit").escape().isLength().trim(),
+				body("rate").escape().trim().isNumeric(),
+				body("stocked").escape().trim().isBoolean(),
+				body("cost").escape().trim().isNumeric(),
+				body("mrp").escape().trim().isNumeric(),
+				body("units").optional().isArray(),
+				async (req, res) => {
+					const errors = validationResult(req);
+					if (!errors.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							errors.array()
+						);
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						if (
+							!hasAccessPermission(authenticatedUser, null, "ALLOW_PRODUCT_POST") ||
+							!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET"))
+						)
+							return apiResponse.unauthorizedResponse(
 								res,
-								`No suggestions for:${req.params.code}`,
-								[]
+								"You are not authorised to add product"
 							);
+						const newProduct = await updateProduct(
+							req.params.productId,
+							req.body.code,
+							req.body.name,
+							req.body.primaryUnit,
+							req.body.rate,
+							req.body.mrp,
+							req.body.cost,
+							req.body.stocked,
+							req.params.categoryId,
+							req.body.units,
+							authenticatedUser.belongsTo ? authenticatedUser.belongsTo._id.toString() : authenticatedUser._id.toString()
+						);
 						return apiResponse.successResponseWithData(
 							res,
-							`Product Suggestions for:${req.params.code}`,
-							products.map((product) => new ProductData(product))
+							"Product Updated",
+							new ProductData(newProduct)
+						);
+					} catch (e) {
+						return apiResponse.validationErrorWithData(
+							res,
+							"Product Updation Error",
+							e.message || e
 						);
 					}
-				);
-		} catch (e) {
-			return apiResponse.ErrorResponse(res, e.message || e);
-		}
-	},
-];
+				}
+			];
 
-/**
- * Get Products List based on the query
- */
-exports.queryProduct = [
-	auth,
-	param("categoryId")
-		.escape()
-		.trim()
-		.isMongoId(),
-	query(["page", "limit", "offset"])
-		.optional()
-		.isInt(),
-	query("search")
-		.optional()
-		.trim()
-		.escape(),
-	async (req, res) => {
-		const validation = validationResult(req);
-		if (!validation.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				validation.array()
-			);
+			/**
+			 * Update any fields of the Product Category
+			 *
+			 * @param {Mongoose.Schema.Types.ObjectId} [id] - ID of the product category to be updated.
+			 */
+			exports.updateProductCategory = [
+				auth,
+				param("categoryId")
+					.escape()
+					.trim()
+					.isMongoId(),
+				body("name").optional().escape().trim().matches(/^[a-z0-9./\- ]+$/i),
+				body("hasAccess").optional().isArray(),
+				async (req, res) => {
+					if (!validationResult(req).isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error.",
+							validationResult(req).array()
+						);
+					try {
+						//Check for product category access rights
+						const authenticatedUser = await userData(req.user._id);
+						if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_PUT")))
+							return apiResponse.unauthorizedResponse(res, "You are not authorised for this operation");
 
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			//Check product category access
-			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
-
-			const query = {
-				...(req.query.search && {
-					$or: [
-						{
-							"name": {
-								$regex: new RegExp(`${req.query.search}`, "i"),
+						const productCategory = await ProductCategory.findById(req.params.categoryId);
+						if (productCategory) {
+							if (Array.isArray(req.body.hasAccess)) {
+								for (let userId of req.body.hasAccess) {
+									const user = await User.findOne({ belongsTo: productCategory.belongsTo, _id: userId }).exec();
+									if (!user) return apiResponse.unauthorizedResponse(res, "You cannot add this user");
+								}
+								productCategory.hasAccess = req.body.hasAccess;
 							}
-						},
-						{
-							"code": {
-								$regex: new RegExp(`${req.query.search}`, "i"),
+							if (req.body.name) {
+								productCategory.name = req.body.name;
 							}
-						},
-					]
-				}),
-				category: req.params.categoryId,
-			};
-
-			const paginateOptions = {
-				...(new QueryParser(req.query))
-			};
-
-			return Product.paginate(query, paginateOptions).then(
-				(items) => apiResponse.successResponseWithData(
-					res,
-					"Operation success",
-					items
-				)
-				,
-				(err) => apiResponse.ErrorResponse(res, err.message)
-			);
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err.message);
-		}
-	},
-];
-
-/**
- * Get availibity for the Product CODE.
- *
- * @param {string} code - Product's code
- * @returns {boolean} availability - Availibility of the product code
- */
-exports.productAvailability = [
-	auth,
-	param("code").escape().trim(),
-	param("categoryId")
-		.escape()
-		.trim()
-		.isMongoId(),
-	async (req, res) => {
-		const validation = validationResult(req);
-		if (!validation.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				validation.array()
-			);
-
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			//Check product category access
-			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
-
-			return Product.findOne(
-				{
-					code: req.params.code,
-					category: req.params.categoryId,
+							await productCategory.save();
+							return apiResponse.successResponse(
+								res,
+								"Product Category Update Success",
+							);
+						} else {
+							return apiResponse.notFoundResponse(res, "Product Category not found");
+						}
+					} catch (err) {
+						//throw error in json response with status 500.
+						return apiResponse.ErrorResponse(res, err.message);
+					}
 				},
-				(err, product) => {
-					if (err) return apiResponse.ErrorResponse(res, err);
-					return apiResponse.successResponseWithData(
-						res,
-						"Product code availibility",
-						!(product)
-					);
-				}
-			).lean();
-		} catch (e) {
-			apiResponse.ErrorResponse(res, e.message || e);
-		}
-	}
-];
+			];
 
-/**
- * Get a product details by its ID
- * @param {Mongoose.Schema.Types.ObjectId} id - ID of the product
- */
-exports.getProduct = [
-	auth,
-	param("categoryId")
-		.escape()
-		.trim()
-		.isMongoId(),
-	param("productId")
-		.escape()
-		.trim()
-		.isMongoId(),
-	async function (req, res) {
-		const validation = validationResult(req);
-		if (!validation.isEmpty())
-			return apiResponse.validationErrorWithData(
-				res,
-				"Validation Error",
-				validation.array()
-			);
-
-		try {
-			const authenticatedUser = await userData(req.user._id);
-			//Check product category access
-			if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
-				return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
-
-			return getProductByIdAndCategory(req.params.productId, req.params.categoryId).then((product) => {
-				if (product) {
-					if (hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_GET")) {
-						let productData = new ProductData(product);
-
-						return apiResponse.successResponseWithData(
+			/**
+			 * Get suggestions for the matching Product CODE.
+			 *
+			 * @param {string} code - Phrase or parts of a product's code
+			 * @returns {Products[]} products - Array of products that matches the code phrase
+			 */
+			exports.getProductSuggestions = [
+				auth,
+				param("categoryId")
+					.escape()
+					.trim()
+					.isMongoId(),
+				param("code").escape().trim(),
+				async (req, res) => {
+					const validation = validationResult(req);
+					if (!validation.isEmpty())
+						return apiResponse.validationErrorWithData(
 							res,
-							"Operation success",
-							productData
+							"Validation Error",
+							validation.array()
 						);
-					} else {
-						return apiResponse.unauthorizedResponse(
-							res,
-							"Not authorised to access this product"
-						);
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
+							return apiResponse.unauthorizedResponse(
+								res,
+								"You are not authorised to access this product category"
+							);
+
+						return await Product.find(
+							{
+								code: {
+									$regex: new RegExp(`${req.params.code}`, "i"),
+								},
+								category: req.params.categoryId,
+							}).limit(10).lean().exec(
+								(err, products) => {
+									if (err) return apiResponse.ErrorResponse(res, err);
+									if (products.length === 0)
+										return apiResponse.successResponseWithData(
+											res,
+											`No suggestions for:${req.params.code}`,
+											[]
+										);
+									return apiResponse.successResponseWithData(
+										res,
+										`Product Suggestions for:${req.params.code}`,
+										products.map((product) => new ProductData(product))
+									);
+								}
+							);
+					} catch (e) {
+						return apiResponse.ErrorResponse(res, e.message || e);
 					}
-				} else {
-					return apiResponse.notFoundResponse(
-						res,
-						"No product Found"
-					);
+				},
+			];
+
+			/**
+			 * Get Products List based on the query
+			 */
+			exports.queryProduct = [
+				auth,
+				param("categoryId")
+					.escape()
+					.trim()
+					.isMongoId(),
+				query(["page", "limit", "offset"])
+					.optional()
+					.isInt(),
+				query("search")
+					.optional()
+					.trim()
+					.escape(),
+				async (req, res) => {
+					const validation = validationResult(req);
+					if (!validation.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							validation.array()
+						);
+
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						//Check product category access
+						if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
+							return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
+
+						const query = {
+							...(req.query.search && {
+								$or: [
+									{
+										"name": {
+											$regex: new RegExp(`${req.query.search}`, "i"),
+										}
+									},
+									{
+										"code": {
+											$regex: new RegExp(`${req.query.search}`, "i"),
+										}
+									},
+								]
+							}),
+							category: req.params.categoryId,
+						};
+
+						const paginateOptions = {
+							...(new QueryParser(req.query))
+						};
+
+						return Product.paginate(query, paginateOptions).then(
+							(items) => apiResponse.successResponseWithData(
+								res,
+								"Operation success",
+								items
+							)
+							,
+							(err) => apiResponse.ErrorResponse(res, err.message)
+						);
+					} catch (err) {
+						//throw error in json response with status 500.
+						return apiResponse.ErrorResponse(res, err.message);
+					}
+				},
+			];
+
+			/**
+			 * Get availibity for the Product CODE.
+			 *
+			 * @param {string} code - Product's code
+			 * @returns {boolean} availability - Availibility of the product code
+			 */
+			exports.productAvailability = [
+				auth,
+				param("code").escape().trim(),
+				param("categoryId")
+					.escape()
+					.trim()
+					.isMongoId(),
+				async (req, res) => {
+					const validation = validationResult(req);
+					if (!validation.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							validation.array()
+						);
+
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						//Check product category access
+						if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
+							return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
+
+						return Product.findOne(
+							{
+								code: req.params.code,
+								category: req.params.categoryId,
+							},
+							(err, product) => {
+								if (err) return apiResponse.ErrorResponse(res, err);
+								return apiResponse.successResponseWithData(
+									res,
+									"Product code availibility",
+									!(product)
+								);
+							}
+						).lean();
+					} catch (e) {
+						apiResponse.ErrorResponse(res, e.message || e);
+					}
 				}
-			});
-		} catch (err) {
-			//throw error in json response with status 500.
-			return apiResponse.ErrorResponse(res, err);
-		}
-	},
-];
+			];
+
+			/**
+			 * Get a product details by its ID
+			 * @param {Mongoose.Schema.Types.ObjectId} id - ID of the product
+			 */
+			exports.getProduct = [
+				auth,
+				param("categoryId")
+					.escape()
+					.trim()
+					.isMongoId(),
+				param("productId")
+					.escape()
+					.trim()
+					.isMongoId(),
+				async function (req, res) {
+					const validation = validationResult(req);
+					if (!validation.isEmpty())
+						return apiResponse.validationErrorWithData(
+							res,
+							"Validation Error",
+							validation.array()
+						);
+
+					try {
+						const authenticatedUser = await userData(req.user._id);
+						//Check product category access
+						if (!(await hasProductCategoryAccess(authenticatedUser, req.params.categoryId, "ALLOW_PRODUCTCATEGORY_GET")))
+							return apiResponse.unauthorizedResponse(res, "You are not authorised to do this operation");
+
+						return getProductByIdAndCategory(req.params.productId, req.params.categoryId).then((product) => {
+							if (product) {
+								if (hasAccessPermission(authenticatedUser, product, "ALLOW_PRODUCT_GET")) {
+									let productData = new ProductData(product);
+
+									return apiResponse.successResponseWithData(
+										res,
+										"Operation success",
+										productData
+									);
+								} else {
+									return apiResponse.unauthorizedResponse(
+										res,
+										"Not authorised to access this product"
+									);
+								}
+							} else {
+								return apiResponse.notFoundResponse(
+									res,
+									"No product Found"
+								);
+							}
+						});
+					} catch (err) {
+						//throw error in json response with status 500.
+						return apiResponse.ErrorResponse(res, err);
+					}
+				},
+			];

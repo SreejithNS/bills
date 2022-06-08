@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import AddIcon from '@material-ui/icons/Add';
 import { useHistory } from 'react-router-dom';
 import { itemPaths, paths } from '../routes/paths.enum';
-import MaterialTable, { Query, QueryResult } from 'material-table';
+import MaterialTable, { MTableToolbar, Query, QueryResult } from 'material-table';
 import { tableIcons } from '../components/MaterialTableIcons';
 import { exportToCsv, itemsArrayToCsvArray } from '../actions/item.actions';
 import { toast } from 'react-toastify';
@@ -25,6 +25,7 @@ import { UserPermissions } from '../reducers/auth.reducer';
 import PurchaseBillsFilter from '../components/PurchaseBillsFilter';
 import useAxios from 'axios-hooks';
 import fileDownload from 'js-file-download';
+import { useTheme } from '@material-ui/core';
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -56,6 +57,25 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 function isFloat(n: number) {
     return Number(n) === n && n % 1 !== 0;
+}
+
+const useInventryDetails = () => {
+    const category = useSelector((state: RootState) => state.product.productCategory?._id);
+    const [{ data: inventryDetails, loading: inventryDetailsLoading }, fetchDetails] = useAxios<APIResponse<{
+        totalValue: number;
+        totalStock: number;
+    }>>('/product/' + category + '/stats', { manual: true });
+
+    useEffect(() => {
+        if (category) {
+            fetchDetails({
+                method: 'GET',
+                url: '/product/' + category + '/stats'
+            });
+        }
+    }, [category, fetchDetails]);
+
+    return { inventryDetails: inventryDetails?.data, loading: inventryDetailsLoading };
 }
 
 export const ProductCategorySelection = React.forwardRef<HTMLDivElement>((_, ref) => {
@@ -174,6 +194,8 @@ export default function ItemsHomePage() {
     const classes = useStyles();
     const history = useHistory();
     const tableRef = useRef<any>(null);
+    const theme = useTheme();
+    const { inventryDetails, loading: detailsLoading } = useInventryDetails();
     const { productCategory } = useSelector((state: RootState) => state.product);
 
     const [{ loading, error, response }, execute, cancel] = useAxios<Blob>({
@@ -207,6 +229,11 @@ export default function ItemsHomePage() {
     }, [productCategory])
 
     const fetchItems = (query: Query<Product>): Promise<QueryResult<Product>> => new Promise((resolve) => {
+        if(!productCategory) return resolve({
+            data: [],
+            page: 0,
+            totalCount: 0
+        });
         const url = `/product/${productCategory?._id}/query?`;
         const search = (new URLSearchParams(interpretMTQuery(query))).toString();
         axios
@@ -244,6 +271,17 @@ export default function ItemsHomePage() {
                             tableRef={tableRef}
                             icons={tableIcons}
                             isLoading={loading}
+                            components={{
+                                Toolbar: (props: any) => (
+                                    <>
+                                        <MTableToolbar {...props} />
+                                        {(inventryDetails && !detailsLoading) ? <div style={{display:"inline-block"}}>
+                                            <Chip style={{ margin: theme.spacing(1), marginLeft: theme.spacing(2) }} label={`Total Stock: ${inventryDetails.totalStock}`} />
+                                            <Chip style={{ margin: theme.spacing(1), marginRight: "8px" }} label={`Total Value: ₹${inventryDetails.totalStock.toLocaleString()}`} />
+                                        </div> : null}
+                                    </>
+                                )
+                            }}
                             columns={[
                                 { title: "Item Name", field: "name", editable: "never" },
                                 { title: "Code", field: "code", editable: "never" },
