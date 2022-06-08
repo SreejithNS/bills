@@ -21,11 +21,11 @@ var UserSchema = new mongoose.Schema(
 				printHeader: { type: String, default: "( Quotation )" },
 				printFooter: String,
 				checkInSettings: {
-					customerRequired: { type: Boolean, default: true },
-					productsRequired: { type: Boolean, default: true },
-					noteRequired: { type: Boolean, default: true },
+					customerRequired: { type: Boolean, default: false },
+					productsRequired: { type: Boolean, default: false },
+					noteRequired: { type: Boolean, default: false },
 					notePresets: { type: [String], default: ["No Order"] },
-					distanceThreshold: { type: Number, default: 5 },
+					distanceThreshold: { type: Number, default: 200 },
 					dateFields: {
 						type: [{
 							name: { type: String, required: true },
@@ -49,7 +49,7 @@ var UserSchema = new mongoose.Schema(
 					noteRequired: false,
 					notePresets: ["No Order"],
 					dateFields: [],
-					distanceThreshold: 5
+					distanceThreshold: 200
 				}
 			}
 		}

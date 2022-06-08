@@ -1724,7 +1724,7 @@
           "noteRequired": false,
           "notePresets": ["No Order"],
           "dateFields": [],
-          "distanceThreshold": 5
+          "distanceThreshold": 200
         }
       },
       "enums": null,
