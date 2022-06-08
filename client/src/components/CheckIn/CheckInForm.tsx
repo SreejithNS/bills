@@ -99,7 +99,7 @@ export function CheckInForm(props: {
             contact: contact?._id ?? null,
             products,
             checkInLocation,
-            note: note,
+            note: note.trim(),
             dates,
         });
     }, [errors, props, contact?._id, products, checkInLocation, note, dates]);
@@ -150,7 +150,7 @@ export function CheckInForm(props: {
                 <>
                     <TextField
                         value={note}
-                        onChange={(e) => setNote(e.target.value.trim())}
+                        onChange={(e) => setNote(e.target.value)}
                         label="Note"
                         multiline
                         error={!!(getError("note"))}
