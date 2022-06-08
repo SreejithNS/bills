@@ -90,6 +90,10 @@ export default function BillViewer(props: BillData & AdditionalProps) {
         Print.init().then(instance => {
             return instance.printBill(props)
         }).then(() => toast.success("Bill Printed!")).catch((error) => toast.error(error.message));
+
+        return async () => {
+            await Print.disconnect()
+        }
     }, [props]);
 
     const handleWhatsAppShare = useCallback(async () => {
