@@ -42,7 +42,7 @@ const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, 
                     {bill.items.map((item, key) =>
                         <tr key={key}>
                             <td>{item.name}</td>
-                            <td>{item.quantity}</td>
+                            <td>{item.quantity}{item.unit ? (item.unit as unknown as string).split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""}</td>
                             <td>{(item.rate * item.quantity).toFixed(2)}</td>
                         </tr>
                     )}

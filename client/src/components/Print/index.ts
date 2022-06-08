@@ -14,7 +14,7 @@ export default class Print {
 
   public static onConnect: () => any;
   public static onDisconnect: () => any;
-
+  public static disconnect = async () => void 0;
   constructor(public printer: BluetoothRemoteGATTCharacteristic, private pageWidth: number = 42) { }
 
   public static async init() {
@@ -33,6 +33,12 @@ export default class Print {
 
         const server = await device.gatt.connect();
         if (Print.onConnect) Print.onConnect();
+        Print.disconnect = async () => {
+          if (server.connected) {
+            await server.disconnect();
+          }
+          return void 0;
+        };
 
         device.ongattserverdisconnected = ((_) => {
           if (Print.onDisconnect) Print.onDisconnect();
@@ -70,7 +76,7 @@ export default class Print {
   public async printBill({ customer, soldBy, itemsTotalAmount, serialNumber, createdAt, billAmount, discountAmount, items }: PrintBillData) {
     try {
       const itemString = items.map(item => {
-        return [item.name, item.quantity.toString() + (item.unit || ""), (item.quantity * item.rate).toString()]
+        return [item.name, item.quantity.toString() + (item.unit ? (item.unit as unknown as string).split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""), (item.quantity * item.rate).toString()]
       })
 
       const billText = new BillText(
