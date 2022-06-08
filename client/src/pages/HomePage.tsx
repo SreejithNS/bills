@@ -40,6 +40,7 @@ export default function HomePage() {
     const createBillAccess = useHasPermission(UserPermissions.ALLOW_BILL_POST);
     const customersPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_CUSTOMERS);
     const createCheckinAccess = useHasPermission(UserPermissions.ALLOW_CHECKIN_POST);
+    const checkInPageAccess = useHasPermission(UserPermissions.ALLOW_PAGE_CHECKINS);
     const hasAdminPermissions = useHasPermission();
 
     return (
@@ -122,9 +123,20 @@ export default function HomePage() {
                     && <Grid item xs={12} sm={6} md={4}>
                         <HomeCard
                             icon={<Room fontSize="large" />}
-                            onClick={()=>setOpen(true)}
+                            onClick={() => setOpen(true)}
                             title="Add a CheckIn"
                             content="Create a CheckIn record. Make sure your location is turned on for this."
+                        />
+                    </Grid>
+                }
+
+                {checkInPageAccess
+                    && <Grid item xs={12} sm={6} md={4}>
+                        <HomeCard
+                            icon={<Room fontSize="large" />}
+                            onClick={openLink(paths.checkIn)}
+                            title="Browse CheckIn"
+                            content="Browse your CheckIn Records and visualise in on maps."
                         />
                     </Grid>
                 }
