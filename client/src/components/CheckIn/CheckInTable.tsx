@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import MaterialTable from "material-table";
+import MaterialTable, { Filter } from "material-table";
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
-import { Box, Chip, CircularProgress, Input, Tooltip, useTheme } from "@material-ui/core";
+import { Box, Chip, CircularProgress, IconButton, Input, Tooltip, useTheme } from "@material-ui/core";
 import useAxios from "axios-hooks";
 import { APIResponse, handleAxiosError } from "../Axios";
 import { PaginateResult } from "../../reducers/bill.reducer";
@@ -18,7 +18,8 @@ import { tableIcons } from "../MaterialTableIcons";
 import { useHasPermission } from "../../actions/auth.actions";
 import RefreshIcon from '@material-ui/icons/Refresh';
 import { toast } from "react-toastify";
-import { Delete } from "@material-ui/icons";
+import { Clear, DateRange, Delete } from "@material-ui/icons";
+import { DateFilter, DateFilterDialog } from "./DateFilterDialog";
 
 interface CheckInTableProps {
     /**
@@ -60,11 +61,23 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(6);
     const [filterToggle, setFilterToggle] = useState(false);
+    const [tableFilter, setTableFilter] = useState<Filter<CheckInDTO>[]>([]);
     const [filter, setFilter] = useState("");
+    const [dateFilter, setDateFilter] = useState<DateFilter[]>([]);
     const [sort, setSort] = useState("");
     const [salesman, setSalesman] = useState<UserData | null>(null);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [distanceFilter, setDistanceFilter] = useState<string>("");
+
+    useEffect(() => {
+        let filters = [...tableFilter, ...dateFilter];
+        setFilter(
+            filters.map(f => `${f.column}${f.operator}${f.value}`).join("&")
+        )
+    }, [dateFilter, tableFilter])
+
+    // Date Filter Dialog
+    const [dateFilterDialog, setDateFilterDialog] = useState(false);
 
     // Styles
     const theme = useTheme();
@@ -159,7 +172,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
 
     const { customerRequired, noteRequired, notePresets, distanceThreshold } = organistaionData.checkInSettings;
 
-    return (<MaterialTable
+    return (<><MaterialTable
         icons={tableIcons}
         isLoading={loading || deleteLoading}
         data={data?.data?.docs ?? []}
@@ -171,7 +184,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
         onQueryChange={({ orderBy, orderDirection, page, filters }) => {
             setSort(`${orderDirection === "desc" ? "-" : ""}${orderBy ?? ""}`);
             setPage(page);
-            setFilter(filters.map(f => f.column + f.operator + f.value).join("&"));
+            setTableFilter(filter);
         }}
         onOrderChange={(orderBy, orderDirection) => setSort(`${orderDirection === "desc" ? "-" : ""}${orderBy ?? ""}`)}
         columns={
@@ -256,6 +269,16 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                         <Tooltip title={moment(createdAt).format("DD-MM-YYYY HH:mm")}>
                             <>{moment(createdAt).fromNow()}</>
                         </Tooltip>,
+                    filterComponent: () => (
+                        <Box display="flex">
+                            <IconButton onClick={() => setDateFilterDialog(true)}>
+                                <DateRange />
+                            </IconButton>
+                            <IconButton onClick={() => setDateFilter([])}>
+                                <Clear />
+                            </IconButton>
+                        </Box>
+                    )
                 },
             ]
         }
@@ -322,5 +345,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
             },
         }}
     />
+        <DateFilterDialog field="createdAt" open={dateFilterDialog} onClose={() => setDateFilterDialog(false)} onApply={(setDateFilter)} />
+    </>
     )
 }
