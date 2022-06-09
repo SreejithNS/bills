@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import MaterialTable, { Filter } from "material-table";
 import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
-import { Box, Chip, CircularProgress, IconButton, Input, Tooltip, useTheme } from "@material-ui/core";
+import { Box, Chip, ChipProps, CircularProgress, IconButton, Input, Tooltip, useTheme } from "@material-ui/core";
 import useAxios from "axios-hooks";
 import { APIResponse, handleAxiosError } from "../Axios";
 import { PaginateResult } from "../../reducers/bill.reducer";
@@ -40,19 +40,27 @@ interface CheckInTableProps {
     observe: any[];
 }
 
-export const noteHighlighter = (note: string | null, presets: string[] = []) => {
+export const noteHighlighter = (note: string | null, presets: string[] = [], chipProps: ChipProps = {}) => {
+    let chips: JSX.Element[] = [];
     let result: JSX.Element[] = [];
-    presets.forEach(preset => {
-        if (note === null) return result.push(<></>);
-        let startIndex = note.indexOf(preset);
-        if (startIndex !== -1) {
-            return result.push(<>
-                {note.substring(0, startIndex)} <Chip size="small" label={preset} />  {note.substring(startIndex + preset.length)}
-            </>)
-        } else {
-            return result.push(<>{note}</>)
+
+    if (note !== null) {
+        // Wrap preset text with Chip
+        for (const preset of presets) {
+            while (note.includes(preset)) {
+                chips.push(<Chip key={preset} label={preset} {...chipProps} />);
+                note = note.replace(preset, "$#$");
+            }
         }
-    })
+        let splitted: JSX.Element[] = []
+        splitted = note.split("$#$").map((text, index) => <>{text}</>);
+
+        for (const part of splitted) {
+            result.push(part);
+            if (chips.length > 0) result.push(chips.shift() as JSX.Element);
+        }
+    }
+
     return result;
 }
 
@@ -232,7 +240,11 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                     type: "string",
                     sorting: false,
                     hidden: !noteRequired,
-                    render: ({ note }) => noteHighlighter(note, notePresets)
+                    render: ({ note }) => noteHighlighter(note, notePresets, {
+                        size: "small", style: {
+                            marginBottom: theme.spacing(0.5)
+                        }
+                    }),
                 },
                 ...organistaionData.checkInSettings.dateFields.map((f: { label: any; name: any; }) => ({
                     title: f.label,
