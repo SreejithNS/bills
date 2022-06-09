@@ -150,7 +150,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                         Date: {moment(props?.createdAt).format('MMM D YYYY, h:mm a') || moment().format('MMM D YYYY, h:mm a')}
                     </Typography>
                     {props.location && <Tooltip title="Open Location in Google Maps">
-                        <IconButton onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${props.location?.coordinates.join(",")}`) }}>
+                        <IconButton onClick={() => { window.open(`https://www.google.com/maps/search/?api=1&query=${props.location?.coordinates.reverse().join(",")}`) }}>
                             <RoomRounded />
                         </IconButton>
                     </Tooltip>}
