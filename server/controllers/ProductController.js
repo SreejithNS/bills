@@ -1040,16 +1040,15 @@ exports.getProductCategoriesList = [
 							{
 								code: req.params.code,
 								category: req.params.categoryId,
-							},
-							(err, product) => {
-								if (err) return apiResponse.ErrorResponse(res, err);
-								return apiResponse.successResponseWithData(
-									res,
-									"Product code availibility",
-									!(product)
-								);
 							}
-						).lean();
+						).lean().exec((err, product) => {
+							if (err) return apiResponse.ErrorResponse(res, err);
+							return apiResponse.successResponseWithData(
+								res,
+								"Product code availibility",
+								!(product)
+							);
+						});
 					} catch (e) {
 						apiResponse.ErrorResponse(res, e.message || e);
 					}
