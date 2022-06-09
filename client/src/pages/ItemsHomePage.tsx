@@ -277,7 +277,7 @@ export default function ItemsHomePage() {
                                         <MTableToolbar {...props} />
                                         {(inventryDetails && !detailsLoading) ? <div style={{display:"inline-block"}}>
                                             <Chip style={{ margin: theme.spacing(1), marginLeft: theme.spacing(2) }} label={`Total Stock: ${inventryDetails.totalStock}`} />
-                                            <Chip style={{ margin: theme.spacing(1), marginRight: "8px" }} label={`Total Value: ₹${inventryDetails.totalStock.toLocaleString()}`} />
+                                            <Chip style={{ margin: theme.spacing(1), marginRight: "8px" }} label={`Total Value: ₹${inventryDetails.totalValue.toLocaleString()}`} />
                                         </div> : null}
                                     </>
                                 )
