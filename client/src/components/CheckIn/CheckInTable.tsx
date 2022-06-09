@@ -64,6 +64,21 @@ export const noteHighlighter = (note: string | null, presets: string[] = [], chi
     return result;
 }
 
+const parseOperatorAndValue = (value: string) => {
+    const [operator] = /^(<=|>=|<|>|=)/.exec(value) ?? [];
+    if (operator) {
+        return {
+            operator,
+            value: value.substring(operator.length)
+        }
+    } else {
+        return {
+            operator: "=",
+            value
+        }
+    }
+}
+
 export default function CheckInTable({ onData, onSelect, newEntry = () => void 0, observe = [] }: CheckInTableProps) {
     // Query Parameters
     const [page, setPage] = useState(0);
@@ -75,14 +90,14 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     const [sort, setSort] = useState("");
     const [salesman, setSalesman] = useState<UserData | null>(null);
     const [customer, setCustomer] = useState<Customer | null>(null);
-    const [distanceFilter, setDistanceFilter] = useState<string>("");
+    const [distanceFilter, setDistanceFilter] = useState<Filter<CheckInDTO>[]>([]);
 
     useEffect(() => {
-        let filters = [...tableFilter, ...dateFilter];
+        let filters = [...tableFilter, ...dateFilter, ...distanceFilter];
         setFilter(
             filters.map(f => `${f.column}${f.operator}${f.value}`).join("&")
         )
-    }, [dateFilter, tableFilter])
+    }, [dateFilter, distanceFilter, tableFilter])
 
     // Date Filter Dialog
     const [dateFilterDialog, setDateFilterDialog] = useState(false);
@@ -104,7 +119,6 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
             url: "/checkin?" + filter,
             params: {
                 page: page + 1,
-                distance: distanceFilter,
                 limit: rowsPerPage,
                 sort: sort || "-createdAt",
                 checkedBy: viewAllPermission
@@ -192,7 +206,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
         onQueryChange={({ orderBy, orderDirection, page, filters }) => {
             setSort(`${orderDirection === "desc" ? "-" : ""}${orderBy ?? ""}`);
             setPage(page);
-            setTableFilter(filter);
+            setTableFilter(filters);
         }}
         onOrderChange={(orderBy, orderDirection) => setSort(`${orderDirection === "desc" ? "-" : ""}${orderBy ?? ""}`)}
         columns={
@@ -267,9 +281,13 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                     },
                     filterComponent: () => <Input
                         type="text"
-                        value={distanceFilter}
+                        value={distanceFilter[0].operator+distanceFilter[0].value}
                         onChange={(e) => {
-                            setDistanceFilter(e.target.value);
+                            const oprAndVal = parseOperatorAndValue(e.target.value);
+                            setDistanceFilter([{
+                                column: "distance",
+                                ...oprAndVal
+                            } as any]);
                         }
                         } />
                 },
