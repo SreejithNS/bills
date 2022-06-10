@@ -276,8 +276,12 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                     type: "numeric",
                     render: ({ distance }) => {
                         if (distance === null) return "";
-                        if (distance > distanceThreshold) return <Chip label={distance + "m"} color="secondary" />;
-                        return distance + "m";
+                        const distanceNormalise = (distance: number) => {
+                            if (distance < 1000) return `${distance} m`;
+                            return `${(distance / 1000).toFixed(2)} km`;
+                        }
+                        if (distance > distanceThreshold) return <Chip label={distanceNormalise(distance)} color="secondary" />;
+                        return distanceNormalise(distance);
                     },
                     filterComponent: () => <Input
                         type="text"
