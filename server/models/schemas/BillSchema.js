@@ -206,13 +206,12 @@ BillSchema.pre("save", async function (next) {
 
 						soldQuantity -= stockReduction;
 					} else {
-						await session.abortTransaction();
-						return next(new Error(`No record of purchased stock found for ${item.name}`));
+						soldQuantity = 0;
 					}
 				}
 			} catch (err) {
 				await session.abortTransaction();
-				return next(err);
+				throw err;
 			}
 			// const product = await Product.findOne({ _id: item._id, stocked: true });
 			// if (product) {
@@ -220,7 +219,7 @@ BillSchema.pre("save", async function (next) {
 			// 		product.stock -= item.converted;
 			// 		await product.save();
 			// 	} else {
-			// 		next(new Error(`Stock of ${product.name} is insufficient`));
+			// 		throw new Error(`Stock of ${product.name} is insufficient`);
 			// 	}
 			// }
 		}
@@ -228,7 +227,7 @@ BillSchema.pre("save", async function (next) {
 		next();
 	} catch (error) {
 		console.error(error);
-		next(error);
+		throw error;
 	}
 });
 // BillSchema.virtual("itemsTotalAmount").get(function () {

@@ -690,9 +690,8 @@ exports.receivePayment = [
 
 				if (bill.paidAmount === bill.billAmount) bill.credit = false;
 
-				return bill.save().then(() =>
-					apiResponse.successResponse(res, "Bill payment received")
-				);
+				await bill.save();
+				return apiResponse.successResponse(res, "Bill payment received");
 			}
 		} catch (e) {
 			return apiResponse.ErrorResponse(
