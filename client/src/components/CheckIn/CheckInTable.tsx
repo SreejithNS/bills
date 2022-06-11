@@ -285,7 +285,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                     },
                     filterComponent: () => <Input
                         type="text"
-                        value={distanceFilter[0].operator+distanceFilter[0].value}
+                        value={distanceFilter[0] ? distanceFilter[0].operator + distanceFilter[0].value : ""}
                         onChange={(e) => {
                             const oprAndVal = parseOperatorAndValue(e.target.value);
                             setDistanceFilter([{
