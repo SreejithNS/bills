@@ -1,13 +1,13 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import * as ReactDOMClient from 'react-dom/client';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import { createStore, applyMiddleware, compose } from 'redux';
+import { legacy_createStore as createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
 import rootReducer from './reducers/rootReducer';
 import thunk from 'redux-thunk';
-import { createMuiTheme, CssBaseline, ThemeProvider } from '@material-ui/core';
+import { createTheme, CssBaseline, ThemeProvider } from '@material-ui/core';
 import { createLogger } from 'redux-logger';
 import initAxios from './components/Axios';
 import 'react-toastify/dist/ReactToastify.css';
@@ -35,7 +35,7 @@ if (!isProduction) {
 
 export const store = createStore(rootReducer, composeEnhancers(applyMiddleware(...middlewares)));
 
-const theme = createMuiTheme({
+const theme = createTheme({
   overrides: {
     MuiCssBaseline: {
       '@global': {
@@ -61,7 +61,9 @@ const theme = createMuiTheme({
 
 initAxios();
 
-ReactDOM.render(
+const container = document.getElementById('root');
+const root = ReactDOMClient.createRoot(container); // createRoot(container!) if you use TypeScript
+root.render(
   <React.Fragment>
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -70,8 +72,7 @@ ReactDOM.render(
         <ToastContainer />
       </Provider>
     </ThemeProvider>
-  </React.Fragment>//StrictMode>
-  , document.getElementById('root')
+  </React.Fragment>
 );
 
 // If you want your app to work offline and load faster, you can change
