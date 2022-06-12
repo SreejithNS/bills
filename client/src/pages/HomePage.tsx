@@ -15,7 +15,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../reducers/rootReducer';
 import AccountCircleRoundedIcon from "@material-ui/icons/AccountCircleRounded";
 import SystemUpdateIcon from '@material-ui/icons/SystemUpdate';
-import logo from "../assets/logo_blue.svg";
+import logo from "../assets/logo.svg";
 import CheckInEntryDialog from '../components/CheckIn/CheckInEntryDialog';
 
 export default function HomePage() {
