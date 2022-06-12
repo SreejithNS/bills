@@ -5,7 +5,7 @@ import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import Slide from '@material-ui/core/Slide';
 import { TransitionProps } from '@material-ui/core/transitions';
-import { Container, Grid, Typography } from '@material-ui/core';
+import { Box, Container, Typography, useTheme } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import { paths } from '../../routes/paths.enum';
 // import { useDispatch } from 'react-redux';
@@ -20,7 +20,6 @@ const useStyles = makeStyles((theme: Theme) =>
             flex: 1,
         },
         container: {
-            // padding: theme.spacing(2),
             height: "100%"
         }
     }),
@@ -37,24 +36,19 @@ export default function NotFoundModal(props: any) {
     const [open, setOpen] = useState(true);
     const classes = useStyles();
     const history = useHistory();
+    const theme = useTheme();
     return (
         <Dialog fullScreen open={"visible" in props ? props.visible : open} onClose={props.onClose || (() => { setOpen(false); history.goBack() })} TransitionComponent={Transition}>
             <Container fixed className={classes.container}>
-                <Grid
-                    container
-                    direction="row"
-                    justify="center"
-                    alignItems="center"
-                    style={{ height: "100%" }}
-                >
-                    <Grid item xs style={{ textAlign: "center" }}>
-                        <img src={svg} alt="Page Not Found" style={{ width: "100%" }} />
-                        <Typography variant="h4" display="block" style={{ marginBottom: "1em" }} >
-                            Oops! you are not supposed to be here.
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%" textAlign="center">
+                    <div>
+                        <img src={svg} alt="Page Not Found" style={{ width: "100%", maxWidth: 300 }} />
+                        <Typography variant="h4" display="block" style={{ margin: theme.spacing(3), }} >
+                            Oops! You are in the wrong section.
                         </Typography>
-                        <Button variant="outlined" onClick={() => history.push(paths.home)}>Take back to Home Page</Button>
-                    </Grid>
-                </Grid>
+                        <Button variant="outlined" onClick={() => history.push(paths.home)}>Go to Home Page</Button>
+                    </div>
+                </Box>
             </Container>
         </Dialog>
     );

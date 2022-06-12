@@ -8,6 +8,7 @@ import FullScreenLoading from '../components/FullScreenLoading';
 import PrivateRoute from '../components/RouteContainer/PrivateRoute';
 import CheckInsPage from '../pages/CheckInsPage';
 import LoginPage from '../pages/LoginPage';
+import NotFoundPage from '../pages/NotFoundPage';
 import AccountRoutes from './account.routes';
 import { paths } from './paths.enum';
 
@@ -64,11 +65,7 @@ export default function Routes() {
                         <LoginPage />
                     </Suspense>
                 </Route>
-                <Route path={"/test"}>
-                    {/* <QueryParams updateURL>
-                        <QueryFilter />
-                    </QueryParams> */}
-                </Route>
+                <Route> <NotFoundPage /> </Route>
             </Switch>
             <AppBottomNavigation />
         </>
