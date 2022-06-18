@@ -1,4 +1,4 @@
-import { Validator } from 'format-utils';
+//import { Validator } from 'format-utils';
 
 export default class UPI {
     public currency = "INR";
@@ -9,9 +9,6 @@ export default class UPI {
         public note?: string,
         public url?: string | URL
     ) {
-        if (!Validator.vpa(vpa)) {
-            throw new Error("Invalid UPI VPA");
-        }
      }
 
     toString() {
