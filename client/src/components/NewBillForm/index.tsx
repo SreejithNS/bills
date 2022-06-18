@@ -22,8 +22,7 @@ import {
 import { Autocomplete as AutocompleteBase } from "@material-ui/lab";
 import MaterialTable from "material-table";
 import { useDispatch, useSelector } from "react-redux";
-import { createFilterOptions } from "@material-ui/lab/Autocomplete";
-import NewCustomerCreationModal from "../NewCustomerCreationModal";
+import { AutocompleteProps, createFilterOptions } from "@material-ui/lab/Autocomplete";
 import { toast } from "react-toastify";
 import { BillPostData, getBillAmount, getItemsTotalAmount } from "../../reducers/bill.reducer";
 import { tableIcons } from "../MaterialTableIcons";
@@ -36,6 +35,8 @@ import { Product, Unit } from "../../reducers/product.reducer";
 import { useHasPermission } from "../../actions/auth.actions";
 import { ProductCategorySelection } from "../../pages/ItemsHomePage";
 import useAxios from "axios-hooks";
+import { customersPaths, paths } from "../../routes/paths.enum";
+import { useHistory } from "react-router-dom";
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
 	"buttons": {
@@ -129,10 +130,10 @@ export function CustomerSelection(props: {
 				return filtered;
 			}}
 			fullWidth={true}
-			renderOption={(option) => (
+			renderOption={(option, state) => (
 				<React.Fragment>
 					{option.phone === "" && option._id === "" ? (
-						<Button onClick={() => props.addNewCustomer(option._id)}>
+						<Button onClick={() => props.addNewCustomer(state.inputValue)}>
 							Add&nbsp;&quot;<strong>{option.name}</strong>&quot;&nbsp;as new customer
 						</Button>
 					) : (
@@ -145,9 +146,11 @@ export function CustomerSelection(props: {
 	);
 }
 
-function BillItemSelection(props: {
-	product: Product | undefined;
+export function BillItemSelection(props: {
+	product: Product | null;
 	onChange: (newValue: Product | null) => void;
+	inputProps?: TextFieldProps;
+	otherProps?: AutocompleteProps;
 }) {
 	const [productsSuggestion, setProductsSuggestion] = useState<Product[]>([]);
 	const [productCode, setProductCode] = useState<Product["code"]>("");
@@ -176,7 +179,7 @@ function BillItemSelection(props: {
 	}, [productCode, productCategory]);
 	return (
 		<Autocomplete
-			value={props.product ?? null}
+			value={props.product}
 			options={productsSuggestion}
 			getOptionSelected={(_, value) => {
 				return props.product?._id === value._id
@@ -190,13 +193,15 @@ function BillItemSelection(props: {
 			onInputChange={(_, val: Product["code"]) => setProductCode(val)}
 			onChange={(_, newValue) => onChange(newValue)}
 			fullWidth={true}
-			renderInput={(params) => <TextField {...params} size="small" label="Item Code" variant="outlined" />}
+			renderInput={(params) => <TextField {...params} size="small" label="Item Code" variant="outlined" {...props.inputProps} />}
+			{...props.otherProps}
 		/>
 	);
 }
 
 export default function NewBillForm(props: { closeModal: (id?: string) => void }) {
 	const classes = useStyles();
+	const history = useHistory();
 	const dispatch = useDispatch();
 	const billState = useSelector((state: RootState) => state.bill);
 	const quantityRef = useRef<HTMLInputElement>(null);
@@ -246,14 +251,12 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 	const [selectedProductUnit, setSelectedProductUnit] = useState<Unit>();
 	const [itemQuantity, setItemQuantity] = useState(0);
 
-	const [newCustomerModalOpen, setNewCustomerModalOpen] = useState(false);
-
 	const billData = useCallback((): BillPostData | null => {
 
 		const itemsData: BillPostData["items"] = items.map((item) => ({
 			_id: item._id,
 			quantity: item.quantity,
-			unit: item.unit?.name ?? undefined,
+			unit: item.unit ? item.unit.name ?? item.unit : undefined,
 		}));
 		if (customer && items.length)
 			return {
@@ -361,7 +364,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 			<Grid container direction="row" justify="space-between" alignItems="center" spacing={2}>
 				<Grid item xs>
 					<CustomerSelection
-						addNewCustomer={(newCustomerName) => setNewCustomerModalOpen(true)}
+						addNewCustomer={(newCustomerName) => history.push(paths.customer + customersPaths.createCustomer + "?name=" + newCustomerName)}
 						inputProps={{
 							variant: "outlined"
 						}}
@@ -451,7 +454,10 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 								field: "quantity",
 								type: "numeric",
 								editable: "onUpdate",
-								render: (data) => data.unit ? data.quantity + " " + data.unit.name : data.quantity
+								render: (data) => {
+									if (data.unit && typeof data.unit !== "string") return data.quantity + " " + data.unit.name
+									return data.quantity
+								}
 							},
 							{
 								title: "Amount",
@@ -626,11 +632,6 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 					</Zoom>
 				</Grid>
 			</Grid>
-			<NewCustomerCreationModal
-				visible={newCustomerModalOpen}
-				onClose={() => setNewCustomerModalOpen(false)}
-				onCreate={() => setNewCustomerModalOpen(false)}
-			/>
 		</form >
 	);
 }

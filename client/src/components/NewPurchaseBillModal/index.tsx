@@ -51,7 +51,7 @@ export default function NewPurchaseBillModal() {
                     <Typography variant="h6" className={classes.title}>
                         New Purchase Bill
                     </Typography>
-                    <Button autoFocus color="inherit" onClick={() => { setOpen(false); history.goBack() }}>
+                    <Button  color="inherit" onClick={() => { setOpen(false); history.goBack() }}>
                         Cancel
                     </Button>
                 </Toolbar>

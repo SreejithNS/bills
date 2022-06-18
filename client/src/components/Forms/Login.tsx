@@ -39,7 +39,7 @@ export default function LoginForm({ onSubmit, loading = false, disabled = false 
             disabled={disabled}
             name="phone"
             type="text"
-            autoFocus
+            
             margin="normal"
             label="Phone Number"
             required

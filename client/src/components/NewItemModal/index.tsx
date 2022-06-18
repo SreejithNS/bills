@@ -70,7 +70,7 @@ export default function NewItemModal(props: { onCreate?: () => void; visible?: b
                     <Typography variant="h6" className={classes.title}>
                         Add Item to Inventory
                         </Typography>
-                    <Button autoFocus color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })}>
+                    <Button  color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })}>
                         Cancel
                          </Button>
                 </Toolbar>

@@ -46,7 +46,7 @@ export default function PaymentReceiveDialog({ _id, open, onClose, paidAmount, b
                     Enter the amount you received for this Bill.
                 </DialogContentText>
                 <TextField
-                    autoFocus
+                    
                     disabled={loading}
                     margin="dense"
                     label="Amount in ₹"

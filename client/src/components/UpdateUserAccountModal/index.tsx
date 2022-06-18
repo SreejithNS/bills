@@ -124,7 +124,7 @@ export default function UpdateUserAccountModal(props: { onCreate?: () => void; v
                     <Typography variant="h6" className={classes.title}>
                         Edit User Account
                     </Typography>
-                    <Button autoFocus color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })}>
+                    <Button  color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })}>
                         Cancel
                     </Button>
                 </Toolbar>

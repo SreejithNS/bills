@@ -13,6 +13,7 @@ import { Container } from '@material-ui/core';
 import NewCustomerForm from "../NewCustomerForm";
 import { useHistory } from 'react-router-dom';
 import { addCustomer } from '../../actions/customer.action';
+import { useQueryStringKey } from 'use-route-as-state';
 // import { useDispatch } from 'react-redux';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -41,6 +42,7 @@ export default function NewCustomerCreationModal(props: any) {
     const [open, setOpen] = useState(true);
     const classes = useStyles();
     const history = useHistory();
+    const [customerName] = useQueryStringKey("name", "");
 
     const handleSubmit = (values: any) => {
         return addCustomer(values).then(() => {
@@ -57,14 +59,14 @@ export default function NewCustomerCreationModal(props: any) {
                     </IconButton>
                     <Typography variant="h6" className={classes.title}>
                         Create New Customer
-                        </Typography>
-                    <Button autoFocus color="inherit" onClick={props.onClose || (() => { setOpen(false); history.goBack() })}>
+                    </Typography>
+                    <Button color="inherit" onClick={props.onClose || (() => { setOpen(false); history.goBack() })}>
                         Cancel
-                         </Button>
+                    </Button>
                 </Toolbar>
             </AppBar>
             <Container fixed className={classes.containerPadding}>
-                <NewCustomerForm onSubmit={handleSubmit} />
+                <NewCustomerForm initialValues={{ name: customerName || "" }} onSubmit={handleSubmit} />
             </Container>
         </Dialog>
     );

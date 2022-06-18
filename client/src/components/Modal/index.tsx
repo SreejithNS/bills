@@ -75,7 +75,7 @@ export default function Modal(props: PropTypes) {
                     <Typography variant="h6" className={classes.title}>
                         {props.title}
                     </Typography>
-                    <Button autoFocus color="inherit" onClick={handleClose}>
+                    <Button  color="inherit" onClick={handleClose}>
                         {props.closeText ?? "Close"}
                     </Button>
                     {props.extraButtons && props.extraButtons.map((buttonDetails, key) =>

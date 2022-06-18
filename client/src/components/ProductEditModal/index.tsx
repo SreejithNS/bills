@@ -81,7 +81,7 @@ export default function ProductEditModal(props: { onCreate?: () => void; visible
                     <Typography variant="h6" className={classes.title}>
                         Edit Product Details
                     </Typography>
-                    <Button autoFocus color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })}>
+                    <Button  color="inherit" onClick={props.onClose ?? (() => { setOpen(false); history.goBack() })}>
                         Cancel
                     </Button>
                 </Toolbar>
