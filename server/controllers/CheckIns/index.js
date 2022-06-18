@@ -166,6 +166,47 @@ class CheckInService {
 
         return await checkin.remove();
     }
+
+    /**
+     * 
+     * @param {string|string[]} id - Array of checkins to be updated
+     * @param {import("mongoose").Types.ObjectId|string} belongsTo - Admin id
+     */
+    async updateCustomerLocationFromCheckin(id, belongsTo) {
+        let updateCount = 0;
+
+        if (!Array.isArray(id)) {
+            id = [id];
+        }
+
+        const checkins = await CheckIn.find({ _id: { $in: id }, contact: { $exists: true }, belongsTo }).populate({
+            path: "contact",
+        });
+
+        for (const checkin of checkins) {
+            const contact = await Customer.findById(checkin.contact);
+            if (contact) {
+                contact.location = checkin.checkInLocation;
+                await contact.save();
+                updateCount++;
+
+                checkin.distance = 0;
+                await checkin.save();
+
+                const updateCheckIns = await CheckIn.find({
+                    contact: contact._id,
+                    "checkInLocation.coordinates": { $exists: true }
+                }, "distance checkInLocation");
+
+                for (const customerCheckIns of updateCheckIns) {
+                    customerCheckIns.distance = geolib.getDistance(customerCheckIns.checkInLocation.coordinates, contact.location.coordinates);
+                    await customerCheckIns.save();
+                }
+            }
+        }
+
+        return updateCount;
+    }
 }
 
 class CheckInController {
@@ -181,6 +222,12 @@ class CheckInController {
                 method: "post",
                 localMiddlewares: [authenticate],
                 action: this.create.bind(this),
+            },
+            {
+                path: "/updateCustomerLocation",
+                method: "patch",
+                localMiddlewares: [authenticate],
+                action: this.updateCustomerLocationFromCheckin.bind(this),
             },
             {
                 path: "/:id",
@@ -322,12 +369,29 @@ class CheckInController {
         try {
             if (await this.checkPermission(req, this.permissions.delete)) {
                 const ids = req.query.id.split(",") || [];
-                
+
                 for (let x = 0; x < ids.length; x++) {
                     await this.service.delete(ids[x]);
                 }
 
                 return apiResponse.successResponse(res, "Checkin deleted successfully");
+            } else {
+                return apiResponse.unauthorizedResponse(res);
+            }
+        } catch (error) {
+            return apiResponse.ErrorResponse(res, error);
+        }
+    }
+
+    async updateCustomerLocationFromCheckin(req, res) {
+        try {
+            if (await this.checkPermission(req, this.permissions.update)) {
+                if (!Array.isArray(req.body.contacts))
+                    return apiResponse.validationError(res, "contacts must be an array");
+
+                const updatedCount = await this.service.updateCustomerLocationFromCheckin(req.body.contacts || [], req.admin._id.toString());
+
+                return apiResponse.successResponse(res, updatedCount + " Customer Locations Updated successfully");
             } else {
                 return apiResponse.unauthorizedResponse(res);
             }
