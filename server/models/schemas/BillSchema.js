@@ -279,7 +279,7 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 		const document = await Product.findOne({ _id: item._id }).lean().exec();
 		if (document) {
 			document.quantity = item.quantity;
-			if (item.unit) {
+			if (item.unit && item.unit !== document.primaryUnit) {
 				const unit = document.units.find(unit => unit.name === item.unit.toLowerCase());
 				if (unit) {
 					document.unit = unit.name;
