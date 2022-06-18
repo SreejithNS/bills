@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../reducers/rootReducer";
 import { Box, Chip, ChipProps, CircularProgress, IconButton, Input, Tooltip, useTheme } from "@material-ui/core";
 import useAxios from "axios-hooks";
-import { APIResponse, handleAxiosError } from "../Axios";
+import { APIResponse, axios, handleAxiosError } from "../Axios";
 import { PaginateResult } from "../../reducers/bill.reducer";
 import { CheckInDTO } from "../../types/CheckIn";
 import moment from "moment";
@@ -18,8 +18,9 @@ import { tableIcons } from "../MaterialTableIcons";
 import { useHasPermission } from "../../actions/auth.actions";
 import RefreshIcon from '@material-ui/icons/Refresh';
 import { toast } from "react-toastify";
-import { Clear, DateRange, Delete } from "@material-ui/icons";
+import { Clear, DateRange, Delete, StreetviewRounded } from "@material-ui/icons";
 import { DateFilter, DateFilterDialog } from "./DateFilterDialog";
+import { useConfirm } from "material-ui-confirm";
 
 interface CheckInTableProps {
     /**
@@ -44,11 +45,14 @@ export const noteHighlighter = (note: string | null, presets: string[] = [], chi
     let chips: JSX.Element[] = [];
     let result: JSX.Element[] = [];
 
+    const productsNote = "Products Added";
+    presets.push(productsNote)
+
     if (note !== null) {
         // Wrap preset text with Chip
         for (const preset of presets) {
             while (note.includes(preset)) {
-                chips.push(<Chip key={preset} label={preset} {...chipProps} />);
+                chips.push(<Chip key={preset} label={preset} color={preset === productsNote ? "primary" : "default"} {...chipProps} />);
                 note = note.replace(preset, "$#$");
             }
         }
@@ -91,6 +95,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     const [salesman, setSalesman] = useState<UserData | null>(null);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [distanceFilter, setDistanceFilter] = useState<Filter<CheckInDTO>[]>([]);
+    const [updateLoading, setUpdateLoading] = useState(false);
 
     useEffect(() => {
         let filters = [...tableFilter, ...dateFilter, ...distanceFilter];
@@ -105,10 +110,15 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     // Styles
     const theme = useTheme();
 
+    // Confirmation Dialog
+    const confirm = useConfirm();
+
     //Permission To access
     const viewAllPermission = useHasPermission(UserPermissions.ALLOW_CHECKIN_GET_ALL);
     const createPermission = useHasPermission(UserPermissions.ALLOW_CHECKIN_POST);
     const deletePermission = useHasPermission(UserPermissions.ALLOW_CHECKIN_DELETE);
+    const updatePermission = useHasPermission(UserPermissions.ALLOW_CHECKIN_PUT);
+    const customerUpdatePermission = useHasPermission(UserPermissions.ALLOW_CUSTOMER_PUT);
 
     // Organisational Settings
     const { organistaionData, userData } = useSelector((state: RootState) => state.auth);
@@ -138,14 +148,43 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
     );
 
     const handleDelete = useCallback((id: string) => {
-        deleteCheckIn({
-            url: "/checkin",
-            params: {
-                id: id
+        confirm({
+            title: "Delete Check-In(s)",
+            description: "Are you sure you want to delete these selected check-in? This action is irreversable",
+            confirmationButtonProps: {
+                color: "secondary"
             },
-            method: "DELETE"
+            confirmationText: "Delete",
+        }).then(() => {
+            deleteCheckIn({
+                url: "/checkin",
+                params: {
+                    id: id
+                },
+                method: "DELETE"
+            });
         });
-    }, [deleteCheckIn]);
+    }, [confirm, deleteCheckIn]);
+
+    const handleUpdateCustomerLocation = useCallback((ids: string[]) => {
+        const request = axios.patch<APIResponse<undefined>>("/checkin/updateCustomerLocation", {
+            contacts: ids
+        })
+
+        confirm({
+            title: "Update Customer Location(s)",
+            description: "Are you sure you update Customer Locations based on their current Check-In location?",
+            confirmationText: "Update",
+        }).then(() => {
+            setUpdateLoading(true);
+            return request
+        }).then((response) => {
+            toast.success(response.data.message);
+            refetch();
+        }, handleAxiosError).finally(() => {
+            setUpdateLoading(false);
+        });
+    }, [confirm, refetch]);
 
     // Load only when organisation data and user data are present
     useEffect(() => {
@@ -196,7 +235,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
 
     return (<><MaterialTable
         icons={tableIcons}
-        isLoading={loading || deleteLoading}
+        isLoading={loading || deleteLoading || updateLoading}
         data={data?.data?.docs ?? []}
         page={page}
         onChangePage={(page, pageSize) => { setPage(page); setRowsPerPage(pageSize) }}
@@ -358,6 +397,21 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                             handleDelete(id);
                         }
                     }
+                }, {
+                    icon: () => <StreetviewRounded />,
+                    tooltip: "Update CheckIn Locations to their respective Customers",
+                    disabled: !updatePermission || !customerUpdatePermission,
+                    isFreeAction: false,
+                    onClick: (_event, rows) => {
+                        let ids: string[];
+                        if (!Array.isArray(rows)) {
+                            ids = [rows._id];
+                        } else {
+                            ids = rows.map(r => r._id);
+                        }
+
+                        handleUpdateCustomerLocation(ids);
+                    },
                 }
                 , {
                     icon: () => <RefreshIcon />,
