@@ -58,6 +58,7 @@ export default function CheckInEntryDialog<T = undefined>({ onClose, open, title
                 open={open ?? isOpen}
                 onClose={onClose ?? handleClose}
                 aria-labelledby="responsive-dialog-title"
+                scroll='paper'
             >
                 <DialogTitle id="responsive-dialog-title">
                     {title}
@@ -71,10 +72,10 @@ export default function CheckInEntryDialog<T = undefined>({ onClose, open, title
                         })
                     }} >
                         <DialogActions>
-                            <Button autoFocus onClick={handleClose} color="primary">
+                            <Button  onClick={handleClose} color="primary">
                                 Cancel
                             </Button>
-                            <Button disabled={loading} type="submit" color="primary" autoFocus>
+                            <Button disabled={loading} type="submit" color="primary" >
                                 Submit
                             </Button>
                         </DialogActions>

@@ -4,11 +4,15 @@ import { BillItem } from "../../reducers/bill.reducer";
 import { Customer } from "../../reducers/customer.reducer";
 import { RootState } from "../../reducers/rootReducer";
 import { CustomerSelection } from "../NewBillForm";
-import { Chip, TextField, Paper, Box, Typography, Button, IconButton, createStyles, makeStyles, Theme } from "@material-ui/core";
+import { Chip, TextField, Paper, Box, Typography, Button, IconButton, createStyles, makeStyles, Theme, useTheme } from "@material-ui/core";
 import { getDistance } from "geolib";
 import moment from "moment";
 import CloseIcon from '@material-ui/icons/Close';
 import { toast } from "react-toastify";
+import { ProductsSelect } from "../ProductsSelect";
+import { tableIcons } from "../MaterialTableIcons";
+import MaterialTable from "material-table";
+import { Delete } from "@material-ui/icons";
 
 interface FormState {
     contact: string | null;
@@ -40,10 +44,11 @@ export function CheckInForm(props: {
     loading: boolean;
     children?: JSX.Element;
 }) {
+    const theme = useTheme();
     // Form data handlers
     const [contact, setContact] = useState<Customer | null>(null);
     const [note, setNote] = useState("");
-    const [products] = useState<BillItem[]>([]);
+    const [products, setProducts] = useState<BillItem[]>([]);
     const [checkInLocation, setCheckInLocation] = useState<{
         type: string
         coordinates: [number, number]
@@ -61,9 +66,16 @@ export function CheckInForm(props: {
         message: string
     }[]>([]);
 
+    // Set note when products are added
+    useEffect(() => {
+        if (products.length > 0)
+            setNote(prev => prev.replace(/Products Added/g, "").trim() + " Products Added");
+        else setNote(prev => prev.replace(/Products Added/g, ""));
+    }, [products]);
+
     // Config
     const config = useSelector((state: RootState) => state.auth.organistaionData?.checkInSettings);
-    const { customerRequired, noteRequired, notePresets, dateFields } = config ?? { customerRequired: false, noteRequired: false, notePresets: [] };
+    const { customerRequired, noteRequired, notePresets, dateFields, productsRequired } = config ?? { customerRequired: false, noteRequired: false, notePresets: [] };
 
     // Geo Location
     useEffect(() => {
@@ -97,7 +109,13 @@ export function CheckInForm(props: {
         }
         props.onSubmit({
             contact: contact?._id ?? null,
-            products,
+            products: products.map((p) => {
+                if (p.unit) return {
+                    ...p,
+                    unit: p.unit.name as any
+                }
+                return p;
+            }),
             checkInLocation,
             note: note.trim(),
             dates,
@@ -142,9 +160,78 @@ export function CheckInForm(props: {
                     onChange={(c) => setContact(c)}
                     addNewCustomer={() => void (0)}
                     inputProps={{
+                        variant: "outlined",
+                        size: "small",
                         error: !!(getError("contact")),
                     }}
                 />
+            }
+            {
+                productsRequired && <>
+                    <ProductsSelect
+                        onSelect={(p) => setProducts([...products, p])}
+                        onClear={() => setProducts([])}
+                    />
+                    {products.length > 0 && <MaterialTable
+                        icons={tableIcons}
+                        components={{
+                            Container: props => <Paper {...props} style={{ padding: theme.spacing(1) }} variant="outlined" />
+                        }}
+                        columns={[
+                            {
+                                title: "Item",
+                                field: "name",
+                                editable: "never",
+                            },
+                            {
+                                title: "Quantity",
+                                field: "quantity",
+                                type: "numeric",
+                                editable: "always",
+                                render: (rowData: any) => <><strong>{rowData.quantity}</strong> {rowData.unit?.length ? rowData.unit.split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""}</>
+                            },
+                            {
+                                title: "Rate",
+                                field: "rate",
+                                type: "numeric",
+                                editable: "never"
+                            },
+                            {
+                                title: "Amount",
+                                field: "amount",
+                                type: "numeric",
+                                editable: "never",
+                            }
+                        ]}
+                        data={products}
+                        options={{
+                            search: false,
+                            paging: false,
+                            toolbar: false,
+                            padding: "dense"
+                        }}
+                        localization={{
+                            body: {
+                                emptyDataSourceMessage: "No Products Added"
+                            }
+                        }}
+                        actions={[
+                            {
+                                icon: () => <Delete />,
+                                tooltip: "Delete",
+                                isFreeAction: false,
+                                onClick: (event, rowData) => {
+                                    if (!Array.isArray(rowData))
+                                        setProducts(prev => prev.filter(p => p._id !== rowData._id && (
+                                            rowData.unit && p.unit ?
+                                                p.unit !== rowData.unit
+                                                : true
+                                        )));
+                                }
+                            }
+                        ]}
+                    />}
+                </>
             }
             {noteRequired &&
                 <>
@@ -162,7 +249,7 @@ export function CheckInForm(props: {
                     {
                         notePresets.map((preset, key) =>
                             <Chip
-                                key={key}
+                                key={key + preset}
                                 label={preset}
                                 size="small"
                                 onClick={() => setNote(prev => (prev + " " + preset).trim())}
