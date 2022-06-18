@@ -46,7 +46,8 @@ export const noteHighlighter = (note: string | null, presets: string[] = [], chi
     let result: JSX.Element[] = [];
 
     const productsNote = "Products Added";
-    presets.push(productsNote)
+    presets.push(productsNote);
+    let key = 0;
 
     if (note !== null) {
         // Wrap preset text with Chip
@@ -57,7 +58,7 @@ export const noteHighlighter = (note: string | null, presets: string[] = [], chi
             }
         }
         let splitted: JSX.Element[] = []
-        splitted = note.split("$#$").map((text, index) => <>{text}</>);
+        splitted = note.split("$#$").map((text, index) => <React.Fragment key={++key}>{text}</React.Fragment>);
 
         for (const part of splitted) {
             result.push(part);
@@ -293,7 +294,7 @@ export default function CheckInTable({ onData, onSelect, newEntry = () => void 0
                     type: "string",
                     sorting: false,
                     hidden: !noteRequired,
-                    render: ({ note }) => noteHighlighter(note, notePresets, {
+                    render: ({ note }) => noteHighlighter(note, [...notePresets], {
                         size: "small", style: {
                             marginBottom: theme.spacing(0.5)
                         }

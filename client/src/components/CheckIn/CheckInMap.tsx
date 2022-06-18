@@ -111,7 +111,7 @@ function CheckInMarker({ data = [] }: { data: CheckInDTO[] }) {
             <Marker icon={markerIcon} key={key} position={[coordinates[1], coordinates[0]]}>
                 <Popup zoomAnimation={true} keepInView={data.length === 1}>
                     {<strong>{rest.contact?.name}</strong> ?? null} <br />
-                    {noteHighlighter(note, organisationData.checkInSettings.notePresets)}
+                    {noteHighlighter(note, [...organisationData.checkInSettings.notePresets])}
                 </Popup>
             </Marker>
         )
