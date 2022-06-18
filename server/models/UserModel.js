@@ -17,6 +17,8 @@ var UserSchema = new mongoose.Schema(
 			type: {
 				name: { type: String, required: true, default: "Organisation" },
 				printTitle: { type: String, default: "Billz App" },
+				upivpa: { type: String, default: "" },
+				upiname: { type: String, default: "" },
 				tagline: String,
 				printHeader: { type: String, default: "( Quotation )" },
 				printFooter: String,

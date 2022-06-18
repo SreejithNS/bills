@@ -3,7 +3,7 @@ import { Button, CircularProgress, createStyles, Divider, Grid, makeStyles, Them
 import { Field, reduxForm } from 'redux-form';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import CheckInSettings from './CheckInSettings';
-import { Business, BusinessCenter, Phone, RecentActors, Subtitles, Title, ViewStream } from '@material-ui/icons';
+import { AccountBalanceWalletRounded, Business, BusinessCenter, PaymentRounded, Phone, RecentActors, Subtitles, Title, ViewStream } from '@material-ui/icons';
 
 function validate(values: { [x: string]: any; }) {
     const errors: any = {};
@@ -103,6 +103,30 @@ const AccountEditForm = (props: { handleSubmit: any; pristine: any; reset: any; 
                                 variant="outlined"
                                 size='small'
                                 label="Organistaion Tagline"
+                            />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <PaymentRounded />
+                            </ListItemIcon>
+                            <Field
+                                name="organisation.upiname"
+                                component={ReduxTextField}
+                                variant="outlined"
+                                size='small'
+                                label="UPI Name"
+                            />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <AccountBalanceWalletRounded />
+                            </ListItemIcon>
+                            <Field
+                                name="organisation.upivpa"
+                                component={ReduxTextField}
+                                variant="outlined"
+                                size='small'
+                                label="UPI ID"
                             />
                         </ListItem>
                     </List>

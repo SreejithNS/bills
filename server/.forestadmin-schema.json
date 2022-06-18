@@ -1668,6 +1668,12 @@
           "field": "printTitle",
           "type": "String"
         }, {
+          "field": "upivpa",
+          "type": "String"
+        }, {
+          "field": "upiname",
+          "type": "String"
+        }, {
           "field": "tagline",
           "type": "String"
         }, {

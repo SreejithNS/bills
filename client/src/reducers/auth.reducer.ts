@@ -29,6 +29,8 @@ export interface OrganisationDetails extends Object {
     tagline: string;
     printHeader: string;
     printFooter: string;
+    upivpa: string;
+    upiname: string;
     checkInSettings: CheckInSettings;
 }
 
