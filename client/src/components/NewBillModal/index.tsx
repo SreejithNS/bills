@@ -13,6 +13,7 @@ import { Container } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import NewBillForm from '../NewBillForm';
 import { billsPaths, paths } from '../../routes/paths.enum';
+import CheckInEntryDialog from '../CheckIn/CheckInEntryDialog';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -37,13 +38,14 @@ const Transition = React.forwardRef(function Transition(
 });
 
 export default function NewBillModal() {
-    const [open, setOpen] = useState(true)
+    const [open, setOpen] = useState(true);
+    const [checkin, setCheckin] = useState(false);
     const classes = useStyles();
     const history = useHistory();
 
     return (
         <Dialog fullScreen open={open} onClose={() => { setOpen(false); history.goBack() }} TransitionComponent={Transition}>
-            <AppBar className={classes.appBar}>
+            {!checkin && <AppBar className={classes.appBar}>
                 <Toolbar>
                     <IconButton edge="start" color="inherit" onClick={() => { setOpen(false); history.goBack() }} aria-label="close">
                         <CloseIcon />
@@ -51,13 +53,27 @@ export default function NewBillModal() {
                     <Typography variant="h6" className={classes.title}>
                         New Bill
                     </Typography>
-                    <Button autoFocus color="inherit" onClick={() => { setOpen(false); history.goBack() }}>
+                    <Button color="inherit" onClick={() => { setCheckin(!checkin) }}>
+                        {checkin ? "Bill" : "Check-In"}
+                    </Button>
+                    <Button color="inherit" onClick={() => { setOpen(false); history.goBack() }}>
                         Cancel
                     </Button>
                 </Toolbar>
-            </AppBar>
+            </AppBar>}
             <Container fixed className={classes.containerPadding}>
-                <NewBillForm closeModal={(id?: string) => { setOpen(false); id ? history.push(paths.billsHome + billsPaths.billDetail.replace(":id", id)) : history.goBack() }} />
+                {checkin
+                    ? <CheckInEntryDialog title="Add CheckIn" open={checkin}
+                        onClose={() => {
+                            setCheckin(false);
+                        }} onSubmit={() => {
+                            setCheckin(false);
+                            setOpen(false);
+                            history.goBack()
+                        }}
+                    />
+                    : <NewBillForm closeModal={(id?: string) => { setOpen(false); id ? history.push(paths.billsHome + billsPaths.billDetail.replace(":id", id)) : history.goBack() }} />
+                }
             </Container>
         </Dialog>
     );
