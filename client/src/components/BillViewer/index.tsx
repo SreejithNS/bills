@@ -347,7 +347,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                     content={uri}
                     open={qrDialogOpen}
                     onClose={() => setQrDialogOpen(false)}
-                    footer={<span style={theme.typography.h6}>Scan to Pay<br /><strong>₹ {(props.billAmount - props.paidAmount).toLocaleString()}</strong></span>}
+                    footer={<span style={theme.typography.h6}>Scan to Pay<br /><strong>₹ {props.billAmount.toLocaleString()}</strong></span>}
                 />
             }
         </Paper >
