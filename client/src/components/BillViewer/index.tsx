@@ -113,10 +113,9 @@ export default function BillViewer(props: BillData & AdditionalProps) {
     const [qrDialogOpen, setQrDialogOpen] = React.useState(false);
     const { available, uri } = useUPI({
         billId: props._id,
-        amount: props.billAmount - props.paidAmount,
+        amount: props.billAmount,
     });
 
-    console.log(available, uri)
     const handlePrint = useReactToPrint({
         content: () => printRef.current,
     });
@@ -224,7 +223,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                             </IconButton>
                         </Tooltip>
                     }
-                    {available && props.credit &&
+                    {available &&
                         <Tooltip title="Show UPI QR">
                             <UPIIconButton onClick={() => setQrDialogOpen(true)} style={{ color: theme.palette.text.secondary }} />
                         </Tooltip>
@@ -343,7 +342,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                 </Grid>
             </Grid>
             <PlainPrint bill={props} ref={printRef} />
-            {available && props.credit && props.billAmount - props.paidAmount > 0 &&
+            {available &&
                 <QRDialog
                     content={uri}
                     open={qrDialogOpen}
