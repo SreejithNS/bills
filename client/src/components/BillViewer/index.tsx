@@ -3,6 +3,10 @@ import {
     Button,
     Chip,
     createStyles,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     Divider,
     Grid,
     IconButton,
@@ -10,9 +14,11 @@ import {
     Paper,
     Theme,
     Tooltip,
-    Typography
+    Typography,
+    TypographyProps,
+    useTheme
 } from "@material-ui/core";
-import { Add, DeleteRounded, InfoOutlined, RoomRounded } from "@material-ui/icons";
+import { Add, DeleteRounded, InfoOutlined, RoomRounded, WhatsApp } from "@material-ui/icons";
 import MaterialTable from "material-table";
 import * as React from "react";
 import { useCallback, useRef } from "react";
@@ -34,6 +40,30 @@ import { RootState } from "../../reducers/rootReducer";
 import { useHasPermission } from "../../actions/auth.actions";
 import { UserPermissions } from "../../reducers/auth.reducer";
 import { toBlob } from "html-to-image";
+import QRCode from 'qrcode';
+import { useUPI } from "../UPI/hooks";
+import { UPIIconButton } from "../UPI/UPIIcon";
+
+const QRDialog = ({ open, onClose, content, title = "Scan the QR Code", footer = "" }: { open: boolean, onClose: () => void, title?: string, content: string, footer?: string | TypographyProps["children"] }) => {
+    const [src, setSrc] = React.useState<string>("");
+    React.useEffect(() => {
+        QRCode.toDataURL(content).then(url => {
+            setSrc(url);
+        });
+    }, [content]);
+    return (
+        <Dialog open={open} onClose={onClose}>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogContent style={{ textAlign: "center" }}>
+                <img src={src} alt="qr" />
+                <Typography variant="body2" display="block">{footer}</Typography>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose} color="primary">Close</Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
 
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -76,9 +106,17 @@ interface AdditionalProps {
 export default function BillViewer(props: BillData & AdditionalProps) {
     const classes = useStyles();
     const history = useHistory();
+    const theme = useTheme();
     const printRef = useRef<HTMLDivElement>(null);
     const billRef = useRef<HTMLDivElement>(null);
     const userData = useSelector((state: RootState) => state.auth.userData);
+    const [qrDialogOpen, setQrDialogOpen] = React.useState(false);
+    const { available, uri } = useUPI({
+        billId: props._id,
+        amount: props.billAmount - props.paidAmount,
+    });
+
+    console.log(available, uri)
     const handlePrint = useReactToPrint({
         content: () => printRef.current,
     });
@@ -96,7 +134,7 @@ export default function BillViewer(props: BillData & AdditionalProps) {
         }
     }, [props]);
 
-    const handleWhatsAppShare = useCallback(async () => {
+    const handleShare = useCallback(async () => {
         if (printRef.current) {
             const display = { ...printRef.current.style };
             printRef.current.style.display = "block";
@@ -119,6 +157,16 @@ export default function BillViewer(props: BillData & AdditionalProps) {
             }
         }
     }, [props, userData, printRef]);
+
+    const handleWhatsApp = useCallback(() => {
+        const text = "Hi from *" + (userData?.organisation?.printTitle.replace(/\n/g, " ") ?? "") + "*" +
+            "\nYour bill amount is *₹ " + props.billAmount.toLocaleString() + "*." +
+            "\nThank you." +
+            "\n\nPowered by BillzApp.in";
+        const uri = `https://wa.me/91${props.customer.phone}?text=${encodeURIComponent(text)}`;
+        //const url = `${encodeURIComponent(`Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""} ${window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`}`)}`
+        window.open(uri);
+    }, [props.billAmount, props.customer.phone, userData?.organisation?.printTitle]);
 
     return (
         <Paper ref={billRef}>
@@ -165,12 +213,22 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                         </IconButton>
                     </Tooltip> : <></>}
                     <Tooltip title="Share this Bill">
-                        {/* <WhatsappShareButton title={`BillzApp | Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""}`} url={window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`} > */}
-                        <IconButton onClick={handleWhatsAppShare}>
+                        <IconButton onClick={handleShare}>
                             <ShareIcon />
                         </IconButton>
-                        {/* </WhatsappShareButton> */}
                     </Tooltip>
+                    {
+                        props.customer.phone && <Tooltip title="Send Bill to Customer via WhatsApp">
+                            <IconButton onClick={handleWhatsApp}>
+                                <WhatsApp />
+                            </IconButton>
+                        </Tooltip>
+                    }
+                    {available && props.credit &&
+                        <Tooltip title="Show UPI QR">
+                            <UPIIconButton onClick={() => setQrDialogOpen(true)} style={{ color: theme.palette.text.secondary }} />
+                        </Tooltip>
+                    }
                     {(billDeletePermission && props.onDelete) && <Tooltip title="Delete Bill">
                         <IconButton color="secondary" onClick={() => props.onDelete && props.onDelete()}>
                             <DeleteRounded />
@@ -285,6 +343,14 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                 </Grid>
             </Grid>
             <PlainPrint bill={props} ref={printRef} />
+            {available && props.credit && props.billAmount - props.paidAmount > 0 &&
+                <QRDialog
+                    content={uri}
+                    open={qrDialogOpen}
+                    onClose={() => setQrDialogOpen(false)}
+                    footer={<span style={theme.typography.h6}>Scan to Pay<br /><strong>₹ {(props.billAmount - props.paidAmount).toLocaleString()}</strong></span>}
+                />
+            }
         </Paper >
     );
 }
