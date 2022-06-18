@@ -106,6 +106,23 @@ exports.validationErrorWithData = function (res, msg, data) {
  * @param {e.Response} res 
  * @param {string} msg 
  */
+exports.validationError = function (res, msg) {
+	/**
+	 * @type {ResponseData}
+	 */
+	var resData = {
+		status: 0,
+		message: msg,
+	};
+	return res.status(400).json(resData);
+};
+
+
+/**
+ * 
+ * @param {e.Response} res 
+ * @param {string} msg 
+ */
 exports.unauthorizedResponse = function (res, msg = "Unauthorized to perform this request") {
 	/**
 	 * @type {ResponseData}
