@@ -1,15 +1,24 @@
 import React, { useState } from 'react'
-import { Theme, Grid, Typography, useMediaQuery } from '@material-ui/core';
+import { Theme, Grid, Typography, useMediaQuery, useTheme, Button } from '@material-ui/core';
 import PageContainer from '../components/PageContainer';
 import CheckInTable from '../components/CheckIn/CheckInTable';
 import CheckInMap from '../components/CheckIn/CheckInMap';
 import { CheckInDTO } from '../types/CheckIn';
 import CheckInEntryDialog from '../components/CheckIn/CheckInEntryDialog';
+import MaterialTable from 'material-table';
+import { tableIcons } from '../components/MaterialTableIcons';
+import { PostAdd } from '@material-ui/icons';
+import { useDispatch } from 'react-redux';
+import { billsPaths, paths } from '../routes/paths.enum';
+import { useHistory } from 'react-router-dom';
 
 
 
 export default function CheckInsPage() {
+    const theme = useTheme();
     const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+    const dispatch = useDispatch();
+    const history = useHistory();
 
     //Data
     const [data, setData] = useState<CheckInDTO[]>([]);
@@ -19,6 +28,20 @@ export default function CheckInsPage() {
 
     //Dialog
     const [open, setOpen] = useState(false);
+
+    //Convert to sales Bill
+    const newSalesBillFromCheckIn = ({ products, contact }: CheckInDTO) => {
+        dispatch({
+            type: 'BILL_FROM_CHECKIN',
+            payload: {
+                items: products,
+                customer: contact,
+            }
+        });
+
+        history.push(paths.billsHome + billsPaths.addBill);
+    }
+
     return (
         <React.Fragment>
             <PageContainer>
@@ -27,10 +50,61 @@ export default function CheckInsPage() {
                         <Typography variant="h4">CheckIns</Typography>
                     </Grid>
                     <Grid xs={12} item direction={!isMobile ? "row" : "column-reverse"} container spacing={2} justifyContent="center" alignItems="stretch">
-                        <Grid item xs={12} md={8} >
+                        <Grid item xs={12} md={8}>
                             <CheckInTable observe={[open]} newEntry={() => setOpen(true)} onData={setData} onSelect={setSelectedData} />
                         </Grid>
-                        <Grid item xs={12} md={4} >
+                        <Grid item xs={12} md={4}>
+                            {selectedData.length === 1 && selectedData[0].products.length > 0 &&
+                                <MaterialTable
+                                    icons={tableIcons}
+                                    style={{ marginBottom: theme.spacing(2), padding: theme.spacing(2) }}
+                                    components={{
+                                        // Container: props => <Paper {...props} variant="outlined" style={{ ...props.style, padding: theme.spacing(1) }} />,
+                                        Toolbar: props => <Button
+                                            variant="outlined"
+                                            color="default"
+                                            size="small"
+                                            startIcon={<PostAdd />}
+                                            onClick={() => newSalesBillFromCheckIn(selectedData[0])}
+                                        >
+                                            Convert to Sales Bill
+                                        </Button>
+                                    }}
+                                    columns={[
+                                        {
+                                            title: "Item",
+                                            field: "name",
+                                            editable: "never"
+                                        },
+                                        {
+                                            title: "Quantity",
+                                            field: "quantity",
+                                            type: "numeric",
+                                            editable: "always",
+                                            render: (rowData: any) => <><strong>{rowData.quantity}</strong> {rowData.unit?.length ? rowData.unit.split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""}</>
+                                        },
+                                        {
+                                            title: "Rate",
+                                            field: "rate",
+                                            type: "numeric",
+                                            editable: "never"
+                                        },
+                                        {
+                                            title: "Amount",
+                                            field: "amount",
+                                            type: "numeric",
+                                            editable: "never",
+                                            render: rowData => rowData.quantity * rowData.rate
+                                        }
+                                    ]}
+                                    data={selectedData[0].products ?? []}
+                                    options={{
+                                        search: false,
+                                        paging: false,
+                                        toolbar: true,
+                                        padding: "dense"
+                                    }}
+                                />}
                             <CheckInMap data={selectedData.length > 0 ? selectedData : data} />
                         </Grid>
                     </Grid>

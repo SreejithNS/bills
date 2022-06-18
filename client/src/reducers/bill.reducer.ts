@@ -96,7 +96,7 @@ export const getBillAmount = (billState: BillState) => {
 
 const calculateItemAmounts = (billState: BillState) => {
 	billState.items.forEach((item) => {
-		if (item.unit) item.amount = item.quantity * item.unit.rate;
+		if (item.unit && typeof item.unit !== "string") item.amount = item.quantity * item.unit.rate;
 		else item.amount = item.quantity * item.rate;
 	});
 	if (!billState.credit) {
@@ -170,6 +170,19 @@ export default function billReducer(state: BillState = initialState, action: { t
 				...state,
 				items,
 			});
+		}
+
+		case "BILL_FROM_CHECKIN": {
+			const payload: {
+				customer: Customer;
+				items: (BillItem & { unit: string })[];
+			} = action.payload;
+
+			return calculateItemAmounts({
+				...initialState,
+				customer: payload.customer,
+				items: payload.items
+			})
 		}
 
 		case "BILL_ITEM_QUANTITY_UPDATE": {
