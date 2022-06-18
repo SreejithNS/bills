@@ -70,7 +70,6 @@ function ProductWiseSalesFilter() {
 
     useEffect(() => {
         if (response && !loading) {
-            debugger;
             const fileName = response.headers["x-bills-report-filename"];
             fileDownload(response.data, fileName)
         }
@@ -177,7 +176,6 @@ export default function ReportDownloadModal(props: ModalProps) {
 
     useEffect(() => {
         if (response && !loading) {
-            debugger;
             const fileName = response.headers["x-bills-report-filename"];
             fileDownload(response.data, fileName)
         }
