@@ -247,7 +247,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 		//eslint-disable-next-line
 	}, [])
 
-	const [selectedProduct, setSelectedProduct] = useState<Product>();
+	const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 	const [selectedProductUnit, setSelectedProductUnit] = useState<Unit>();
 	const [itemQuantity, setItemQuantity] = useState(0);
 
@@ -346,7 +346,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 
 			dispatch({ type: "BILL_ADD_ITEM", payload: product });
 			setItemQuantity(0);
-			setSelectedProduct(undefined);
+			setSelectedProduct(null);
 			setSelectedProductUnit(undefined);
 		} else {
 			toast.warn("Couldn't add item to the bill");
@@ -354,8 +354,8 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 	};
 
 	const clearBill = () => {
-		setSelectedProduct(void 0);
-		setSelectedProductUnit(void 0);
+		setSelectedProduct(null);
+		setSelectedProductUnit(undefined);
 		setItemQuantity(0);
 		dispatch({ type: "BILL_RESET" })
 	}
@@ -379,7 +379,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				</Grid>
 				<Grid item xs={12}>
 					<BillItemSelection
-						onChange={(newValue) => { setSelectedProduct(newValue ?? undefined); quantityRef.current?.focus(); }}
+						onChange={(newValue) => { setSelectedProduct(newValue ?? null); quantityRef.current?.focus(); }}
 						product={selectedProduct}
 					/>
 				</Grid>
