@@ -1,0 +1,9 @@
+{
+    "mocha.nycPath": "server/node_modules/nyc",
+    "mocha.files.glob": "test/**/*.test.js",
+    "mocha.subdirectory": "server",
+    "mocha.options": {
+        "timeout": 10000,
+    },
+    "typescript.tsdk": "./client/node_modules/typescript/lib"
+}

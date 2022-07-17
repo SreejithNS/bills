@@ -23,6 +23,7 @@
             "program": "${workspaceFolder}/server/bin/www",
             "port": 9222,
             "restart": true,
+            "cwd": "${workspaceFolder}/server",
             "envFile": "${workspaceFolder}/server/.env",
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
