@@ -473,9 +473,9 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 								editable: "never",
 								render: (data) => {
 									if (gst) {
-										return (data.taxAmount ?? 0) + (data.taxableAmount ?? 0)
+										return parseFloat(((data.taxAmount ?? 0) + (data.taxableAmount ?? 0)).toFixed(2))
 									}
-									return data.amount;
+									return parseFloat((data.amount).toFixed(2));
 								}
 							},
 							{ title: "Rate", field: "rate", type: "numeric", editable: "never", hidden: gst },
@@ -524,7 +524,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				</Grid>
 				<Grid item xs={12}>
 					<TextField
-						value={getItemsTotalAmount(billState)}
+						value={getItemsTotalAmount(billState).toFixed(2)}
 						label="Total"
 						InputProps={{
 							readOnly: true,

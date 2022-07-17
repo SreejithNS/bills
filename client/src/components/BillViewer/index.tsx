@@ -388,9 +388,9 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                 type: "numeric",
                                 editable: "never",
                                 render: (rowData: { quantity: number; rate: number; taxableAmount: any; }) => {
-                                    return props.gstSummary === null
+                                    return parseFloat((props.gstSummary === null
                                         ? rowData.quantity * rowData.rate
-                                        : rowData.taxableAmount;
+                                        : rowData.taxableAmount).toFixed(2));
                                 }
                             },
                             ...(props.gstSummary === null ? [] : [
