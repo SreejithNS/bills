@@ -1,8 +1,5 @@
 import { store } from "../..";
-import { BillData } from "../../reducers/bill.reducer";
-
-
-const escpos = require("escpos-commands");
+import { Escpos } from "../escpos-commands/src/escpos";
 
 class TextManipulator {
     public chunkString(str: string, length: number) {
@@ -74,7 +71,7 @@ class TextTable extends TextManipulator {
         super();
     }
 
-    getProportionalLength(index?: number): number[] {
+    getProportionalLength(): number[] {
         if (this.proportion.length !== this.columns)
             return new Array(this.columns).fill(
                 Math.floor(this.length / this.columns)
@@ -179,7 +176,7 @@ class TextTable extends TextManipulator {
 }
 
 export default class BillText {
-    private buffer = new escpos.Escpos();
+    private buffer = new Escpos();
     public table?: TextTable;
     public lineWidth = 44;
 
@@ -187,7 +184,6 @@ export default class BillText {
         private customerName: string,
         private billSerial: number,
         private date: string,
-        private salesMan: string,
         private items: string[][],
         private billAmount: number,
         private itemsTotalAmount: number,
