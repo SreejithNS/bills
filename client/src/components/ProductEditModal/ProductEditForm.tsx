@@ -1,10 +1,11 @@
-import React from 'react';
-import { Button, CircularProgress, createStyles, Grid, IconButton, makeStyles, Theme, Zoom } from '@material-ui/core';
+import React, { useCallback } from 'react';
+import { Button, CircularProgress, createStyles, Grid, IconButton, InputAdornment, makeStyles, TextField, TextFieldProps, Theme, Zoom } from '@material-ui/core';
 import { Field, FieldArray, reduxForm } from 'redux-form';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import RemoveCircleOutlineRoundedIcon from '@material-ui/icons/RemoveCircleOutlineRounded';
 import { Unit } from '../../reducers/product.reducer';
 import ReduxCheckbox from '../ReduxEnabledFormControls/ReduxCheckBox';
+import { SearchRounded } from '@material-ui/icons';
 
 function validate(values: { [x: string]: any; }) {
     const errors: any = {};
@@ -91,9 +92,43 @@ const renderUnits = ({ fields }: { fields: any }) => (
     </>
 )
 
+const textField = (props: TextFieldProps) => (inputProps: any) => {
+    return <TextField {...props} {...inputProps.input} />
+}
+
 const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; submitting: boolean; }) => {
     const { handleSubmit, pristine, reset, submitting } = props;
     const classes = useStyles();
+
+    const hsnField = useCallback(textField({
+        label: "HSN Code",
+        fullWidth: true,
+        InputProps: {
+            endAdornment: <InputAdornment position="end">
+                <IconButton>
+                    <SearchRounded />
+                </IconButton>
+            </InputAdornment>
+        },
+    }), []);
+
+    const sgstField = useCallback(textField({
+        label: "SGST %",
+        fullWidth: true,
+        type: "number",
+        InputProps: {
+            endAdornment: <InputAdornment position="end">%</InputAdornment>
+        },
+    }), []);
+
+    const cgstField = useCallback(textField({
+        label: "CGST %",
+        fullWidth: true,
+        type: "number",
+        InputProps: {
+            endAdornment: <InputAdornment position="end">%</InputAdornment>
+        },
+    }), []);
 
     return (
         <form onSubmit={handleSubmit} >
@@ -116,6 +151,28 @@ const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; subm
                         name="code"
                         component={ReduxTextField}
                         label="Item Code ( UNIQUE )"
+                    />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <Field
+                        name="hsn"
+                        type="string"
+                        component={hsnField}
+                    />
+                    <Field name="gstInclusive" component={(props: any) => <ReduxCheckbox {...props} label="Product rate includes GST" />} type="boolean" />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <Field
+                        name="sgst"
+                        type="number"
+                        component={cgstField}
+                    />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <Field
+                        name="cgst"
+                        type="number"
+                        component={sgstField}
                     />
                 </Grid>
                 <Grid item xs={12}>

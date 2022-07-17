@@ -137,8 +137,8 @@ export function CustomerSelection(props: {
 							Add&nbsp;&quot;<strong>{option.name}</strong>&quot;&nbsp;as new customer
 						</Button>
 					) : (
-						option.name
-					)}
+							option.name
+						)}
 				</React.Fragment>
 			)}
 			renderInput={(params) => <TextField  {...params} label="Customer" {...props.inputProps} />}
@@ -213,7 +213,8 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 		discountPercentage,
 		paidAmount,
 		billSaved,
-		location
+		location,
+		gst,
 	} = billState;
 
 	const [geolocationError, setGeolocationError] = useState(false);
@@ -263,13 +264,14 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				customerId: customer._id,
 				items: itemsData,
 				credit,
+				gst,
 				discountAmount,
 				paidAmount,
 				...(location && { location: { lat: location[0], lon: location[1] } })
 			};
 		else return null;
 		//eslint-disable-next-line
-	}, [customer, items, credit, discountAmount, paidAmount]);
+	}, [customer, items, credit, discountAmount, paidAmount, gst]);
 
 	const [{ error, loading, data }, saveBill] = useAxios<
 		APIResponse<{ _id: string; serialNumber: number }>
@@ -295,13 +297,19 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 	}, [error, data, dispatch, props, billSaved]);
 
 	const setValues = (
-		parameter: "credit" | "discountAmount" | "discountPercentage" | "paidAmount"
+		parameter: "credit" | "discountAmount" | "discountPercentage" | "paidAmount" | "gst"
 	) => (newValue: string | boolean | number) => {
 		switch (parameter) {
 			case "credit":
 				dispatch({
 					type: "BILL_SET_CREDIT",
 					payload: !credit,
+				});
+				break;
+			case "gst":
+				dispatch({
+					type: "BILL_SET_GST",
+					payload: !gst,
 				});
 				break;
 			case "discountAmount":
@@ -461,11 +469,30 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 							},
 							{
 								title: "Amount",
-								field: "amount",
 								type: "numeric",
 								editable: "never",
+								render: (data) => {
+									if (gst) {
+										return (data.taxAmount ?? 0) + (data.taxableAmount ?? 0)
+									}
+									return data.amount;
+								}
 							},
-							{ title: "Rate", field: "rate", type: "numeric", editable: "never" },
+							{ title: "Rate", field: "rate", type: "numeric", editable: "never", hidden: gst },
+							{
+								title: "Tax Amount",
+								field: "taxAmount",
+								type: "numeric",
+								editable: "never",
+								hidden: !gst
+							},
+							{
+								title: "Rate",
+								field: "taxableAmount",
+								type: "numeric",
+								editable: "never",
+								hidden: !gst
+							},
 						]}
 						data={items ?? [] as BillItem[]}
 						options={{
@@ -501,7 +528,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						label="Total"
 						InputProps={{
 							readOnly: true,
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							startAdornment: <InputAdornment position="start"></InputAdornment>,
 						}}
 						type="number"
 						variant="outlined"
@@ -528,12 +555,12 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				</Grid>
 				<Grid item xs={6}>
 					<TextField
-						label="Discount ₹"
+						label="Discount "
 						type="number"
 						fullWidth
 						variant="outlined"
 						InputProps={{
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>
+							startAdornment: <InputAdornment position="start"></InputAdornment>
 						}}
 						onFocus={(event) => {
 							event.target.select();
@@ -548,7 +575,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						value={getBillAmount(billState)}
 						label="Bill Amount"
 						InputProps={{
-							readOnly: true, startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							readOnly: true, startAdornment: <InputAdornment position="start"></InputAdornment>,
 							classes: {
 								notchedOutline: classes.labelOutline,
 								input: classes.resize
@@ -564,7 +591,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 					<TextField
 						value={paidAmount || ""}
 						InputProps={{
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							startAdornment: <InputAdornment position="start"></InputAdornment>,
 						}}
 						label="Paid"
 						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -581,7 +608,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						value={getBillAmount(billState) - paidAmount}
 						InputProps={{
 							readOnly: true,
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							startAdornment: <InputAdornment position="start"></InputAdornment>,
 						}}
 						label="Balance"
 						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -622,6 +649,19 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 							/>
 						}
 						label="Credit Amount"
+					/>
+					<FormControlLabel
+						control={
+							<Checkbox
+								checked={gst}
+								onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+									setValues("gst")(event.target.checked)
+								}
+								name="gst"
+								color="primary"
+							/>
+						}
+						label="GST Bill"
 					/><br />
 					{geolocationError && <Typography variant="caption" color="error" display="inline">
 						( No Location ) - Try turning ON GPS.

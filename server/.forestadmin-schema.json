@@ -115,6 +115,65 @@
       "inverseOf": null,
       "validations": []
     }, {
+      "field": "gstSummary",
+      "type": {
+        "fields": [{
+          "field": "totalTax",
+          "type": "Number"
+        }, {
+          "field": "slabs",
+          "type": {
+            "fields": [{
+              "field": "sgst",
+              "type": [{
+                "fields": [{
+                  "field": "slab",
+                  "type": "Number"
+                }, {
+                  "field": "totalTaxAmount",
+                  "type": "Number"
+                }, {
+                  "field": "totalTaxableAmount",
+                  "type": "Number"
+                }]
+              }]
+            }, {
+              "field": "cgst",
+              "type": [{
+                "fields": [{
+                  "field": "slab",
+                  "type": "Number"
+                }, {
+                  "field": "totalTaxAmount",
+                  "type": "Number"
+                }, {
+                  "field": "totalTaxableAmount",
+                  "type": "Number"
+                }]
+              }]
+            }]
+          }
+        }, {
+          "field": "totalTaxableAmount",
+          "type": "Number"
+        }, {
+          "field": "totalAmountWithTax",
+          "type": "Number"
+        }]
+      },
+      "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
       "field": "items",
       "type": [{
         "fields": [{
@@ -143,6 +202,27 @@
           "type": "Number"
         }, {
           "field": "cost",
+          "type": "Number"
+        }, {
+          "field": "hsn",
+          "type": "String"
+        }, {
+          "field": "sgst",
+          "type": "Number"
+        }, {
+          "field": "cgst",
+          "type": "Number"
+        }, {
+          "field": "gstInclusive",
+          "type": "Boolean"
+        }, {
+          "field": "taxAmount",
+          "type": "Number"
+        }, {
+          "field": "taxableAmount",
+          "type": "Number"
+        }, {
+          "field": "amount",
           "type": "Number"
         }, {
           "field": "stocked",
@@ -933,6 +1013,25 @@
       "inverseOf": null,
       "validations": []
     }, {
+      "field": "cgst",
+      "type": "Number",
+      "defaultValue": 0,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": true,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": [{
+        "message": null,
+        "type": "is present",
+        "value": null
+      }]
+    }, {
       "field": "code",
       "type": "String",
       "defaultValue": null,
@@ -970,6 +1069,40 @@
       "field": "createdAt",
       "type": "Date",
       "defaultValue": null,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": false,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": []
+    }, {
+      "field": "gstInclusive",
+      "type": "Boolean",
+      "defaultValue": false,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": true,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": [{
+        "message": null,
+        "type": "is present",
+        "value": null
+      }]
+    }, {
+      "field": "hsn",
+      "type": "String",
+      "defaultValue": "",
       "enums": null,
       "integration": null,
       "isFilterable": true,
@@ -1064,6 +1197,25 @@
       "reference": null,
       "inverseOf": null,
       "validations": []
+    }, {
+      "field": "sgst",
+      "type": "Number",
+      "defaultValue": 0,
+      "enums": null,
+      "integration": null,
+      "isFilterable": true,
+      "isPrimaryKey": false,
+      "isReadOnly": false,
+      "isRequired": true,
+      "isSortable": true,
+      "isVirtual": false,
+      "reference": null,
+      "inverseOf": null,
+      "validations": [{
+        "message": null,
+        "type": "is present",
+        "value": null
+      }]
     }, {
       "field": "stock",
       "type": "Number",

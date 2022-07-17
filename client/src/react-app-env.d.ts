@@ -25,3 +25,17 @@ declare var GeolocationPosition: {
     new(): GeolocationPosition;
 };
 
+type ShareData = {
+    title?: string;
+    text?: string;
+    url?: string;
+    files?: File[];
+};
+
+interface Navigator {
+    share?: (data?: ShareData) => Promise<void>;
+}
+
+interface Number {
+    toINR: () => string;
+}

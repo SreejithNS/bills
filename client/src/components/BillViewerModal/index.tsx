@@ -93,24 +93,11 @@ export default function BillViewerModal(props: ModalProps) {
             {(loading || paymentLoading) && <Zoom in={loading || paymentLoading}><CircularProgress /></Zoom>}
             {error && <ErrorCard errors={error} title="Couldn't load bill" />}
             {(!loading && data && data.data !== undefined) && <BillViewer
-                receivePayment={() => setPaymentReceiveModalOpen(true)}
-                createdAt={data.data.createdAt}
-                customer={data.data.customer}
-                items={data.data.items}
-                soldBy={data.data.soldBy}
-                billAmount={data.data.billAmount}
-                discountAmount={data.data.discountAmount}
-                payments={data.data.payments || []}
-                credit={data.data.credit}
-                paidAmount={data.data.paidAmount}
-                creditAction={handleCreditUpdate}
-                serialNumber={data.data.serialNumber}
-                _id={data.data._id}
-                belongsTo={data.data.belongsTo}
-                itemsTotalAmount={data.data.itemsTotalAmount}
-                location={data.data.location}
-                onDelete={() => deleteBill(data.data?._id ?? "")}
+                {...data.data as BillData<typeof data.data.gstSummary>}
                 paymentDelete={deletePayment(data.data._id)}
+                creditAction={handleCreditUpdate}
+                receivePayment={() => setPaymentReceiveModalOpen(true)}
+                onDelete={() => deleteBill(data.data?._id ?? "")}
                 payBalance={(balance) => receiveBalance({ data: { paidAmount: balance } })}
             />}
             {data?.data && <PaymentReceiveDialog  {...data.data} open={paymentReceiveModalOpen} onClose={() => { fetchAgain(); setPaymentReceiveModalOpen(false) }} />}

@@ -1,4 +1,5 @@
 import { store } from "../..";
+import { BillData } from "../../reducers/bill.reducer";
 
 
 const escpos = require("escpos-commands");
@@ -190,7 +191,8 @@ export default class BillText {
         private items: string[][],
         private billAmount: number,
         private itemsTotalAmount: number,
-        private discount?: number
+        private discount?: number,
+        private tax?: number,
     ) { }
 
     toPrintBuffer() {
@@ -259,9 +261,18 @@ export default class BillText {
         }
 
         p.control("LF");
+
+        //Total Sum
+        if (this.discount || this.tax) {
+            (new TextManipulator()).centerText("Sum: " + (this.itemsTotalAmount), 33).map(line => p.text(line));
+        }
+
+        if (this.tax) {
+            (new TextManipulator()).centerText("GST Total: " + (this.tax), 33).map(line => p.text(line));
+        }
+
         //Discount
         if (this.discount) {
-            (new TextManipulator()).centerText("Sum: " + (this.itemsTotalAmount), 33).map(line => p.text(line));
             (new TextManipulator()).centerText("Discount: -" + this.discount, 35).map(line => p.text(line));
             p.control("LF");
         }

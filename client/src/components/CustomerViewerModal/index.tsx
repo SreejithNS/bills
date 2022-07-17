@@ -83,22 +83,22 @@ const StatPaper = ({
             <Box display="flex" flexDirection="row" flexWrap="wrap" className={classes.boxRoot}>
                 <Box flexGrow={1}>
                     <Typography variant="subtitle2">Bill Count</Typography>
-                    <Typography variant="h5">{billCount.toLocaleString()}</Typography>
+                    <Typography variant="h5">{billCount}</Typography>
                 </Box>
 
                 <Box flexGrow={1}>
                     <Typography variant="subtitle2">Total Bill Amount</Typography>
-                    <Typography variant="h5">₹ {billAmount.toLocaleString()}</Typography>
+                    <Typography variant="h5"> {billAmount.toINR()}</Typography>
                 </Box>
 
                 <Box flexGrow={1}>
                     <Typography variant="subtitle2">Total Bills Balance</Typography>
-                    <Typography variant="h5">₹ {billAmountBalance.toLocaleString()}</Typography>
+                    <Typography variant="h5"> {billAmountBalance.toINR()}</Typography>
                 </Box>
 
                 <Box flexGrow={1}>
                     <Typography variant="subtitle2">Received Payments</Typography>
-                    <Typography variant="h5">₹ {paidAmount.toLocaleString()}</Typography>
+                    <Typography variant="h5"> {paidAmount.toINR()}</Typography>
                 </Box>
             </Box>
         </Paper>
@@ -167,7 +167,7 @@ const BillsTable = () => {
                         height: "1.3rem",
                         fontSize: "1rem"
                     }
-                    }>₹</span>,
+                    }></span>,
                     tooltip: 'Receive Payment',
                     isFreeAction: false,
                     disabled: !rowData.credit,

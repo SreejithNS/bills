@@ -2,7 +2,7 @@
 import { BillData } from './../../reducers/bill.reducer';
 import BillText from "./BillText";
 
-type PrintBillData = Pick<BillData, "customer" | "soldBy" | "serialNumber" | "createdAt" | "billAmount" | "discountAmount" | "itemsTotalAmount" | "items">;
+type PrintBillData = Pick<BillData, "customer" | "soldBy" | "serialNumber" | "createdAt" | "billAmount" | "discountAmount" | "itemsTotalAmount" | "items" | "gstSummary">;
 
 export default class Print {
   private printBuffer: number[] = [];
@@ -73,7 +73,7 @@ export default class Print {
     return true;
   }
 
-  public async printBill({ customer, soldBy, itemsTotalAmount, serialNumber, createdAt, billAmount, discountAmount, items }: PrintBillData) {
+  public async printBill({ customer, soldBy, itemsTotalAmount, serialNumber, createdAt, billAmount, discountAmount, items, gstSummary }: PrintBillData) {
     try {
       const itemString = items.map(item => {
         return [item.name, item.quantity.toString() + (item.unit ? (item.unit as unknown as string).split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""), (item.quantity * item.rate).toString()]
@@ -81,7 +81,7 @@ export default class Print {
 
       const billText = new BillText(
         customer.name, serialNumber, (new Date(createdAt)).toDateString(), soldBy.name,
-        itemString, billAmount, itemsTotalAmount, discountAmount || undefined
+        itemString, billAmount, gstSummary ? gstSummary.totalTaxableAmount : itemsTotalAmount, discountAmount || undefined, gstSummary?.totalTax
       );
 
       try {

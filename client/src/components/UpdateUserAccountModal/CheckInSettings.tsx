@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -207,11 +207,11 @@ export default function CheckInSettings() {
                     <Field
                         name="organisation.checkInSettings.distanceThreshold"
                         type="number"
-                        component={(props: any) =>
+                        component={useCallback((props: any) =>
                             <TextField {...props.input} type="number" InputProps={{
                                 endAdornment: <InputAdornment position="end">meters</InputAdornment>,
                             }} />
-                        }
+                            , [])}
                     />
                 } />
             </ListItem>

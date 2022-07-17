@@ -581,8 +581,8 @@ exports.saveBill = [
 		.trim()
 		.escape()
 		.isNumeric(),
-	body("paidAmount").optional().trim().escape().isNumeric(),
-	body("credit").optional().trim().escape().isBoolean(),
+	body("paidAmount").optional().isNumeric(),
+	body("credit").optional().isBoolean(),
 	body("location", "Invalid coordinates")
 		.optional()
 		.custom((value) => {

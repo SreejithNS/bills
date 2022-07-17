@@ -120,7 +120,7 @@ export default function ImportModal(props: ModalProps) {
                                             <ListItem key={key}>
                                                 <ListItemText
                                                     primary={unit.name.toUpperCase()}
-                                                    secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate} \n COST:₹${unit.cost} CONVERSION:₹${unit.conversion}`}
+                                                    secondary={`MRP:${unit.mrp} RATE:${unit.rate} \n COST:${unit.cost} CONVERSION:${unit.conversion}`}
                                                 />
                                             </ListItem>,
                                         )}

@@ -59,6 +59,7 @@
 		"redux-form": "^8.3.6",
 		"redux-logger": "^3.0.6",
 		"redux-thunk": "^2.3.0",
+		"typed-web-workers": "^4.0.0",
 		"typescript": "~3.7.2",
 		"use-route-as-state": "^3.0.1",
 		"web-vitals": "^2.1.4",
@@ -90,7 +91,8 @@
 		"not op_mini all"
 	],
 	"resolutions": {
-		"react-error-overlay": "6.0.9"
+		"react-error-overlay": "6.0.9",
+		"@types/react": "^17.0.38"
 	},
 	"devDependencies": {
 		"@types/jest": "^24.0.0",

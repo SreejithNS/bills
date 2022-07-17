@@ -277,7 +277,7 @@ export default function ItemsHomePage() {
                                         <MTableToolbar {...props} />
                                         {(inventryDetails && !detailsLoading) ? <div style={{display:"inline-block"}}>
                                             <Chip style={{ margin: theme.spacing(1), marginLeft: theme.spacing(2) }} label={`Total Stock: ${inventryDetails.totalStock}`} />
-                                            <Chip style={{ margin: theme.spacing(1), marginRight: "8px" }} label={`Total Value: ₹${inventryDetails.totalValue.toLocaleString()}`} />
+                                            <Chip style={{ margin: theme.spacing(1), marginRight: "8px" }} label={`Total Value: ${inventryDetails.totalValue.toINR()}`} />
                                         </div> : null}
                                     </>
                                 )
@@ -369,7 +369,7 @@ export default function ItemsHomePage() {
                                                 <ListItem key={key}>
                                                     <ListItemText
                                                         primary={unit.name.toUpperCase()}
-                                                        secondary={`MRP:₹${unit.mrp} RATE:₹${unit.rate}`}
+                                                        secondary={`MRP:${unit.mrp} RATE:${unit.rate}`}
                                                     />
                                                 </ListItem>,
                                             )}

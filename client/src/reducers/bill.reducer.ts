@@ -1,11 +1,14 @@
 import { UserData } from "./auth.reducer";
 import { Customer } from "./customer.reducer";
 import { Product, Unit } from "./product.reducer";
+import { GST } from "../components/GST/GST";
 
-export interface BillItem extends Product {
+export interface BillItem<GST = null> extends Product {
 	unit?: Unit;
 	quantity: number;
 	amount: number;
+	taxableAmount: GST extends null ? undefined : number;
+	taxAmount: GST extends null ? undefined : number;
 }
 
 export interface PaginateResult<T> {
@@ -22,14 +25,16 @@ export interface PaginateResult<T> {
 	meta?: any;
 }
 
-export interface BillState {
+export interface BillState<GST = null> {
 	customer: Customer | null;
-	items: BillItem[];
+	items: BillItem<GST>[];
 	discountAmount: number;
 	discountPercentage: number;
 	billSaved: boolean;
 	paidAmount: number;
 	credit: boolean;
+	gstSummary: BillData<GST>["gstSummary"];
+	gst: boolean;
 	location: null | [GeolocationCoordinates["longitude"], GeolocationCoordinates["latitude"]]
 }
 
@@ -39,16 +44,33 @@ export interface BillPayments {
 	createdAt: Date;
 }
 
-export interface BillData {
+export interface BillData<GST = null> {
 	_id: string;
 	serialNumber: number;
 	customer: Customer;
 	soldBy: UserData;
 	belongsTo: UserData;
-	items: BillItem[];
+	items: BillItem<GST>[];
 	discountAmount: number;
 	itemsTotalAmount: number;
 	billAmount: number;
+	gstSummary: {
+		totalTax: number;
+		totalAmountWithTax: number;
+		totalTaxableAmount: number;
+		slabs: {
+			sgst: {
+				slab: number;
+				totalTaxAmount: number;
+				totalTaxableAmount: number;
+			}[];
+			cgst: {
+				slab: number;
+				totalTaxAmount: number;
+				totalTaxableAmount: number;
+			}[];
+		}
+	} | null;
 	credit: boolean;
 	paidAmount: number;
 	payments: BillPayments[];
@@ -64,8 +86,10 @@ const initialState: BillState = {
 	items: [],
 	discountAmount: 0,
 	discountPercentage: 0,
+	gstSummary: null,
 	billSaved: false,
 	paidAmount: 0,
+	gst: false,
 	credit: false,
 	location: null,
 };
@@ -76,16 +100,19 @@ export interface BillPostData extends Object {
 	items: { _id: BillItem["_id"]; quantity: BillItem["quantity"]; unit?: Unit["name"] }[];
 	credit: BillState["credit"];
 	paidAmount: BillState["paidAmount"];
+	gst: BillState["gst"];
 	location?: {
 		lat: GeolocationCoordinates["latitude"],
 		lon: GeolocationCoordinates["longitude"]
 	}
 }
 
-export const getItemsTotalAmount = (billState: BillState) => {
+export const getItemsTotalAmount = (billState: BillState<true> | BillState<null>) => {
 	var sum = 0;
 	billState.items.forEach((item) => {
-		sum += item.amount;
+		sum += billState.gstSummary === null
+			? item.amount
+			: item.taxAmount + item.taxableAmount
 	});
 	return sum;
 };
@@ -94,14 +121,22 @@ export const getBillAmount = (billState: BillState) => {
 	return Math.round(getItemsTotalAmount(billState) - billState.discountAmount);
 };
 
-const calculateItemAmounts = (billState: BillState) => {
+const calculateItemAmounts = (billState: BillState<any>) => {
 	billState.items.forEach((item) => {
 		if (item.unit && typeof item.unit !== "string") item.amount = item.quantity * item.unit.rate;
 		else item.amount = item.quantity * item.rate;
 	});
+
+	if (billState.gst) {
+		const gstSummary = GST.calculateSummaryOfProducts(billState.items);
+		billState.items = gstSummary.products as unknown as BillItem<true>[];
+		billState.gstSummary = gstSummary;
+	}
+
 	if (!billState.credit) {
 		billState.paidAmount = getBillAmount(billState);
 	}
+
 	return billState;
 };
 
@@ -228,6 +263,13 @@ export default function billReducer(state: BillState = initialState, action: { t
 				newState.paidAmount = 0;
 			}
 			return newState;
+		}
+		case "BILL_SET_GST": {
+			return calculateItemAmounts({
+				...state,
+				gstSummary: null,
+				gst: action.payload,
+			});
 		}
 		case "BILL_SET_PAID_AMOUNT": {
 			if (action.payload <= getBillAmount(state))

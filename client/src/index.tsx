@@ -21,6 +21,11 @@ declare global {
   }
 }
 
+// eslint-disable-next-line no-extend-native
+Number.prototype.toINR = function () {
+  return this.toLocaleString("en-IN", { maximumFractionDigits: 2, currency: "INR", minimumFractionDigits: 0, style: "currency", currencyDisplay: "symbol" });
+}
+
 const isProduction = process.env.NODE_ENV === "production";
 
 let middlewares: any = [thunk];

@@ -49,7 +49,7 @@ export default function PaymentReceiveDialog({ _id, open, onClose, paidAmount, b
                     
                     disabled={loading}
                     margin="dense"
-                    label="Amount in ₹"
+                    label="Amount in "
                     type="number"
                     fullWidth
                     value={amount || ""}

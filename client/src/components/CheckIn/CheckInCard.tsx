@@ -38,7 +38,7 @@ export default function CheckInCard({ data, ...rest }: {
             </Typography>
             <Box display="flex" justifyContent="flex-start" alignItems="center" marginTop={theme.spacing(2)}>
                 <DataNotNull data={data.billAmount}>
-                    <Chip label={data.billAmount?.toLocaleString()} />
+                    <Chip label={data.billAmount?.toINR()} />
                 </DataNotNull>
                 <DataNotNull data={data.note}>
                     <span className={classes.noteText}>

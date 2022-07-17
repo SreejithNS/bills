@@ -6,7 +6,9 @@
 		"start": "migrate-mongo up && export NODE_ENV=production && node ./bin/www",
 		"dev": "export NODE_ENV=development && nodemon ./bin/www",
 		"debug": "export NODE_ENV=development && nodemon --inspect ./bin/www",
-		"test": "nyc _mocha --timeout 10000 --exit --report lcovonly -- -R spec",
+		"test": "mocha \"test/**/*.test.js\" --timeout 10000 --exit",
+		"test:watch": "mocha \"test/**/*.test.js\" --timeout 10000 --watch --exit",
+		"test:report": "nyc _mocha \"test/**/*.test.js\" --timeout 10000 --exit --report lcovonly -- -R spec",
 		"lint": "eslint --fix --config .eslintrc.json \"**/*.js\"",
 		"migrate": "migrate-mongo",
 		"migrate:up": "migrate-mongo up",
@@ -41,11 +43,12 @@
 		"papaparse": "^5.3.1"
 	},
 	"devDependencies": {
+		"@faker-js/faker": "^7.3.0",
 		"@types/express": "^4.17.11",
 		"chai": "^4.2.0",
 		"chai-http": "^4.3.0",
 		"eslint": "^6.5.1",
-		"mocha": "^6.2.2",
+		"mocha": "^10.0.0",
 		"nodemon": "^1.19.4",
 		"nyc": "^14.1.1"
 	}

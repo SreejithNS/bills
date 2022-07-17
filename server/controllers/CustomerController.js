@@ -110,6 +110,8 @@ async function createCustomer(name, phone, belongsTo, place, location) {
 	return newCustomer.populate("belongsTo");
 }
 
+exports.createCustomer = createCustomer;
+
 /**
  * Delete the Customer by deleting all the bills from that customer.
  * @param {Customer._id} _id 

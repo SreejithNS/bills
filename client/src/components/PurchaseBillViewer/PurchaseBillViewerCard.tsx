@@ -216,22 +216,22 @@ export default function PurchaseBillViewer(props: BillData & AdditionalProps) {
                                     Total Items: {props?.items.length || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
-                                    Total Amount: ₹ {props?.items.map(item => item.rate * item.quantity).reduce((acc, cur) => acc + cur, 0).toLocaleString() ?? 0}
+                                    Total Amount:  {props?.items.map(item => item.rate * item.quantity).reduce((acc, cur) => acc + cur, 0).toINR() ?? 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
-                                    Discount: ₹ {props?.discountAmount.toLocaleString() || 0}
+                                    Discount:  {props?.discountAmount.toINR() || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
                                     Discount (%): {props?.discountAmount ? ((props.discountAmount / (props.billAmount + props.discountAmount)) * 100).toFixed(2) : 0}%
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
-                                    Balance: ₹ {(props.billAmount - props.paidAmount).toLocaleString()}
+                                    Balance:  {(props.billAmount - props.paidAmount).toINR()}
                                 </Typography>
                                 {billUpdatePermission && (props.credit === null || props.credit === undefined)
                                     ? <></>
                                     : !props.credit
-                                        ? <Chip color="primary" onClick={props.creditAction} variant="outlined" style={{ color: "white" }} size="small" avatar={<Avatar>₹</Avatar>} label="Bill Closed" />
-                                        : <Chip color="primary" size="small" onClick={props.creditAction} avatar={<Avatar>₹</Avatar>} label="In Credit" />
+                                        ? <Chip color="primary" onClick={props.creditAction} variant="outlined" style={{ color: "white" }} size="small" avatar={<Avatar></Avatar>} label="Bill Closed" />
+                                        : <Chip color="primary" size="small" onClick={props.creditAction} avatar={<Avatar></Avatar>} label="In Credit" />
                                 }
                             </Grid>
                             <Grid item className={classes.itemPadding + " " + classes.alignRight} xs>
@@ -239,13 +239,13 @@ export default function PurchaseBillViewer(props: BillData & AdditionalProps) {
                                     Bill Amount
                                 </Typography>
                                 <Typography variant="h4" display="block" >
-                                    <strong>₹{props?.billAmount?.toLocaleString() || 0}</strong>
+                                    <strong>{props?.billAmount?.toINR() || 0}</strong>
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
                                     Paid Amount
                                 </Typography>
                                 <Typography variant="h5" display="block" >
-                                    <strong>₹{props?.paidAmount?.toLocaleString() || 0}</strong>
+                                    <strong>{props?.paidAmount?.toINR() || 0}</strong>
                                 </Typography>
                                 {(props.credit && billUpdatePermission) && <Button variant="outlined" onClick={props.receivePayment} className={classes.button} size="small" startIcon={<Add />}>Receive Payment</Button>}
                             </Grid>

@@ -114,7 +114,7 @@ export default function BillCard(props: BillCardProps) {
           </Grid>
           <Grid item>
             <Typography component="label" variant="h4" align="right" display="block">
-              ₹ {props.rightPrimary?.toLocaleString() || 12345.25}
+               {props.rightPrimary?.toINR() || 12345.25}
             </Typography>
             <Typography
               color="textSecondary"
@@ -157,7 +157,7 @@ export default function BillCard(props: BillCardProps) {
                 size="small"
                 onClick={() => { receiveBalance({ data: { paidAmount: (props.pay?.billAmount ?? 0) - (props.pay?.paidAmount ?? 0) } }) }}
               >
-                PAY ₹{((props.pay?.billAmount ?? 0) - (props.pay?.paidAmount ?? 0)).toLocaleString()}
+                PAY {((props.pay?.billAmount ?? 0) - (props.pay?.paidAmount ?? 0)).toINR()}
               </Button>
             }
             {props.deleteAction &&

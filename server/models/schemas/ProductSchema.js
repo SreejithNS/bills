@@ -3,6 +3,9 @@ const mongoosePaginate = require("mongoose-paginate-v2");
 
 var Schema = mongoose.Schema;
 
+/**
+ * @class Product
+ */
 const ProductSchema = new Schema(
 	{
 		code: { type: String, required: true, index: true },
@@ -31,6 +34,10 @@ const ProductSchema = new Schema(
 			default: []
 		},
 		cost: { type: Number, default: 0 },
+		hsn: { type: String, default: "" },
+		sgst: { type: Number, default: 0, required: true },
+		cgst: { type: Number, default: 0, required: true },
+		gstInclusive: { type: Boolean, default: false, required: true },
 		stocked: { type: Boolean, default: false },
 		stock: { type: Number, default: 0 },
 		quantity: { type: Number, default: 0 },

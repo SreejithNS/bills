@@ -488,7 +488,7 @@ export default function NewPurchaseBillForm(props: { closeModal: (id?: string) =
 						label="Total"
 						InputProps={{
 							readOnly: true,
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							startAdornment: <InputAdornment position="start"></InputAdornment>,
 						}}
 						type="number"
 						variant="outlined"
@@ -515,12 +515,12 @@ export default function NewPurchaseBillForm(props: { closeModal: (id?: string) =
 				</Grid>
 				<Grid item xs={6}>
 					<TextField
-						label="Discount ₹"
+						label="Discount "
 						type="number"
 						fullWidth
 						variant="outlined"
 						InputProps={{
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>
+							startAdornment: <InputAdornment position="start"></InputAdornment>
 						}}
 						onFocus={(event) => {
 							event.target.select();
@@ -535,7 +535,7 @@ export default function NewPurchaseBillForm(props: { closeModal: (id?: string) =
 						value={getBillAmount(billState)}
 						label="Bill Amount"
 						InputProps={{
-							readOnly: true, startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							readOnly: true, startAdornment: <InputAdornment position="start"></InputAdornment>,
 							classes: {
 								notchedOutline: classes.labelOutline,
 								input: classes.resize
@@ -551,7 +551,7 @@ export default function NewPurchaseBillForm(props: { closeModal: (id?: string) =
 					<TextField
 						value={paidAmount || ""}
 						InputProps={{
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							startAdornment: <InputAdornment position="start"></InputAdornment>,
 						}}
 						label="Paid"
 						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -568,7 +568,7 @@ export default function NewPurchaseBillForm(props: { closeModal: (id?: string) =
 						value={getBillAmount(billState) - paidAmount}
 						InputProps={{
 							readOnly: true,
-							startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+							startAdornment: <InputAdornment position="start"></InputAdornment>,
 						}}
 						label="Balance"
 						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>

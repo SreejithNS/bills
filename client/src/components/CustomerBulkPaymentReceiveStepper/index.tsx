@@ -324,10 +324,10 @@ function StepContent({ step, customerId, setStep, onFinalStep }: { step: number,
                     {(!billListLoading && selectedBills.length > 0) && userFeedbacks().canClose
                         ?
                         <Paper variant="outlined" elevation={0}>
-                            By paying&nbsp;₹{userFeedbacks().paymentAmount}&nbsp;you can close&nbsp;{selectedBills.length}&nbsp;bill(s)
+                            By paying&nbsp;{userFeedbacks().paymentAmount}&nbsp;you can close&nbsp;{selectedBills.length}&nbsp;bill(s)
                         </Paper>
                         : <Paper variant="outlined" elevation={0}>
-                            You receive&nbsp;₹{userFeedbacks().paymentAmount}&nbsp;for&nbsp;{selectedBills.length}&nbsp;bill
+                            You receive&nbsp;{userFeedbacks().paymentAmount}&nbsp;for&nbsp;{selectedBills.length}&nbsp;bill
                         </Paper>
                     }
                     {
@@ -346,7 +346,7 @@ function StepContent({ step, customerId, setStep, onFinalStep }: { step: number,
                     {(!billListLoading && selectedBills.length > 0) &&
                         <Paper variant="outlined" elevation={0}>
                             After receiving you will have&nbsp;
-                        ₹{userFeedbacks().remainingCash}&nbsp;
+                        {userFeedbacks().remainingCash}&nbsp;
                         as remained cash
                         </Paper>
                     }
@@ -372,7 +372,7 @@ function StepContent({ step, customerId, setStep, onFinalStep }: { step: number,
                         value = value === "" || value === "" ? undefined : parseFloat(value)
                         setAmount(value);
                     }}>
-                        Add ₹{userFeedbacks().remainingCash} to another bill
+                        Add {userFeedbacks().remainingCash} to another bill
                     </Button>
                 }
             </>)

@@ -40,7 +40,7 @@ export default function PaymentListItem(props: { payments: any[]; onDelete?: (_i
                                 </Avatar>
                             </ListItemAvatar>
                             <ListItemText
-                                primary={`₹${paidAmount}`}
+                                primary={`${paidAmount}`}
                                 secondary={`${"Received by " + paymentReceivedBy?.name.toLocaleUpperCase()} at ${moment(updatedAt.toString()).format('MMM D YYYY, h:mm a')}`}
                             />
                             {(billUpdatePermission && props.onDelete) && <ListItemSecondaryAction>

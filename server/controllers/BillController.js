@@ -7,12 +7,13 @@ var mongoose = require("mongoose");
 const { Customer } = require("../models/CustomerModel");
 const { userData, UserData } = require("./AuthController");
 const Papa = require("papaparse");
+const { GST } = require("./sales/GST");
 
 
 //Types
 /**
  * Bill Data from bill document
- * @param {Bill} doc - Bill Document
+ * @param {import('../models/BillModel').Bill} doc - Bill Document
  */
 function BillData(doc) {
 	this._id = doc._id;
@@ -32,6 +33,7 @@ function BillData(doc) {
 		return payment;
 	});
 	this.createdAt = doc.createdAt;
+	this.gstSummary = doc.gstSummary;
 }
 
 function QueryParser(query) {
@@ -549,11 +551,10 @@ exports.saveBill = [
 		.withMessage("Error in customer id"),
 	body("items", "Items list must be an array").isArray(),
 	body("discountAmount", "Discount should be set")
-		.trim()
-		.escape()
 		.isNumeric(),
-	body("paidAmount").optional().trim().escape().isNumeric(),
-	body("credit").optional().trim().escape().isBoolean(),
+	body("paidAmount").optional().isNumeric(),
+	body("credit").optional().isBoolean(),
+	body("gst").optional().isBoolean(),
 	body("location", "Invalid coordinates")
 		.optional()
 		.custom((value) => {
@@ -591,60 +592,60 @@ exports.saveBill = [
 			)
 			.then(
 				async (populatedItems) => {
-					try {
-						req.body.items = populatedItems;
-						const authenticatedUser = await userData(req.user._id);
-						const belongsTo =
-							(authenticatedUser.type === privilegeEnum.admin || authenticatedUser.type === privilegeEnum.root)
-								? authenticatedUser._id
-								: authenticatedUser.belongsTo._id;
+					req.body.items = populatedItems;
+					const authenticatedUser = await userData(req.user._id);
+					const belongsTo =
+						(authenticatedUser.type === privilegeEnum.admin || authenticatedUser.type === privilegeEnum.root)
+							? authenticatedUser._id
+							: authenticatedUser.belongsTo._id;
 
-						var newBill = new Bill({
-							customer: req.body.customerId,
-							items: req.body.items,
-							discountAmount: req.body.discountAmount,
-							soldBy: req.user._id,
-							credit:
-								req.body.credit === undefined ||
-									req.body.credit === null
-									? true
-									: req.body.credit,
-							paidAmount:
-								req.body.paidAmount === undefined ||
-									req.body.paidAmount === null
-									? 0
-									: req.body.paidAmount,
-							belongsTo,
-							...(req.body.location && { location: { type: "Point", coordinates: [req.body.location.lat, req.body.location.lon] } })
+					var newBill = new Bill({
+						customer: req.body.customerId,
+						items: req.body.items,
+						discountAmount: req.body.discountAmount,
+						soldBy: req.user._id,
+						credit:
+							req.body.credit === undefined ||
+								req.body.credit === null
+								? true
+								: req.body.credit,
+						paidAmount:
+							req.body.paidAmount === undefined ||
+								req.body.paidAmount === null
+								? 0
+								: req.body.paidAmount,
+						belongsTo,
+						...(req.body.location && { location: { type: "Point", coordinates: [req.body.location.lat, req.body.location.lon] } })
+					});
+
+					if (req.body.gst) {
+						const summary = GST.calculateSummaryOfProducts(req.body.items);
+						newBill.gstSummary = summary;
+						newBill.items = summary.products;
+					}
+
+					newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();
+					newBill.billAmount = newBill.calculateBillAmount();
+
+					if (newBill.paidAmount > 0)
+						newBill.payments.push({
+							paidAmount: newBill.paidAmount,
+							paymentReceivedBy: req.user._id,
 						});
 
-						newBill.itemsTotalAmount = newBill.calculateItemsTotalAmount();
-						newBill.billAmount = newBill.calculateBillAmount();
-
-						if (newBill.paidAmount > 0)
-							newBill.payments.push({
-								paidAmount: newBill.paidAmount,
-								paymentReceivedBy: req.user._id,
-							});
-
-						return newBill.save();
-					} catch (e) {
-						return apiResponse.ErrorResponse(res, e.message);
-					}
-				},
-				(err) => apiResponse.ErrorResponse(res, err.message)
+					return newBill.save();
+				}
 			)
 			.then(
 				(bill) =>
-					apiResponse.successResponseWithData(res, "Bill created", {
-						_id: bill._id,
-						serialNumber: bill.serialNumber
-					}),
-				(err) =>
-					apiResponse.ErrorResponse(
+					apiResponse.successResponseWithData(res, "Bill created", bill.toJSON()),
+				(err) => {
+					console.error(err);
+					return apiResponse.ErrorResponse(
 						res,
 						"Error in saving the bill:" + err.message
 					)
+				}
 			);
 	},
 ];

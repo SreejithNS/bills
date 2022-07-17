@@ -3,15 +3,11 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 require("dotenv").config();
 var indexRouter = require("./routes/index");
-var loginRouter = require("./routes/login");
 var apiResponse = require("./helpers/apiResponse");
 var cors = require("cors");
 
 
 const APP_LOG = "[ APP ] ";
-const origin = process.env.NODE_ENV === "development"
-	? process.env.API_URL || "http://localhost:3000"
-	: process.env.API_URL || "https://bills.sreejithofficial.in";
 
 // DB connection
 var MONGODB_URL = process.env.MONGODB_URL;
@@ -22,7 +18,6 @@ var mongoose = require("mongoose");
 // mongoose.set("useFindAndModify", false);
 // mongoose.set("useCreateIndex", true);
 
-var db = mongoose.connection;
 
 var app = express();
 
@@ -66,7 +61,7 @@ app.use("/", indexRouter);
 // 	}
 // });
 
-app.use(function (err, req, res, next) {
+app.use(function (err, req, res) {
 	return apiResponse.ErrorResponse(res, err);
 });
 

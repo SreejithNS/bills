@@ -52,16 +52,25 @@ const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, 
                         bill.discountAmount > 0
                             ? <>
                                 <tr>
-                                    <td className="text-center" colSpan={100}>Sum: {bill.itemsTotalAmount}</td>
+                                    <td className="text-center" colSpan={100}>Sum: {bill.gstSummary ? bill.gstSummary.totalTaxableAmount : bill.itemsTotalAmount.toINR()}</td>
                                 </tr>
                                 <tr>
-                                    <td className="text-center" colSpan={100}>Discount: -{bill.discountAmount}</td>
+                                    <td className="text-center" colSpan={100}>Discount: -{bill.discountAmount.toINR()}</td>
                                 </tr>
                             </>
-                            : <></>
+                            : <tr>
+                                <td className="text-center" colSpan={100}>Sum:  {bill.gstSummary ? bill.gstSummary.totalTaxableAmount : bill.itemsTotalAmount.toINR()}</td>
+                            </tr>
+                    }
+                    {
+                        bill.gstSummary ? <>
+                            <tr>
+                                <td colSpan={100} className="text-center">GST Total:  {bill.gstSummary.totalTax.toINR()}</td>
+                            </tr>
+                        </> : <></>
                     }
                     <tr>
-                        <td colSpan={100} className="bill-total">Total: {bill.billAmount}</td>
+                        <td colSpan={100} className="bill-total">Bill Total:  {bill.billAmount.toINR()}</td>
                     </tr>
                     {org?.printFooter
                         ? <tr>

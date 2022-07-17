@@ -12,20 +12,30 @@ import {
     IconButton,
     makeStyles,
     Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     Theme,
     Tooltip,
     Typography,
     TypographyProps,
-    useTheme
+    useTheme,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Box
 } from "@material-ui/core";
-import { Add, DeleteRounded, InfoOutlined, RoomRounded, WhatsApp } from "@material-ui/icons";
-import MaterialTable from "material-table";
+import { Add, DeleteRounded, InfoOutlined, RoomRounded, WhatsApp, ExpandMore } from "@material-ui/icons";
+import MaterialTable, { Column } from "material-table";
 import * as React from "react";
 import { useCallback, useRef } from "react";
 import { tableIcons } from "../MaterialTableIcons";
 import PaymentsList from "../PaymentsList";
 import moment from "moment";
-import { BillData } from "../../reducers/bill.reducer";
+import { BillData, BillItem } from "../../reducers/bill.reducer";
 import { useHistory } from "react-router";
 import { billsPaths, customersPaths, paths } from "../../routes/paths.enum";
 import Print from "../Print";
@@ -91,6 +101,13 @@ const useStyles = makeStyles((theme: Theme) =>
             color: theme.palette.common.white,
             borderColor: theme.palette.common.white,
             marginTop: theme.spacing(1),
+        },
+        gstSumarryTable: {
+            width: "50%",
+            float: "right",
+            [theme.breakpoints.down("sm")]: {
+                width: "100%",
+            }
         }
     })
 );
@@ -101,6 +118,96 @@ interface AdditionalProps {
     creditAction(): void;
     onDelete?(): void;
     paymentDelete?(id: string): void;
+}
+
+function GSTSummary({ data }: {
+    data: BillData["gstSummary"];
+}) {
+    const classes = useStyles();
+    return data ? (
+        <TableContainer component={(props) => <Paper variant="outlined" {...props} />}>
+            <Table padding="default" size="small" className={classes.gstSumarryTable}>
+                <TableHead>
+                    <TableRow>
+                        <TableCell colSpan={3}>
+                        </TableCell>
+                        <TableCell align="right">
+                            Taxable Amount
+                        </TableCell>
+                        <TableCell align="right">
+                            Tax Amount
+                        </TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {data?.slabs.cgst.map(({ slab, totalTaxAmount, totalTaxableAmount }, key) => (
+                        <TableRow key={slab}>
+                            {key === 0 ? <TableCell align="center" colSpan={2} rowSpan={data?.slabs.cgst.length}>
+                                CGST
+                            </TableCell> : null}
+                            <TableCell>
+                                @{slab}%
+                            </TableCell>
+                            <TableCell align="right">
+                                {totalTaxableAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                            </TableCell>
+                            <TableCell align="right">
+                                {totalTaxAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                    {data?.slabs.sgst.map(({ slab, totalTaxAmount, totalTaxableAmount }, key) => (
+                        <TableRow key={slab}>
+                            {key === 0 ? <TableCell align="center" colSpan={2} rowSpan={data?.slabs.cgst.length}>
+                                SGST
+                            </TableCell> : null}
+                            <TableCell>
+                                @{slab}%
+                            </TableCell>
+                            <TableCell align="right">
+                                {totalTaxableAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                            </TableCell>
+                            <TableCell align="right">
+                                {totalTaxAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <TableBody>
+                    <TableRow>
+                        <TableCell colSpan={2} rowSpan={6} />
+                    </TableRow>
+                    <TableRow>
+                        <TableCell colSpan={5} rowSpan={1} />
+                    </TableRow>
+                    <TableRow>
+                        <TableCell colSpan={2} align="right">
+                            Total Taxable Amount
+                        </TableCell>
+                        <TableCell align="right">
+                            {data?.totalTaxableAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell colSpan={2} align="right">
+                            Total Tax Amount (IGST)
+                        </TableCell>
+                        <TableCell align="right">
+                            {data?.totalTax.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell colSpan={2} align="right">
+                            Total Amount (Payable)
+                        </TableCell>
+                        <TableCell align="right">
+                            {data?.totalAmountWithTax.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </TableContainer>
+    ) : data;
 }
 
 export default function BillViewer(props: BillData & AdditionalProps) {
@@ -152,21 +259,20 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                     files: file ? [file] : []
                 })
                     .then(() => console.log('Successful share'))
-                    .catch((error) => console.log('Error in sharing', error));
+                    .catch((error: any) => console.log('Error in sharing', error));
             }
         }
     }, [props, userData, printRef]);
 
     const handleWhatsApp = useCallback(() => {
         const text = "Hi from *" + (userData?.organisation?.printTitle.replace(/\n/g, " ") ?? "") + "*" +
-            "\nYour bill amount is *₹ " + props.billAmount.toLocaleString() + "*." +
+            "\nYour bill amount is * " + props.billAmount.toINR() + "*." +
             "\nThank you." +
             "\n\nPowered by BillzApp.in";
         const uri = `https://wa.me/91${props.customer.phone}?text=${encodeURIComponent(text)}`;
         //const url = `${encodeURIComponent(`Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""} ${window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`}`)}`
         window.open(uri);
     }, [props.billAmount, props.customer.phone, userData?.organisation?.printTitle]);
-
     return (
         <Paper ref={billRef}>
             <Grid
@@ -248,11 +354,19 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                         components={{
                             Container: props => <Paper className={classes.tablePaper} {...props} variant="outlined" />
                         }}
+                        style={{ verticalAlign: 'top' }}
                         columns={[
                             {
                                 title: "Item",
                                 field: "name",
                                 editable: "never"
+                            },
+                            {
+                                title: "HSN Code",
+                                field: "hsn",
+                                type: "string",
+                                hidden: props.gstSummary === null,
+                                editable: "never",
                             },
                             {
                                 title: "Quantity",
@@ -265,17 +379,53 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                 title: "Rate",
                                 field: "rate",
                                 type: "numeric",
-                                editable: "never"
+                                editable: "never",
+                                hidden: props.gstSummary !== null,
                             },
                             {
                                 title: "Amount",
                                 field: "amount",
                                 type: "numeric",
                                 editable: "never",
-                                render: rowData => rowData.quantity * rowData.rate
-                            }
-                        ]}
-                        data={props?.items || []}
+                                render: (rowData: { quantity: number; rate: number; taxableAmount: any; }) => {
+                                    return props.gstSummary === null
+                                        ? rowData.quantity * rowData.rate
+                                        : rowData.taxableAmount;
+                                }
+                            },
+                            ...(props.gstSummary === null ? [] : [
+                                {
+                                    title: "GST",
+                                    field: "cgst",
+                                    type: "numeric",
+                                    editable: "never",
+                                    render: (rowData: any) => <>
+                                        <Box component="div">
+                                            {rowData.taxAmount}
+                                        </Box>
+                                        ({rowData.cgst + rowData.sgst + "%"})
+                                        <Box component="div" display="none" fontSize={12} fontWeight="bold" color="grey">
+                                            @CGST {rowData.cgst}%<br />
+                                            @SGST {rowData.sgst}%<br />
+                                        </Box>
+                                    </>
+                                },
+                                {
+                                    title: "Tax Amount",
+                                    field: "taxAmount",
+                                    hidden: true,
+                                    type: "numeric",
+                                    editable: "never",
+                                    render: (rowData: { taxAmount: { toLocaleString: (arg0: string) => string; }; }) => "" + rowData.taxAmount.toLocaleString("en-IN")
+                                },
+                                {
+                                    title: "Total",
+                                    type: "numeric",
+                                    editable: "never",
+                                    render: (rowData: { taxableAmount: any; taxAmount: any; }) => "" + (rowData.taxableAmount + rowData.taxAmount).toLocaleString("en-IN")
+                                },
+                            ] as any)]}
+                        data={props?.items || [] as BillData<typeof props.gstSummary>[]}
                         options={{
                             search: false,
                             paging: false,
@@ -284,6 +434,23 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                         }}
                     />
                 </Grid>
+                {props.gstSummary !== null
+                    ? <Grid item className={classes.itemPadding} xs={12}>
+                        <Accordion variant="outlined">
+                            <AccordionSummary
+                                expandIcon={<ExpandMore />}
+                            >
+                                <Typography>
+                                    GST Summary
+                            </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <GSTSummary data={props.gstSummary} />
+                            </AccordionDetails>
+                        </Accordion>
+                    </Grid>
+                    : null
+                }
                 {(props.payments && props.payments.length)
                     ? <Grid item className={classes.itemPadding} xs={12}>
                         <PaymentsList payments={props.payments} onDelete={props.paymentDelete} />
@@ -304,22 +471,22 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                     Total Items: {props?.items.length || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
-                                    Total Amount: ₹ {props?.items.map(item => item.rate * item.quantity).reduce((acc, cur) => acc + cur, 0).toLocaleString() ?? 0}
+                                    Total Amount:  {props?.items.map(item => item.rate * item.quantity).reduce((acc, cur) => acc + cur, 0).toINR() ?? 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
-                                    Discount: ₹ {props?.discountAmount.toLocaleString() || 0}
+                                    Discount:  {props?.discountAmount.toINR() || 0}
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
                                     Discount (%): {props?.discountAmount ? ((props.discountAmount / (props.billAmount + props.discountAmount)) * 100).toFixed(2) : 0}%
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
-                                    Balance: ₹ {(props.billAmount - props.paidAmount).toLocaleString()}
+                                    Balance:  {(props.billAmount - props.paidAmount).toINR()}
                                 </Typography>
                                 {billUpdatePermission && (props.credit === null || props.credit === undefined)
                                     ? <></>
                                     : !props.credit
-                                        ? <Chip color="primary" onClick={props.creditAction} variant="outlined" style={{ color: "white" }} size="small" avatar={<Avatar>₹</Avatar>} label="Bill Closed" />
-                                        : <Chip color="primary" size="small" onClick={props.creditAction} avatar={<Avatar>₹</Avatar>} label="In Credit" />
+                                        ? <Chip color="primary" onClick={props.creditAction} variant="outlined" style={{ color: "white" }} size="small" avatar={<Avatar></Avatar>} label="Bill Closed" />
+                                        : <Chip color="primary" size="small" onClick={props.creditAction} avatar={<Avatar></Avatar>} label="In Credit" />
                                 }
                             </Grid>
                             <Grid item className={classes.itemPadding + " " + classes.alignRight} xs>
@@ -327,13 +494,13 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                                     Bill Amount
                                 </Typography>
                                 <Typography variant="h4" display="block" >
-                                    <strong>₹{props?.billAmount?.toLocaleString() || 0}</strong>
+                                    <strong>{props?.billAmount?.toINR() || 0}</strong>
                                 </Typography>
                                 <Typography variant="subtitle2" display="block">
                                     Paid Amount
                                 </Typography>
                                 <Typography variant="h5" display="block" >
-                                    <strong>₹{props?.paidAmount?.toLocaleString() || 0}</strong>
+                                    <strong>{props?.paidAmount?.toINR() || 0}</strong>
                                 </Typography>
                                 {(props.credit && billUpdatePermission) && <Button variant="outlined" onClick={props.receivePayment} className={classes.button} size="small" startIcon={<Add />}>Receive Payment</Button>}
                             </Grid>
@@ -347,9 +514,13 @@ export default function BillViewer(props: BillData & AdditionalProps) {
                     content={uri}
                     open={qrDialogOpen}
                     onClose={() => setQrDialogOpen(false)}
-                    footer={<span style={theme.typography.h6}>Scan to Pay<br /><strong>₹ {props.billAmount.toLocaleString()}</strong></span>}
+                    footer={<span style={theme.typography.h6}>Scan to Pay<br /><strong> {props.billAmount.toINR()}</strong></span>}
                 />
             }
         </Paper >
     );
 }
+
+/**
+ *
+ */

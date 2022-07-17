@@ -6,7 +6,11 @@ const Payment = require("./PaymentSchema");
 const { PurchaseBill } = require("../PurchaseBillModel");
 const LocationSchema = require("./LocationSchema");
 const AutoIncrement = require("mongoose-sequence")(mongoose);
+const { GST } = require("../../controllers/sales/GST");
 
+/**
+ * @class Bill
+ */
 const BillSchema = new Schema(
 	{
 		serialNumber: { //Incremental Serial Number Right from 0
@@ -24,9 +28,40 @@ const BillSchema = new Schema(
 				mrp: { type: Number, default: 0 },
 				converted: { type: Number, default: 1 },
 				cost: { type: Number, default: 0 },
+				hsn: { type: String, default: "" },
+				sgst: { type: Number, default: 0 },
+				cgst: { type: Number, default: 0 },
+				gstInclusive: { type: Boolean, default: false },
+				taxAmount: { type: Number, default: 0 },
+				taxableAmount: { type: Number, default: 0 },
+				amount: { type: Number, default: 0 },
 				stocked: { type: Boolean, default: false },
 			},
 		],
+		gstSummary: {
+			type: {
+				totalTax: { type: Number, default: 0 },
+				slabs: {
+					sgst: [
+						{
+							slab: { type: Number, default: 0 },
+							totalTaxAmount: { type: Number, default: 0 },
+							totalTaxableAmount: { type: Number, default: 0 },
+						}
+					],
+					cgst: [
+						{
+							slab: { type: Number, default: 0 },
+							totalTaxAmount: { type: Number, default: 0 },
+							totalTaxableAmount: { type: Number, default: 0 },
+						}
+					],
+				},
+				totalTaxableAmount: { type: Number, default: 0 },
+				totalAmountWithTax: { type: Number, default: 0 },
+			},
+			default: null
+		},
 		customer: { type: Schema.Types.ObjectId, ref: "Customer" },
 		discountAmount: { type: Number, default: 0 },
 		itemsTotalAmount: { type: Number, default: 0 },
@@ -127,10 +162,14 @@ BillSchema.methods.reduceItemQuantity = function (id, quantity) {
  * @returns {Number} total
  */
 BillSchema.methods.calculateItemsTotalAmount = function () {
+	if (this.gstSummary) {
+		return this.gstSummary.totalAmountWithTax;
+	}
+
 	let total = 0;
 
 	this.items.forEach((item) => {
-		total += item.quantity * item.rate;
+		total += item.amount;
 	});
 
 	return total;
@@ -292,13 +331,14 @@ BillSchema.statics.populateItemsWithQuantity = async function (items) {
 				document.unit = document.primaryUnit;
 				document.converted = document.quantity;
 			}
+
+			document.amount = document.quantity * document.rate;
 			populatedItems.push(document);
 		} else {
 			// apiResponse.ErrorResponse(res,`Product not found:${item.id}`);
 			throw new Error(`Product not found:${item.id}`);
 		}
 	}
-
 	return populatedItems;
 };
 

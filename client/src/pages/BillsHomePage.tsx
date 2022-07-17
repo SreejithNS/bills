@@ -78,27 +78,27 @@ const StatPaper = ({
                     {title}
                 </Typography>
                 <Box display="flex" flexDirection="row" flexWrap="wrap" className={classes.boxRoot}>
-                    <Tooltip title={`Without Discount ₹${(billDiscounts + billAmount).toLocaleString()}`}>
+                    <Tooltip title={`Without Discount ${(billDiscounts + billAmount).toINR()}`}>
                         <Box flexGrow={1}>
                             <Typography variant="subtitle2">Total Bill Amount</Typography>
-                            <Typography variant="h5">₹ {billAmount.toLocaleString()}</Typography>
+                            <Typography variant="h5"> {billAmount.toINR()}</Typography>
                         </Box>
                     </Tooltip>
 
 
                     <Box flexGrow={1}>
                         <Typography variant="subtitle2">Total Bill Discount</Typography>
-                        <Typography variant="h5">₹ {billDiscounts.toLocaleString()}</Typography>
+                        <Typography variant="h5"> {billDiscounts.toINR()}</Typography>
                     </Box>
 
                     <Box flexGrow={1}>
                         <Typography variant="subtitle2">Total Bills Balance</Typography>
-                        <Typography variant="h5">₹ {billAmountBalance.toLocaleString()}</Typography>
+                        <Typography variant="h5"> {billAmountBalance.toINR()}</Typography>
                     </Box>
 
                     <Box flexGrow={1}>
                         <Typography variant="subtitle2">Total Received Payments</Typography>
-                        <Typography variant="h5">₹ {paidAmount.toLocaleString()}</Typography>
+                        <Typography variant="h5"> {paidAmount.toINR()}</Typography>
                     </Box>
                 </Box>
             </CardContent>
@@ -247,7 +247,7 @@ export default function BillsHomePage() {
                                         <BillCard
                                             primaryText={bill.customer.name}
                                             rightPrimary={bill.billAmount}
-                                            secondaryText={`#${bill.serialNumber} | Received ₹ ${bill.paidAmount}`}
+                                            secondaryText={`#${bill.serialNumber} | Received  ${bill.paidAmount}`}
                                             timestamp={moment(bill.createdAt.toString()).format('MMM D YYYY, h:mm a')}
                                             rightSecondary={(
                                                 <>

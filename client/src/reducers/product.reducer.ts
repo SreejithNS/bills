@@ -8,6 +8,10 @@ export interface Product {
     rate: number;
     mrp: number;
     cost: number;
+    sgst: number;
+    cgst: number;
+    hsn: string;
+    gstInclusive: boolean;
     stocked: boolean;
     stock: number;
     units: Unit[];

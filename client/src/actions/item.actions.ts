@@ -188,7 +188,7 @@ export const exportToCsv = (filename: string, rows: any[][]) => {
         for (var j = 0; j < row.length; j++) {
             var innerValue = row[j] === null ? '' : row[j].toString();
             if (row[j] instanceof Date) {
-                innerValue = row[j].toLocaleString();
+                innerValue = row[j].toINR();
             };
             var result = innerValue.replace(/"/g, '""');
             if (result.search(/("|,|\n)/g) >= 0)

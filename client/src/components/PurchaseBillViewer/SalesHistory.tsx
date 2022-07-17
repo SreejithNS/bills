@@ -59,7 +59,7 @@ function SalesHistoryListItem(props: { sales: any[]; onOpen?: (_id: string) => v
                                     {bill ? moment(bill.createdAt.toString()).format('MMM D YYYY, h:mm a') : ""}
                                     <br />
                                     {items.map(({ code, quantity, amount }) => (
-                                        <div><strong>{code} <em>x{quantity}</em> = ₹{amount.toFixed(2)}</strong></div>
+                                        <div><strong>{code} <em>x{quantity}</em> = {amount.toFixed(2)}</strong></div>
                                     ))}
                                 </>}
                             />

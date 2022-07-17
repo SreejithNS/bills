@@ -70,8 +70,8 @@ async function createUser(name, phone, password, permissions) {
 	}
 
 	var newUser = new User(newUserData);
-
-	return await newUser.save();
+	await newUser.save();
+	return newUser;
 }
 
 /**
@@ -761,10 +761,12 @@ module.exports = {
 	userRegistration,
 	login,
 	fetchUserData,
+	userAuthentication,
 	logout,
 	numberAvailability,
 	salesmenList,
 	updateUserDetails,
 	updateAccountDetails,
-	deleteUserAccount
+	deleteUserAccount,
+	createUser
 };
