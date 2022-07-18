@@ -1,5 +1,5 @@
 /// <reference types="web-bluetooth" />
-import { BillData } from './../../reducers/bill.reducer';
+import { BillData, BillItem } from './../../reducers/bill.reducer';
 import BillText from "./BillText";
 
 type PrintBillData = Pick<BillData, "customer" | "soldBy" | "serialNumber" | "createdAt" | "billAmount" | "discountAmount" | "itemsTotalAmount" | "items" | "gstSummary">;
@@ -75,16 +75,47 @@ export default class Print {
 
   public async printBill({ customer, soldBy, itemsTotalAmount, serialNumber, createdAt, billAmount, discountAmount, items, gstSummary }: PrintBillData) {
     try {
-      const itemString = items.map(item => {
-        return [item.name, item.quantity.toString() + (item.unit ? (item.unit as unknown as string).split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""), (item.quantity * item.rate).toString()]
-      })
+      let itemString = [];
+
+      //Add gst details below each line of the Items
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const { name, quantity, unit, taxAmount, taxableAmount, rate, hsn } = item as any;
+
+        const quantityText = quantity.toString();
+        const unitText = (unit ? (unit as unknown as string).split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : "")
+
+        let amountText;
+
+        if (taxAmount !== undefined && taxableAmount !== undefined) {
+          amountText = taxableAmount || (rate * quantity);
+        } else {
+          amountText = rate * quantity;
+        }
+
+        itemString.push([
+          name,
+          quantityText + unitText,
+          amountText.toFixed(2)
+        ]);
+
+        if (gstSummary !== null)
+          itemString.push([
+            "HSN: " + hsn,
+            "  Tax:",
+            taxAmount ?? ""
+          ]);
+
+        if (i !== items.length - 1) itemString.push(["$$LF", "", ""])
+      }
+
       const billText = new BillText(
         customer.name,
         serialNumber,
         (new Date(createdAt)).toDateString(),
         soldBy.name,
-        itemString, 
-        billAmount, 
+        itemString,
+        billAmount,
         gstSummary ? gstSummary.totalTaxableAmount : itemsTotalAmount,
         discountAmount || undefined,
         gstSummary?.totalTax
