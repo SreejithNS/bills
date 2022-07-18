@@ -5,7 +5,7 @@ import { RootState } from '../../reducers/rootReducer';
 import "./print.css";
 
 type PlainPrintProps = {
-    bill: BillData;
+    bill: BillData<true>;
 };
 
 const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, ref) => {
@@ -15,11 +15,11 @@ const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, 
             <table>
                 <thead>
                     <tr>
-                        <th colSpan={100}>{org?.printTitle}</th>
+                        <th colSpan={100}>{org?.printTitle.split("\n").map((text, key) => <span key={key} style={{ display: "block" }}>{text}</span>)}</th>
                     </tr>
                     {org?.printHeader
                         ? <tr>
-                            <td colSpan={100}>{org?.printHeader}</td>
+                            <td colSpan={100}>{org?.printHeader.split("\n").map((text, key) => <span key={key} style={{ display: "block" }}>{text}</span>)}</td>
                         </tr>
                         : <></>
                     }
@@ -39,12 +39,22 @@ const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, 
                     </tr>
                 </thead>
                 <tbody>
-                    {bill.items.map((item, key) =>
+                    {bill.items.map((item, key) => <>
                         <tr key={key}>
                             <td>{item.name}</td>
                             <td>{item.quantity}{item.unit ? (item.unit as unknown as string).split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""}</td>
-                            <td>{(item.rate * item.quantity).toFixed(2)}</td>
+                            <td>{bill.gstSummary
+                                ? (item.taxableAmount).toFixed(2)
+                                : (item.rate * item.quantity).toFixed(2)
+                            }</td>
                         </tr>
+                        {bill.gstSummary &&
+                            <tr key={key + "gst"}>
+                                <td data-gst>HSN:{item.hsn}</td>
+                                <td colSpan={2} data-gst>{"Tax:\t" + item.taxAmount.toFixed(2)}</td>
+                            </tr>
+                        }
+                    </>
                     )}
                 </tbody>
                 < tfoot >
@@ -52,14 +62,14 @@ const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, 
                         bill.discountAmount > 0
                             ? <>
                                 <tr>
-                                    <td className="text-center" colSpan={100}>Sum: {bill.gstSummary ? bill.gstSummary.totalTaxableAmount : bill.itemsTotalAmount.toINR()}</td>
+                                    <td className="text-center" colSpan={100}>Sum: {bill.gstSummary ? bill.gstSummary.totalTaxableAmount.toINR() : bill.itemsTotalAmount.toINR()}</td>
                                 </tr>
                                 <tr>
                                     <td className="text-center" colSpan={100}>Discount: -{bill.discountAmount.toINR()}</td>
                                 </tr>
                             </>
                             : <tr>
-                                <td className="text-center" colSpan={100}>Sum:  {bill.gstSummary ? bill.gstSummary.totalTaxableAmount : bill.itemsTotalAmount.toINR()}</td>
+                                <td className="text-center" colSpan={100}>Sum:  {bill.gstSummary ? bill.gstSummary.totalTaxableAmount.toINR() : bill.itemsTotalAmount.toINR()}</td>
                             </tr>
                     }
                     {
@@ -74,7 +84,7 @@ const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, 
                     </tr>
                     {org?.printFooter
                         ? <tr>
-                            <td colSpan={100}>{org.printFooter}</td>
+                            <td colSpan={100}>{org.printFooter.split("\n").map((text, key) => <span key={key} style={{ display: "block" }}>{text}</span>)}</td>
                         </tr>
                         : <></>
                     }

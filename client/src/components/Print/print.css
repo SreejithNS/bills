@@ -47,6 +47,9 @@
 	#print-view table tbody tr > td {
 		padding: calc(var(--base-size) * 1) 0pt;
 	}
+	#print-view table tbody tr > td[data-gst] {
+		padding: 0pt 0pt;
+	}
 	#print-view table tbody tr > td {
 		text-align: center;
 	}
