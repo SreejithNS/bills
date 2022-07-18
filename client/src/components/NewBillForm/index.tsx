@@ -467,6 +467,21 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 									return data.quantity
 								}
 							},
+							{ title: "Rate", field: "rate", type: "numeric", editable: "never", hidden: gst },
+							{
+								title: "Rate",
+								field: "taxableAmount",
+								type: "numeric",
+								editable: "never",
+								hidden: !gst
+							},
+							{
+								title: "Tax Amount",
+								field: "taxAmount",
+								type: "numeric",
+								editable: "never",
+								hidden: !gst
+							},
 							{
 								title: "Amount",
 								type: "numeric",
@@ -477,21 +492,6 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 									}
 									return parseFloat((data.amount).toFixed(2));
 								}
-							},
-							{ title: "Rate", field: "rate", type: "numeric", editable: "never", hidden: gst },
-							{
-								title: "Tax Amount",
-								field: "taxAmount",
-								type: "numeric",
-								editable: "never",
-								hidden: !gst
-							},
-							{
-								title: "Rate",
-								field: "taxableAmount",
-								type: "numeric",
-								editable: "never",
-								hidden: !gst
 							},
 						]}
 						data={items ?? [] as BillItem[]}
