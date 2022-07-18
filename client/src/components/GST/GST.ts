@@ -16,7 +16,6 @@ class GSTClass {
     calculateSummaryOfProducts(products: any[]) {
         let productsWithGSTCalculations = products.map((product: { sgst: any; cgst: any; amount: number; gstInclusive: any; }) => {
             const tax = ((product.sgst || 0) + (product.cgst || 0)) / 100;
-            debugger;
             const taxAmount = product.amount * tax;
             const taxableAmount = product.gstInclusive ? product.amount - taxAmount : product.amount * 1;
             return {

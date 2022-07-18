@@ -48,6 +48,10 @@ class GST {
             const taxAmount = product.amount * tax;
             const taxableAmount = product.gstInclusive ? product.amount - taxAmount : product.amount * 1;
             return {
+                hsn: "",
+                sgst: 0,
+                cgst: 0,
+                gstInclusive: false,
                 ...product,
                 taxAmount,
                 taxableAmount,
