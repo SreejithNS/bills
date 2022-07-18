@@ -253,29 +253,32 @@ export default class BillText {
         for (let content of contents) {
             for (let row of content) {
                 if (!row.join(" ").replace(/\s/g, "").length || row.join(" ").replace(/\s/g, "").length < 4) continue;
-                p.text(row.join(" ")).control("LF");
+
+                // If Force line break found skip the content with a blank line
+                if (row[0].includes("$$LF")) p.control("LF");
+                else p.text(row.join(" ")).control("LF");
             }
         }
 
-        p.control("LF");
+        p.control("LF").boldOn();
 
         //Total Sum
         if (this.discount || this.tax) {
-            (new TextManipulator()).centerText("Sum: " + (this.itemsTotalAmount), 33).map(line => p.text(line));
+            p.align("RT").text("Sum:    ").control("HT").text((this.itemsTotalAmount).toFixed(2)).control("LF");
         }
 
         if (this.tax) {
-            (new TextManipulator()).centerText("GST Total: " + (this.tax), 33).map(line => p.text(line));
+            p.align("RT").text("GST Total:").control("HT").text((this.tax).toFixed(2)).control("LF");
         }
 
         //Discount
         if (this.discount) {
-            (new TextManipulator()).centerText("Discount: -" + this.discount, 35).map(line => p.text(line));
-            p.control("LF");
+            p.align("RT").text("Discount: ").control("HT").text("-" + this.discount.toFixed(2)).control("LF");
         }
 
+        p.boldOff().align("LT").control("LF");
 
-        //Organisation header
+        //Bill Amount
         p.boldOn().size(2, 2);
         // p.text("Total:\t" + this.billAmount)
         (new TextManipulator()).centerText("Total: " + this.billAmount, 18).map(line => p.text(line));
