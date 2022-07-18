@@ -78,10 +78,16 @@ export default class Print {
       const itemString = items.map(item => {
         return [item.name, item.quantity.toString() + (item.unit ? (item.unit as unknown as string).split(" ").map((c: string) => c.charAt(0)).join("").toUpperCase() : ""), (item.quantity * item.rate).toString()]
       })
-
       const billText = new BillText(
-        customer.name, serialNumber, (new Date(createdAt)).toDateString(), soldBy.name,
-        itemString, billAmount, gstSummary ? gstSummary.totalTaxableAmount : itemsTotalAmount, discountAmount || undefined, gstSummary?.totalTax
+        customer.name,
+        serialNumber,
+        (new Date(createdAt)).toDateString(),
+        soldBy.name,
+        itemString, 
+        billAmount, 
+        gstSummary ? gstSummary.totalTaxableAmount : itemsTotalAmount,
+        discountAmount || undefined,
+        gstSummary?.totalTax
       );
 
       try {

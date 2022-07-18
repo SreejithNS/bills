@@ -184,6 +184,7 @@ export default class BillText {
         private customerName: string,
         private billSerial: number,
         private date: string,
+        private salesman: string,
         private items: string[][],
         private billAmount: number,
         private itemsTotalAmount: number,

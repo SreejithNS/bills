@@ -1,5 +1,5 @@
-var { MutableBuffer } = require('mutable-buffer'),
-    CMD = require('./commands');
+import CMD from "./commands";
+import { MutableBuffer } from "mutable-buffer";
 
 export class Escpos {
     buffer: any;
@@ -53,21 +53,21 @@ export class Escpos {
 
     control(ctrl: string) {
         this.buffer.write(CMD.FEED_CONTROL_SEQUENCES[
-            'CTL_' + ctrl.toUpperCase()
+            'CTL_' + ctrl.toUpperCase() as keyof typeof CMD.FEED_CONTROL_SEQUENCES
         ]);
         return this;
     }
 
     align(align: string) {
         this.buffer.write(CMD.TEXT_FORMAT[
-            'TXT_ALIGN_' + align.toUpperCase()
+            'TXT_ALIGN_' + align.toUpperCase() as keyof typeof CMD.TEXT_FORMAT
         ]);
         return this;
     }
 
     font(family: string) {
         this.buffer.write(CMD.TEXT_FORMAT[
-            'TXT_FONT_' + family.toUpperCase()
+            'TXT_FONT_' + family.toUpperCase() as keyof typeof CMD.TEXT_FORMAT
         ]);
         return this;
     }
@@ -110,7 +110,7 @@ export class Escpos {
             throw new Error('EAN8 Barcode type requires code length 7');
         }
         if (width >= 2 || width <= 6) {
-            this.buffer.write(CMD.BARCODE_FORMAT.BARCODE_WIDTH[width]);
+            this.buffer.write(CMD.BARCODE_FORMAT.BARCODE_WIDTH[width as keyof typeof CMD.BARCODE_FORMAT.BARCODE_WIDTH]);
         } else {
             this.buffer.write(CMD.BARCODE_FORMAT.BARCODE_WIDTH_DEFAULT);
         }
@@ -120,13 +120,13 @@ export class Escpos {
             this.buffer.write(CMD.BARCODE_FORMAT.BARCODE_HEIGHT_DEFAULT);
         }
         this.buffer.write(CMD.BARCODE_FORMAT[
-            'BARCODE_FONT_' + (font || 'B').toUpperCase()
+            'BARCODE_FONT_' + (font || 'B').toUpperCase() as keyof typeof CMD.BARCODE_FORMAT
         ]);
         this.buffer.write(CMD.BARCODE_FORMAT[
-            'BARCODE_TXT_' + (position || 'BTH').toUpperCase()
+            'BARCODE_TXT_' + (position || 'BTH').toUpperCase() as keyof typeof CMD.BARCODE_FORMAT
         ]);
         this.buffer.write(CMD.BARCODE_FORMAT[
-            'BARCODE_' + ((type || 'EAN13').replace('-', '_').toUpperCase())
+            'BARCODE_' + ((type || 'EAN13').replace('-', '_').toUpperCase()) as keyof typeof CMD.BARCODE_FORMAT
         ]);
         let codeBytes = code.split('').map((s: string) => s.charCodeAt(0));
         this.buffer.write(codeBytes.length);
@@ -146,13 +146,13 @@ export class Escpos {
     }
 
     hardware(hw: string) {
-        this.buffer.write(CMD.HARDWARE['HW_' + hw]);
+        this.buffer.write(CMD.HARDWARE['HW_' + hw as keyof typeof CMD.HARDWARE]);
         return this.flush();
     }
 
     cashdraw(pin: any) {
         this.buffer.write(CMD.CASH_DRAWER[
-            'CD_KICK_' + (pin || 2)
+            'CD_KICK_' + (pin || 2) as keyof typeof CMD.CASH_DRAWER
         ]);
         return this.flush();
     }
