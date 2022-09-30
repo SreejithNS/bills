@@ -271,6 +271,9 @@ exports.getAllBillsAsCSV = [
 	query("credit")
 		.optional()
 		.isBoolean(),
+	query("withProducts")
+		.optional()
+		.isBoolean(),
 	async function (req, res) {
 		try {
 			const validationError = validationResult(req);
@@ -320,7 +323,7 @@ exports.getAllBillsAsCSV = [
 			return Bill.find(queryWithSearch).sort(paginateOptions.sort).populate("soldBy", "name").populate("customer").exec().then(
 				(bills) => {
 					bills = bills.map((doc) => {
-						return {
+						const data = {
 							"Bill Number": doc.serialNumber,
 							"Customer": doc.customer.name,
 							"Location": doc.customer.place || "",
@@ -331,8 +334,19 @@ exports.getAllBillsAsCSV = [
 							"Bill Amount": doc.billAmount,
 							"Paid Amount": doc.paidAmount,
 							"Status": doc.credit ? "IN CREDIT" : "CLOSED",
-							"Balance": doc.billAmount - doc.paidAmount
+							"Balance": doc.billAmount - doc.paidAmount,
 						};
+						
+						if (req.query.withProducts == "true") {
+							for (let i = 0; i < doc.items.length; i++) {
+								data[`Item #${i + 1} Name`] = doc.items[i].name;
+								data[`Item #${i + 1} Code`] = doc.items[i].code;
+								data[`Item #${i + 1} Quantity`] = doc.items[i].quantity;
+								data[`Item #${i + 1} Amount`] = doc.items[i].amount;
+							}
+						}
+						
+						return data;
 					});
 
 					const csv = Papa.unparse(bills);

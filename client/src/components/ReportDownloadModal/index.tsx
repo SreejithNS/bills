@@ -8,7 +8,7 @@ import { handleAxiosError } from '../Axios';
 import BillSearch, { SalesmanSelection } from '../BillSearch';
 import { useQueryStringKey } from 'use-route-as-state';
 import fileDownload from "js-file-download";
-import { Card, CardContent, Grid, FormControl, InputLabel, Select, MenuItem, Divider, Typography } from '@material-ui/core';
+import { Card, CardContent, Grid, FormControl, InputLabel, Select, MenuItem, Divider, Typography, FormControlLabel, Checkbox } from '@material-ui/core';
 import { UserData } from '../../reducers/auth.reducer';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../reducers/rootReducer';
@@ -161,11 +161,13 @@ export default function ReportDownloadModal(props: ModalProps) {
     const [selectedFromDate, setSelectedFromDate] = useQueryStringKey("fromDate");
     const [selectedToDate, setSelectedToDate] = useQueryStringKey("toDate");
     const [creditFilter, setCreditFilter] = useQueryStringKey("credit");
+    const [withProducts, setWithProducts] = useState(false);
 
     const [{ loading, error, response }, execute, cancel] = useAxios<Blob>({
         url: "/bill/asCSV",
         params: {
             page: 1,
+            withProducts,
             sort: (sortDirection === "desc" ? "-" : "") + sortParam,
             ...((searchParam && searchValue) && { [searchParam]: searchValue }),
             ...(selectedFromDate && { "startDate": selectedFromDate }),
@@ -208,6 +210,10 @@ export default function ReportDownloadModal(props: ModalProps) {
                     onSortParamChange={setSortParam}
                     sortDirection={(sortDirection ?? "desc") as "asc" | "desc"}
                     sortParam={sortParam ?? ""}
+                />
+                <FormControlLabel
+                    control={<Checkbox checked={withProducts} onChange={(e) => setWithProducts(e.target.checked)} />}
+                    label="With Bill Items"
                 />
                 <Button disabled={loading} variant="contained" onClick={() => execute()} startIcon={<CloudDownloadRounded />} >Download</Button>
             </div>
