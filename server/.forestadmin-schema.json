@@ -1832,6 +1832,9 @@
           "field": "printHeader",
           "type": "String"
         }, {
+          "field": "printDiscountLabel",
+          "type": "String"
+        }, {
           "field": "printFooter",
           "type": "String"
         }, {
