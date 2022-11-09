@@ -65,7 +65,7 @@ const PlainPrint = React.forwardRef<HTMLDivElement, PlainPrintProps>(({ bill }, 
                                     <td className="text-center" colSpan={100}>Sum: {bill.gstSummary ? bill.gstSummary.totalTaxableAmount.toINR() : bill.itemsTotalAmount.toINR()}</td>
                                 </tr>
                                 <tr>
-                                    <td className="text-center" colSpan={100}>Discount: -{bill.discountAmount.toINR()}</td>
+                                    <td className="text-center" colSpan={100}>{org?.printDiscountLabel ?? "Discount"}: -{bill.discountAmount.toINR()}</td>
                                 </tr>
                             </>
                             : <tr>

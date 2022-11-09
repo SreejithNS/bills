@@ -3,6 +3,7 @@ import { Button, CircularProgress, createStyles, Divider, Grid, makeStyles, Them
 import { Field, reduxForm } from 'redux-form';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import CheckInSettings from './CheckInSettings';
+import LocalOfferIcon from '@material-ui/icons/LocalOffer';
 import { AccountBalanceWalletRounded, Business, BusinessCenter, PaymentRounded, Phone, RecentActors, Subtitles, Title, ViewStream } from '@material-ui/icons';
 
 function validate(values: { [x: string]: any; }) {
@@ -160,6 +161,19 @@ const AccountEditForm = (props: { handleSubmit: any; pristine: any; reset: any; 
                                 size='small'
                                 multiline={true}
                                 label="Header"
+                            />
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon>
+                                <LocalOfferIcon />
+                            </ListItemIcon>
+                            <Field
+                                name="organisation.printDiscountLabel"
+                                component={ReduxTextField}
+                                variant="outlined"
+                                size='small'
+                                multiline={true}
+                                label="Discount Label"
                             />
                         </ListItem>
                         <ListItem>

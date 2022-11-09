@@ -28,6 +28,7 @@ export interface OrganisationDetails extends Object {
     printTitle: string;
     tagline: string;
     printHeader: string;
+    printDiscountLabel: string;
     printFooter: string;
     upivpa: string;
     upiname: string;

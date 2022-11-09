@@ -204,6 +204,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 	const history = useHistory();
 	const dispatch = useDispatch();
 	const billState = useSelector((state: RootState) => state.bill);
+	const orgData = useSelector((state: RootState) => state.auth.organistaionData);
 	const quantityRef = useRef<HTMLInputElement>(null);
 	const {
 		customer,
@@ -538,7 +539,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				</Grid>
 				<Grid item xs={6}>
 					<TextField
-						label="Discount %"
+						label={(orgData?.printDiscountLabel ?? "Discount") + " %"}
 						type="number"
 						fullWidth
 						variant="outlined"
@@ -555,7 +556,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				</Grid>
 				<Grid item xs={6}>
 					<TextField
-						label="Discount "
+						label={(orgData?.printDiscountLabel ?? "Discount") + " "}
 						type="number"
 						fullWidth
 						variant="outlined"

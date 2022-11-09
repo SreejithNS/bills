@@ -273,7 +273,7 @@ export default class BillText {
 
         //Discount
         if (this.discount) {
-            p.align("RT").text("Discount: ").control("HT").text("-" + this.discount.toFixed(2)).control("LF");
+            p.align("RT").text(`${organisation?.printDiscountLabel ?? "Discount:"}: `).control("HT").text("-" + this.discount.toFixed(2)).control("LF");
         }
 
         p.boldOff().align("LT").control("LF");

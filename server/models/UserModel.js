@@ -21,6 +21,7 @@ var UserSchema = new mongoose.Schema(
 				upiname: { type: String, default: "" },
 				tagline: String,
 				printHeader: { type: String, default: "( Quotation )" },
+				printDiscountLabel: { type: String, default: "Discount" },
 				printFooter: String,
 				checkInSettings: {
 					customerRequired: { type: Boolean, default: false },
