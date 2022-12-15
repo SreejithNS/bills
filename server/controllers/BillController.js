@@ -349,7 +349,19 @@ exports.getAllBillsAsCSV = [
 						return data;
 					});
 
-					const csv = Papa.unparse(bills);
+
+					//  a function that returns the set of keys present in array of objects
+					const getKeys = (arr) => {
+						const keys = new Set();
+						arr.forEach((obj) => {
+							Object.keys(obj).forEach((key) => keys.add(key));
+						});
+						return keys;
+					};
+					let columns = Array.from(getKeys(bills));
+					const csv = Papa.unparse(bills, {
+						columns
+					});
 					res.set("Access-Control-Expose-Headers", "x-bills-report-filename");
 					return apiResponse.successResponseWithFile(
 						res.set("x-bills-report-filename", "bills_report_" + (new Date()).toDateString() + ".csv"),
