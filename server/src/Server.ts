@@ -12,8 +12,8 @@ export default class Server {
 
   public static isDev = process.env.NODE_ENV !== "production";
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // loadMiddleware(globalMiddleware: RequestHandler[]) {}
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+  loadMiddleware(globalMiddleware: RequestHandler[]) {}
 
   constructor(app: Application, port: number) {
     this.app = app;
@@ -48,7 +48,8 @@ export default class Server {
     const user = encodeURIComponent(process.env.MONGO_USER ?? "");
     const passwd = encodeURIComponent(process.env.MONGO_PWD ?? "");
     const cluster = process.env.MONGO_CLUSTER;
-    const MONGO_URL = `mongodb+srv://${user}:${passwd}@${cluster}/Main?retryWrites=true&w=majority`;
+    const dbName = process.env.MONGO_DB_NAME;
+    const MONGO_URL = `mongodb+srv://${user}:${passwd}@${cluster}/${dbName}?retryWrites=true&w=majority`;
 
     return mongoose.connect(MONGO_URL ?? "", {});
   }
