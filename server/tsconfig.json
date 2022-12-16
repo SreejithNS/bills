@@ -5,15 +5,7 @@
         "target": "es5",
         "sourceMap": true,
         "outDir": "dist",
-        "allowJs": true,
-        "skipLibCheck": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "strict": true,
-        "forceConsistentCasingInFileNames": true,
-        "noFallthroughCasesInSwitch": true,
-        "resolveJsonModule": true,
-        "isolatedModules": false,
+        "allowJs": true
     },
     "include": [
         "./src/**/*"
