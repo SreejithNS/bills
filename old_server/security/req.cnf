@@ -1,0 +1,19 @@
+[req]
+distinguished_name = localhost_ssl
+x509_extensions = v3_req
+prompt = no
+[localhost_ssl]
+C = IN
+ST = State
+L = Location
+O = Organization
+OU = Organizational
+CN = www.localhost.com
+[v3_req]
+keyUsage = critical, digitalSignature, keyAgreement
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = www.localhost.com
+DNS.2 = localhost.com
+DNS.3 = localhost
