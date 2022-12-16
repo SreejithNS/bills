@@ -10,7 +10,7 @@
   "rules": {
     "prettier/prettier": "error",
     "no-unused-vars": "warn",
-    "no-console": "error",
+    "no-console": "off",
     "func-names": "off",
     "no-process-exit": "off",
     "object-shorthand": "off",

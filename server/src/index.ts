@@ -1,2 +1,2 @@
-const string = "Hello Worl";
-console.log(string)
+const string = "Hello World";
+console.log(string);
