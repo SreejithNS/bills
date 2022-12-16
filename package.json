@@ -6,17 +6,30 @@
 	"author": "SreejithNS <nssreejith229@gmail.com>",
 	"license": "MIT",
 	"private": false,
-	"devDependencies": {},
+	"devDependencies": {
+		"husky": "^8.0.2",
+		"lint-staged": "^13.1.0"
+	},
 	"scripts": {
 		"install": "cd server && yarn && cd ../client && yarn",
 		"build": "cd client && yarn run build",
 		"dev:server": "cd server && cross-env NODE_ENV=development yarn dev",
 		"dev:client": "cd client && cross-env NODE_ENV=development yarn start",
 		"dev": "concurrently -c \"greenBright,blueBright\" -n \"NODEJS,REACT \" \"yarn run dev:server --inspect\" \"yarn run dev:client --inspect\"",
-		"start": "cd server && cross-env NODE_ENV=production yarn start"
+		"start": "cd server && cross-env NODE_ENV=production yarn start",
+		"lint:server": "cd server && yarn lint",
+		"prepare": "husky install "
 	},
 	"dependencies": {
 		"concurrently": "^7.1.0",
 		"cross-env": "^7.0.3"
+	},
+	"husky": {
+		"pre-commit": "yarn lint-staged"
+	},
+	"lint-staged": {
+		"server/**/*.{ts,tsx}": [
+			"yarn run lint:server"
+		]
 	}
 }
