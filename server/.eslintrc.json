@@ -16,6 +16,8 @@
       "error"
     ],
     "no-restricted-syntax": "off",
+    "no-template-curly-in-string":"off",
+    "no-underscore-dangle": "off",
     "no-console": "off",
     "func-names": "off",
     "no-process-exit": "off",
