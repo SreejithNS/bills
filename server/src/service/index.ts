@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { Permissions } from "../utils/Permissions";
 
 export default abstract class Service {
 	public abstract readonly entityName: string;
@@ -7,21 +8,34 @@ export default abstract class Service {
 		| mongoose.PopulateOptions[]
 		| Record<string, mongoose.PopulateOptions[]>;
 
-	public abstract readonly permissions: string[];
+	public abstract readonly permissions: Permissions;
 
 	public static allPermissions: string[];
 
 	static entityName: string;
 
-	protected static createPermissions(...args: string[]): string[] {
-		return args.map((arg) => {
-			const permission = `${this.entityName.toUpperCase()}_${arg
+	private static formatEntity(entityName: string): string {
+		return (
+			entityName
 				.trim()
+				.replace(/[\s.]/g, "_") // Replaces all spaces and dots with underscores
 				.toUpperCase()
-				// Replace spaces and dots with underscores
-				.replace(/(\s|\.)+/g, "_")}`;
-			Service.allPermissions.push(permission);
-			return permission;
-		});
+		);
+	}
+
+	private static generatePermissions<T extends Permissions>(entityName: string, prop: T) {
+		const s: Record<string, string> = {};
+
+		for (const key of Object.values(prop)) {
+			const entityNameFromatted = Service.formatEntity(entityName);
+			const permission = `${entityNameFromatted}_${prop[prop[key]]}`;
+			s[key] = permission;
+		}
+
+		return s as unknown as T;
+	}
+
+	protected generatePermissions<T extends Permissions>(args: T): T {
+		return Service.generatePermissions<T>(this.entityName, args);
 	}
 }
