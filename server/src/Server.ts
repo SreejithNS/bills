@@ -5,54 +5,64 @@ import Controller from "./controllers";
 import logger from "./utils/Logger";
 
 export default class Server {
-  private app: Application;
+	private app: Application;
 
-  private apiBasePath = /^\/api(?=\/|$)/;
+	private apiBasePath = /^\/api(?=\/|$)/;
 
-  private readonly port: number;
+	private readonly port: number;
 
-  public static isDev = process.env.NODE_ENV !== "production";
+	public static isDev = process.env.NODE_ENV !== "production";
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-  loadMiddleware(globalMiddleware: RequestHandler[]) {}
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+	loadMiddleware(globalMiddleware: RequestHandler[]) {}
 
-  constructor(app: Application, port: number) {
-    console.log("Hello world");
-    this.app = app;
-    this.port = port;
-  }
+	constructor(app: Application, port: number) {
+		logger("Initializing server...");
 
-  public run(): ServerType {
-    return this.app.listen(this.port, () => {
-      logger(`Up and running on port ${this.port}`);
-    });
-  }
+		this.app = app;
+		this.port = port;
+	}
 
-  public loadGlobalMiddleware(middleware: Array<RequestHandler>): void {
-    // global stuff like cors, body-parser, etc
-    middleware.forEach((mw) => {
-      this.app.use(mw);
-    });
-  }
+	public run(): ServerType {
+		return this.app.listen(this.port, () => {
+			logger(`Server listening on port ${this.port}`);
+		});
+	}
 
-  public loadControllers(controllers: Array<Controller>): void {
-    const router = Router();
-    controllers.forEach((controller) => {
-      // use setRoutes method that maps routes and returns Router object
-      router.use(controller.path, controller.setRoutes());
-    });
+	public loadGlobalMiddleware(middleware: Array<RequestHandler>): void {
+		// global stuff like cors, body-parser, etc
+		middleware.forEach((mw) => {
+			this.app.use(mw);
+		});
+	}
 
-    this.app.use(this.apiBasePath, router); // Matches only /api
-  }
+	public loadControllers(controllers: Array<Controller>): void {
+		const router = Router();
+		logger(`Base Path : ${this.apiBasePath}`);
+		logger("Initializing controllers...");
+		controllers.forEach((controller) => {
+			// use setRoutes method that maps routes and returns Router object
+			router.use(controller.path, controller.setRoutes());
 
-  public async initDatabase(): Promise<typeof mongoose> {
-    // connect to mongoose connection and return promise
-    const user = encodeURIComponent(process.env.MONGO_USER ?? "");
-    const passwd = encodeURIComponent(process.env.MONGO_PWD ?? "");
-    const cluster = process.env.MONGO_CLUSTER;
-    const dbName = process.env.MONGO_DB_NAME;
-    const MONGO_URL = `mongodb+srv://${user}:${passwd}@${cluster}/${dbName}?retryWrites=true&w=majority`;
+			logger(`Connected : Route ${controller.path}`);
+		});
 
-    return mongoose.connect(MONGO_URL ?? "", {});
-  }
+		this.app.use(this.apiBasePath, router); // Matches only /api
+	}
+
+	public async initDatabase(): Promise<typeof mongoose> {
+		// connect to mongoose connection and return promise
+		const user = encodeURIComponent(process.env.MONGO_USER ?? "");
+		const passwd = encodeURIComponent(process.env.MONGO_PWD ?? "");
+		const cluster = process.env.MONGO_CLUSTER;
+		const dbName = process.env.MONGO_DB_NAME;
+		const MONGO_URL = `mongodb+srv://${user}:${passwd}@${cluster}/${dbName}?retryWrites=true&w=majority`;
+
+		mongoose.set("strictQuery", false);
+
+		await mongoose.connect(MONGO_URL ?? "", {});
+		logger(`Connected : Database "${dbName}" `);
+
+		return mongoose;
+	}
 }
