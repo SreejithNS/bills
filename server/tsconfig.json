@@ -1,13 +1,19 @@
 {
     "compilerOptions": {
-        "module": "esnext",
+        "target": "ES2018",
+        "module": "CommonJS",
         "moduleResolution": "node",
-        "target": "es5",
         "sourceMap": true,
         "outDir": "dist",
-        "allowJs": true
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "skipLibCheck": true,
+        "inlineSources": true
     },
     "include": [
-        "./src/**/*"
+        "./src/**/*",
     ],
+    "files": [
+        "index.d.ts"
+    ]
 }
