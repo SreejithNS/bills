@@ -1,5 +1,5 @@
 import { Schema, model, Types } from "mongoose";
-import { DefaultBase} from "./types";
+import { DefaultBase} from "../utils/Types";
 
 // Interface for SettingsSchema
 export interface ISettings extends DefaultBase {

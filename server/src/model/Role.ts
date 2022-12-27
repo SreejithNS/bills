@@ -1,7 +1,7 @@
 import { Schema, model, Types } from "mongoose";
 import Service from "../service";
 import { IOrganisation } from "./Organisation";
-import { DefaultBase} from "./types";
+import { DefaultBase} from "../utils/Types";
 
 // Interface for RoleSchema
 export interface IRole extends DefaultBase {
