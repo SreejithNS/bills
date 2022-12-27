@@ -2,6 +2,7 @@ import { Application, RequestHandler, Router } from "express";
 import { Server as ServerType } from "http";
 import mongoose from "mongoose";
 import Controller from "./controllers";
+import logger from "./utils/Logger";
 
 export default class Server {
   private app: Application;
@@ -16,13 +17,14 @@ export default class Server {
   loadMiddleware(globalMiddleware: RequestHandler[]) {}
 
   constructor(app: Application, port: number) {
+    console.log("Hello world");
     this.app = app;
     this.port = port;
   }
 
   public run(): ServerType {
     return this.app.listen(this.port, () => {
-      console.log(`Up and running on port ${this.port}`);
+      logger(`Up and running on port ${this.port}`);
     });
   }
 
