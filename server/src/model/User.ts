@@ -1,11 +1,13 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, PaginateModel } from "mongoose";
+import * as paginate from "mongoose-paginate-v2";
+import * as mongooseDelete from "mongoose-delete";
+import { SoftDeleteDocument, SoftDeleteModel } from "mongoose-delete";
 import { IOrganisation } from "./Organisation";
 import { IRole } from "./Role";
 import { ISettings } from "./Settings";
-import { DefaultBase, Deletion } from "./types";
 
 // Interface for UserSchema
-export interface IUser extends DefaultBase, Deletion {
+export interface IUser extends SoftDeleteDocument {
 	name: string;
 	username: string;
 	password: string;
@@ -28,12 +30,10 @@ const UserSchema = new Schema<IUser>(
 		username: {
 			type: String,
 			required: true,
-			indexes: { unique: true },
 			minlength: 4,
 		},
 		password: { type: String, required: true },
 		status: { type: Boolean, required: true, default: true },
-		deletedAt: { type: Date, required: false, default: null },
 		organisation: {
 			type: Schema.Types.ObjectId,
 			ref: "Organisation",
@@ -59,71 +59,35 @@ const UserSchema = new Schema<IUser>(
 	},
 	{
 		timestamps: true,
+		toObject: {
+			transform: function (doc, ret: IUser) {
+				// eslint-disable-next-line no-param-reassign
+				delete ret.password;
+			},
+		},
+		toJSON: {
+			transform: function (doc, ret: IUser) {
+				// eslint-disable-next-line no-param-reassign
+				delete ret.password;
+			},
+		},
 	}
 );
 
 UserSchema.index({ username: 1, organisation: 1 }, { unique: true });
 
-// const UserSchema = new Schema(
-// 	{
-// 		name: { type: String, required: true },
-// 		phone: { type: Number, required: true, indexes: { unique: true } },
-// 		type: { type: Number, default: privilegeEnum.admin },
-// 		belongsTo: { type: Schema.Types.ObjectId, ref: "User" },
-// 		password: { type: String, required: true },
-// 		status: { type: Boolean, required: true, default: 1 },
-// 		settings: {
-// 			type: UserSettingsSchema,
-// 		},
-// 		organisation: {
-// 			type: {
-// 				name: { type: String, required: true, default: "Organisation" },
-// 				printTitle: { type: String, default: "Billz App" },
-// 				upivpa: { type: String, default: "" },
-// 				upiname: { type: String, default: "" },
-// 				tagline: String,
-// 				printHeader: { type: String, default: "( Quotation )" },
-// 				printDiscountLabel: { type: String, default: "Discount" },
-// 				printFooter: String,
-// 				checkInSettings: {
-// 					customerRequired: { type: Boolean, default: false },
-// 					productsRequired: { type: Boolean, default: false },
-// 					noteRequired: { type: Boolean, default: false },
-// 					notePresets: { type: [String], default: ["No Order"] },
-// 					distanceThreshold: { type: Number, default: 200 },
-// 					dateFields: {
-// 						type: [
-// 							{
-// 								name: { type: String, required: true },
-// 								label: { type: String, required: true },
-// 								required: { type: Boolean, required: true },
-// 							},
-// 						],
-// 						default: [],
-// 					},
-// 				},
-// 			},
-// 			required: false,
-// 			default: {
-// 				name: "Organisation",
-// 				printTitle: "Billz App",
-// 				tagline: "",
-// 				printHeader: "( Quotation )",
-// 				printFooter: "",
-// 				checkInSettings: {
-// 					customerRequired: false,
-// 					productsRequired: false,
-// 					noteRequired: false,
-// 					notePresets: ["No Order"],
-// 					dateFields: [],
-// 					distanceThreshold: 200,
-// 				},
-// 			},
-// 		},
-// 	},
-// 	{ timestamps: true }
-// );
+UserSchema.plugin(paginate);
+UserSchema.plugin(mongooseDelete, {
+	overrideMethods: true,
+	deletedAt: true,
+	deletedBy: true,
+	deletedByType: Schema.Types.ObjectId,
+	indexFields: true,
+	validateBeforeDelete: false,
+});
 
-const User = model<IUser>("User", UserSchema);
+type Model = SoftDeleteModel<IUser> & PaginateModel<IUser>;
+
+const User = model<IUser, Model>("User", UserSchema);
 
 export default User;

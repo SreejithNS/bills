@@ -1,10 +1,12 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, PaginateModel } from "mongoose";
+import * as mongooseDelete from "mongoose-delete";
+import { SoftDeleteDocument, SoftDeleteModel } from "mongoose-delete";
+import * as paginate from "mongoose-paginate-v2";
 import Service from "../service";
 import { ISettings } from "./Settings";
-import { DefaultBase, Deletion } from "./types";
 
 // Interface for OrganisationSchema
-export interface IOrganisation extends DefaultBase,Deletion {
+export interface IOrganisation extends SoftDeleteDocument {
 	name: string;
 	tagline: string;
 	allottedPermissions: string[];
@@ -14,7 +16,6 @@ export interface IOrganisation extends DefaultBase,Deletion {
 export interface IOrganisationPopulated {
 	settings: ISettings | null;
 }
-
 
 const OrganisationSchema = new Schema<IOrganisation>(
 	{
@@ -48,6 +49,18 @@ const OrganisationSchema = new Schema<IOrganisation>(
 	}
 );
 
-const Organisation = model<IOrganisation>("Organisation", OrganisationSchema);
+OrganisationSchema.plugin(paginate);
+OrganisationSchema.plugin(mongooseDelete, {
+	overrideMethods: true,
+	deletedAt: true,
+	deletedBy: true,
+	deletedByType: Schema.Types.ObjectId,
+	indexFields: true,
+	validateBeforeDelete: false,
+});
+
+type Model = SoftDeleteModel<IOrganisation> & PaginateModel<IOrganisation>;
+
+const Organisation = model<IOrganisation, Model>("Organisation", OrganisationSchema);
 
 export default Organisation;
