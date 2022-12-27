@@ -1,3 +1,4 @@
+import { NextFunction, Request, Response } from "express";
 import { HydratedDocument, Types } from "mongoose";
 
 export interface Timestamps {
@@ -6,7 +7,12 @@ export interface Timestamps {
 }
 
 export interface Deletion {
-	deletedAt: Date | null;
+	deletedAt?: Date;
+	deletedBy?: {
+		user: Types.ObjectId;
+		name: string;
+	};
+	deleted: boolean;
 }
 
 export interface DefaultBase extends Timestamps {
@@ -21,3 +27,9 @@ export type PopulatedHydratedDocument<Doc, PopulatedFields> = Omit<
 	keyof PopulatedFields
 > &
 	PopulatedFields;
+
+export type MiddlewareFunction = (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => Promise<unknown> | unknown;
