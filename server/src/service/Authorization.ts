@@ -1,12 +1,15 @@
-import { HydratedDocument, PopulateOptions } from "mongoose";
+import { JwtPayload } from "jsonwebtoken";
+import { HydratedDocument, PopulateOptions, Types } from "mongoose";
 import Service from ".";
 import Role, { IRole, IRolePopulated } from "../model/Role";
-import { PopulatedHydratedDocument } from "../model/types";
+import { Permission } from "../utils/Permissions";
+import { PopulatedHydratedDocument } from "../utils/Types";
 import Authentication from "./Authentication";
-import { ValidationError } from "./Errors";
 
 class Authorization extends Service {
-	public permissions: string[] = Service.createPermissions("create", "read", "update", "delete");
+	public entityName = "role";
+	
+	public permissions = this.generatePermissions(Permission.Authorization);
 
 	readonly DEFAULT_ADMIN_PERMISSIONS = [];
 
@@ -17,8 +20,6 @@ class Authorization extends Service {
 			path: "organisation",
 		},
 	];
-
-	public entityName = "role";
 
 	public async createDefaultAdminRole(organisationId: string): Promise<HydratedDocument<IRole>> {
 		const role = new Role({
@@ -61,9 +62,6 @@ class Authorization extends Service {
 		if (permissions) role.permissions = permissions;
 		if (organisation) role.organisation = organisation;
 
-		if (name && this.RESERVED_ROLE_NAMES.includes(name.trim().toUpperCase()))
-			throw new ValidationError("Role name is reserved");
-
 		await role.save();
 
 		return role;
@@ -97,7 +95,9 @@ class Authorization extends Service {
 		return permissions;
 	}
 
-	public async getOrganisationRoles(id: string): Promise<PopulatedHydratedDocument<IRole,IRolePopulated>[]> {
+	public async getOrganisationRoles(
+		id: string
+	): Promise<PopulatedHydratedDocument<IRole, IRolePopulated>[]> {
 		const roles = await Role.find({ organisation: id }).populate<
 			Pick<IRolePopulated, "organisation">
 		>(this.populateOptions);
@@ -119,6 +119,45 @@ class Authorization extends Service {
 		const hasPermission = permissions.every((permission) => userRoles.includes(permission));
 
 		return hasPermission;
+	}
+
+	public async checkAuthorizationFromJWT(
+		jwt: JwtPayload,
+		...permissions: string[]
+	): Promise<boolean> {
+		const userPermissions = jwt.permissions;
+
+		const hasPermission = permissions.every((permission) =>
+			userPermissions.includes(permission)
+		);
+
+		return hasPermission;
+	}
+
+	public async validateRolesForOrganisation(roles: string[], organisation: string) {
+		const organisationRoles = (await this.getOrganisationRoles(organisation)).map((role) =>
+			role._id.toString()
+		);
+
+		const validRoles = roles.filter((role) => organisationRoles.includes(role));
+
+		if (validRoles.length > 0) {
+			return validRoles.map((rolesId) => new Types.ObjectId(rolesId));
+		}
+
+		return [];
+	}
+
+	public async validatePermissionsForUser(permissions: string[], userPermissions: string[]) {
+		const validPermissions = permissions.filter((permission) =>
+			userPermissions.includes(permission)
+		);
+
+		if (validPermissions.length > 0) {
+			return validPermissions;
+		}
+
+		return [];
 	}
 }
 

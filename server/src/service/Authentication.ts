@@ -1,16 +1,18 @@
-import { HydratedDocument, PopulateOptions } from "mongoose";
+import { HydratedDocument, PopulateOptions, Types } from "mongoose";
 import { compare, genSalt, hash } from "bcrypt";
 import * as jwt from "jsonwebtoken";
+import { PaginationParameters } from "mongoose-paginate-v2";
 import Service from ".";
-import { PopulatedHydratedDocument } from "../model/types";
+import { PopulatedHydratedDocument } from "../utils/Types";
 import User, { IUser, IUserPopulated } from "../model/User";
 import {
 	AuthenticationError,
 	InternalServerError,
 	MultipleChoiceFoundError,
 	NotFoundError,
-} from "./Errors";
+} from "../utils/Errors";
 import Organisation, { IOrganisation, IOrganisationPopulated } from "../model/Organisation";
+import { Permission } from "../utils/Permissions";
 
 class Authentication extends Service {
 	public entityName = "auth";
@@ -36,14 +38,16 @@ class Authentication extends Service {
 
 	public static entityName = "Auth";
 
-	public permissions: string[] = Service.createPermissions("CREATE", "READ", "UPDATE", "DELETE");
+	public permissions = this.generatePermissions(Permission.Authentication);
 
 	public static populateOptions: PopulateOptions[] = [];
 
 	public async getUserById(
 		id: string
 	): Promise<PopulatedHydratedDocument<IUser, IUserPopulated>> {
-		const user = await User.findById(id).populate<IUserPopulated>(this.populateOptions.User);
+		const user = await User.findById(id, "-password").populate<IUserPopulated>(
+			this.populateOptions.User
+		);
 
 		return user;
 	}
@@ -51,7 +55,7 @@ class Authentication extends Service {
 	public async getUsersByUsername(
 		username: string
 	): Promise<PopulatedHydratedDocument<IUser, IUserPopulated>[]> {
-		const user = await User.find({ username }).populate<IUserPopulated>(
+		const user = await User.find({ username }, "-password").populate<IUserPopulated>(
 			this.populateOptions.User
 		);
 
@@ -62,9 +66,10 @@ class Authentication extends Service {
 		username: string,
 		organisation: string
 	): Promise<PopulatedHydratedDocument<IUser, IUserPopulated>> {
-		const user = await User.findOne({ username, organisation }).populate<IUserPopulated>(
-			this.populateOptions.User
-		);
+		const user = await User.findOne(
+			{ username, organisation },
+			"-password"
+		).populate<IUserPopulated>(this.populateOptions.User);
 
 		return user;
 	}
@@ -107,10 +112,6 @@ class Authentication extends Service {
 			throw new NotFoundError("User not found");
 		}
 
-		if (user.deletedAt !== null) {
-			throw new AuthenticationError("User is deleted");
-		}
-
 		const passwordMatch = await this.comparePassword(password, user.password);
 		if (!passwordMatch) {
 			throw new AuthenticationError("Incorrect password");
@@ -135,6 +136,10 @@ class Authentication extends Service {
 	> {
 		const passwordHash = await this.encryptPassword(password);
 		const user = await User.create({ username, password: passwordHash, organisation });
+
+		// Delete password
+		user.password = undefined;
+
 		return user;
 	}
 
@@ -153,18 +158,18 @@ class Authentication extends Service {
 	): Promise<PopulatedHydratedDocument<IOrganisation, IOrganisationPopulated>> {
 		const organisation = await Organisation.findOne({
 			_id: id,
-			deletedAt: null,
 		}).populate<IOrganisationPopulated>(this.populateOptions.Organisation);
 
 		return organisation;
 	}
 
-	public async generateToken(user: HydratedDocument<IUser>): Promise<string> {
+	public async generateToken(
+		user: PopulatedHydratedDocument<IUser, IUserPopulated>
+	): Promise<string> {
 		const token = await jwt.sign(
 			{
 				id: user.id,
-				roles: user.roles,
-				permissions: user.extraPermissions,
+				permissions: [...user.roles.map((r) => r.permissions), ...user.extraPermissions],
 				organisation: user.organisation,
 			},
 			process.env.JWT_SECRET,
@@ -180,7 +185,7 @@ class Authentication extends Service {
 		data: Partial<IUser>
 	): Promise<PopulatedHydratedDocument<IUser, IUserPopulated>> {
 		const user = await this.getUserById(userId);
-		if (!user || user.deletedAt !== null) {
+		if (!user) {
 			throw new NotFoundError("User not found");
 		}
 
@@ -197,7 +202,7 @@ class Authentication extends Service {
 		data: Partial<IOrganisation>
 	): Promise<PopulatedHydratedDocument<IOrganisation, IOrganisationPopulated>> {
 		const organisation = await this.getOrganisationById(organisationId);
-		if (!organisation || organisation.deletedAt !== null) {
+		if (!organisation) {
 			throw new NotFoundError("Organisation not found");
 		}
 
@@ -207,46 +212,44 @@ class Authentication extends Service {
 		return organisation;
 	}
 
-	public async deleteUser(userId: string | string[]): Promise<number> {
-		const updates = await User.updateMany(
-			{ _id: { $in: userId }, deletedAt: null },
-			{
-				$set: {
-					deletedAt: new Date(),
-				},
-			}
-		);
+	public async deleteUser(deletedBy: Types.ObjectId, ...userId: string[]): Promise<number> {
+		const updates = await User.delete({ _id: { $in: userId } }, deletedBy).exec();
 
-		if (updates.modifiedCount === 0) {
+		if (updates.deletedCount === 0) {
 			throw new NotFoundError("User not found");
 		}
 
-		if (updates.modifiedCount !== updates.matchedCount) {
+		if (updates.deletedCount !== userId.length) {
 			throw new InternalServerError("Error deleting user");
 		}
 
-		return updates.modifiedCount;
+		return updates.deletedCount;
 	}
 
-	public async deleteOrganisation(organisationId: string | string[]): Promise<number> {
-		const updates = await Organisation.updateMany(
-			{ _id: { $in: organisationId }, deletedAt: null },
-			{
-				$set: {
-					deletedAt: new Date(),
-				},
-			}
-		);
+	public async deleteOrganisation(
+		deletedBy: Types.ObjectId,
+		...organisationId: string[]
+	): Promise<number> {
+		const updates = await Organisation.delete(
+			{ _id: { $in: organisationId } },
+			deletedBy
+		).exec();
 
-		if (updates.modifiedCount === 0) {
+		if (updates.deletedCount === 0) {
 			throw new NotFoundError("Organisation not found");
 		}
 
-		if (updates.modifiedCount !== updates.matchedCount) {
-			throw new InternalServerError("Error deleting organisation");
+		if (updates.deletedCount !== organisationId.length) {
+			throw new InternalServerError("Error deleting user");
 		}
 
-		return updates.modifiedCount;
+		return updates.deletedCount;
+	}
+
+	public async paginateUsers<T, O>(options: PaginationParameters<T, O>) {
+		const users = await User.paginate(...options.get());
+
+		return users;
 	}
 }
 
