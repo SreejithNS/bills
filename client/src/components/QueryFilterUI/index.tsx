@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Select, MenuItem, TextField, IconButton, makeStyles, Theme, Paper, Box, Chip, ChipProps } from "@material-ui/core";
-import { Close, DateRangeRounded } from "@material-ui/icons";
+import Close from '@material-ui/icons/Close';
+import DateRangeRounded from '@material-ui/icons/DateRangeRounded';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import { debounce } from "@material-ui/core";
 import clsx from "clsx";

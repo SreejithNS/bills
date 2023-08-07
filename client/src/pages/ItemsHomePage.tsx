@@ -8,7 +8,11 @@ import MaterialTable, { MTableToolbar, Query, QueryResult } from 'material-table
 import { tableIcons } from '../components/MaterialTableIcons';
 import { exportToCsv, itemsArrayToCsvArray } from '../actions/item.actions';
 import { toast } from 'react-toastify';
-import { Add, DeleteOutlineRounded, GetAppRounded, LineStyleTwoTone, Refresh } from '@material-ui/icons';
+import Add from '@material-ui/icons/Add';
+import DeleteOutlineRounded from '@material-ui/icons/DeleteOutlineRounded';
+import GetAppRounded from '@material-ui/icons/GetAppRounded';
+import LineStyleTwoTone from '@material-ui/icons/LineStyleTwoTone';
+import Refresh from '@material-ui/icons/Refresh';
 import PageContainer from '../components/PageContainer';
 import LineStyleIcon from '@material-ui/icons/LineStyle';
 import EditRoundedIcon from '@material-ui/icons/EditRounded';

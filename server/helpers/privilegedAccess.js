@@ -29,7 +29,7 @@ module.onlyAdmins = (req, res, next) => {
 /**
  * Recursively fetch the admin of the user.
  * @param {string|mongoose.Types.ObjectId|User} identity - User's id or document
- * @returns Admin of the user
+ * @returns {import("mongoose").Document} Admin of the user
  */
 async function getAdmin(identity) {
     if (typeof identity === "string" || mongoose.Types.ObjectId.isValid(identity)) {
@@ -41,7 +41,7 @@ async function getAdmin(identity) {
         } else {
             return await getAdmin(admin.belongsTo);
         }
-    } else if (identity instanceof User) {
+    } else if ("type" in identity) {
         if (identity.type === privilegeEnum.admin) {
             return identity;
         } else {

@@ -2,7 +2,7 @@ var mongoose = require("mongoose");
 const privilegeEnum = require("../helpers/privilegeEnum");
 const UserSettingsSchema = require("./schemas/UserSettingsSchema");
 
-var UserSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
 	{
 		name: { type: String, required: true },
 		phone: { type: Number, required: true, indexes: { unique: true } },
@@ -60,4 +60,6 @@ var UserSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-exports.User = mongoose.model("User", UserSchema);
+const User = mongoose.model("User", UserSchema);
+
+exports.User = User;

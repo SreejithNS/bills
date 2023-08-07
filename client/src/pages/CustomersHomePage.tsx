@@ -1,18 +1,22 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Fab, Grid, makeStyles, Theme, Typography } from '@material-ui/core';
 import { customersPaths, paths } from '../routes/paths.enum';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import AddIcon from '@material-ui/icons/Add';
-import { Add, Delete, Edit, Pageview, Refresh } from '@material-ui/icons';
+import RetryIcon from "@material-ui/icons/Refresh";
+import Add from '@material-ui/icons/Add';
+import Delete from '@material-ui/icons/Delete';
+import Edit from '@material-ui/icons/Edit';
+import Pageview from '@material-ui/icons/Pageview';
 import PageContainer from '../components/PageContainer';
-import { store } from '..';
-import MaterialTable, { Query, QueryResult } from 'material-table';
-import { Customer } from '../reducers/customer.reducer';
-import { APIResponse, axios, handleAxiosError, interpretMTQuery } from '../components/Axios';
-import { PaginateResult } from '../reducers/bill.reducer';
+import MaterialTable from 'material-table';
 import { tableIcons } from '../components/MaterialTableIcons';
 import { useConfirm } from 'material-ui-confirm';
 import { toast } from 'react-toastify';
+// import useAxios from 'axios-hooks';
+import usePromise from 'react-use-promise';
+import { fetchCustomers } from '../actions/analytics.action';
+import { axios, handleAxiosError } from '../components/Axios';
 
 const useStyles = makeStyles((theme: Theme) => ({
     fab: {
@@ -33,47 +37,65 @@ const useStyles = makeStyles((theme: Theme) => ({
 })
 )
 
+// const useCustomersData = (query: Record<string, string>) => {
+//     const url = `/customer/query?`;
+//     let search = new URLSearchParams(query);
+
+//     const [{ data, error, loading }, refetch] = useAxios<APIResponse<PaginateResult<Customer>>>({
+//         url,
+//         params: search,
+//     })
+
+//     React.useEffect(() => {
+//         if (error) {
+//             handleAxiosError(error);
+//         }
+//     }, [error])
+
+//     if (data?.data) data.data.page = (data.data.page * 1) - 1;
+
+//     return {
+//         data,
+//         loading,
+//         refetch
+//     }
+// }
+
 const CustomersTable = () => {
     const history = useHistory();
-    const tableRef = useRef<any>(null);
     const confirm = useConfirm();
 
-    store.subscribe(() => {
-        tableRef?.current?.onQueryChange();
-    })
+    const { search } = useLocation();
+    const page = React.useMemo(() => new URLSearchParams(search).get("page"), [search]);
+    const changePage = React.useCallback((page: number) => {
+        const newUrlParam = new URLSearchParams({ page: page.toString() });
+        history.push(history.location.pathname + "?" + newUrlParam);
+    }, [history])
 
-    const fetchItems = (query: Query<Customer>): Promise<QueryResult<Customer>> => new Promise((resolve) => {
-        const url = `/customer/query?`;
-        const search = (new URLSearchParams(interpretMTQuery(query))).toString();
-        axios
-            .get<APIResponse<PaginateResult<Customer>>>(url + search)
-            .then(function ({ data: responseData }) {
-                if (responseData.data)
-                    resolve({
-                        data: responseData.data.docs,
-                        page: responseData.data.page - 1,
-                        totalCount: responseData.data.totalDocs
-                    });
-            })
-            .catch(handleAxiosError)
-    })
+    const [refetchFlag, setRefetchFlag] = React.useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [response, _error, responseState] = usePromise(() => fetchCustomers(), [refetchFlag])
 
-    return (
-        <MaterialTable
-            tableRef={tableRef}
+    const data = response?.data;
+    console.log('%c' + responseState, 'background: #222; color: #bada55')
+    return responseState !== "pending" ?
+        (<MaterialTable
+            key={"primary_" + Date.now()}
             icons={tableIcons}
             columns={[
                 { title: "Customer Name", field: "name", editable: "never" },
                 { title: "Phone Number", field: "phone", type: "numeric", sorting: false, editable: "never" },
                 { title: "Place", field: "place", editable: "never" }
             ]}
-            data={fetchItems}
+            data={data}
+            page={parseInt(page ?? "")}
+            onChangePage={changePage}
             actions={[
                 {
-                    icon: () => <Refresh />,
-                    tooltip: 'Refresh Data',
+                    tooltip: 'Refresh',
+                    icon: () => <RetryIcon />,
                     isFreeAction: true,
-                    onClick: () => tableRef?.current?.onQueryChange(),
+                    onClick: () => setRefetchFlag((current) => !current)
                 },
                 {
                     icon: () => <Add />,
@@ -110,15 +132,29 @@ const CustomersTable = () => {
                     onClick: (_, data: any) => {
                         history.push((paths.customer + customersPaths.customerEditor).replace(":customerId", data._id))
                     }
-                }
+                },
             ]}
             options={{
                 exportButton: false,
                 toolbarButtonAlignment: "left",
-                showTitle: false
+                showTitle: false,
+                initialPage: parseInt(page ?? "")
             }}
         />
-    )
+        ) : <MaterialTable
+            key={"placeholder_" + Date.now()}
+            icons={tableIcons}
+            data={[]}
+            columns={[
+                { title: "Customer Name", field: "name", editable: "never" },
+                { title: "Phone Number", field: "phone", type: "numeric", sorting: false, editable: "never" },
+                { title: "Place", field: "place", editable: "never" }
+            ]}
+            isLoading={true}
+            options={{
+                showTitle: false,
+            }}
+        />
 }
 
 export default function CustomerHomePage() {

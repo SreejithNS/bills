@@ -7,7 +7,7 @@ import { CheckInDTO } from '../types/CheckIn';
 import CheckInEntryDialog from '../components/CheckIn/CheckInEntryDialog';
 import MaterialTable from 'material-table';
 import { tableIcons } from '../components/MaterialTableIcons';
-import { PostAdd } from '@material-ui/icons';
+import PostAdd from '@material-ui/icons/PostAdd';
 import { useDispatch } from 'react-redux';
 import { billsPaths, paths } from '../routes/paths.enum';
 import { useHistory } from 'react-router-dom';

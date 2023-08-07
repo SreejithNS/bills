@@ -17,7 +17,7 @@ import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import { useHasPermission } from "../../actions/auth.actions";
 import { UserPermissions } from "../../reducers/auth.reducer";
 import { BillData } from '../../reducers/bill.reducer';
-import { DeleteOutlineRounded } from '@material-ui/icons';
+import DeleteOutlineRounded from '@material-ui/icons/DeleteOutlineRounded';
 
 const useStylesForListItem = makeStyles((theme: Theme) =>
     createStyles({

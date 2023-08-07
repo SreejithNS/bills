@@ -1,11 +1,11 @@
 
 
-interface GSTProduct {
-    hsn: string;
-    sgst: number;
-    cgst: number;
-    gstInclusive: boolean;
-}
+// interface GSTProduct {
+//     hsn: string;
+//     sgst: number;
+//     cgst: number;
+//     gstInclusive: boolean;
+// }
 
 class GSTClass {
 

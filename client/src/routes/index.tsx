@@ -11,6 +11,7 @@ import LoginPage from '../pages/LoginPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import AccountRoutes from './account.routes';
 import { paths } from './paths.enum';
+import AnalyticsPage from '../pages/AnalyticsPage';
 
 // import NotFoundPage from '../pages/NotFoundPage';
 // import HomePage from '../pages/HomePage';
@@ -65,6 +66,11 @@ export default function Routes() {
                         <LoginPage />
                     </Suspense>
                 </Route>
+                <PrivateRoute path={paths.analytics}>
+                    <Suspense fallback={<FullScreenLoading />}>
+                        <AnalyticsPage />
+                    </Suspense>
+                </PrivateRoute>
                 <Route> <NotFoundPage /> </Route>
             </Switch>
             <AppBottomNavigation />

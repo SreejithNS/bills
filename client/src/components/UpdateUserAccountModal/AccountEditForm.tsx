@@ -4,7 +4,15 @@ import { Field, reduxForm } from 'redux-form';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
 import CheckInSettings from './CheckInSettings';
 import LocalOfferIcon from '@material-ui/icons/LocalOffer';
-import { AccountBalanceWalletRounded, Business, BusinessCenter, PaymentRounded, Phone, RecentActors, Subtitles, Title, ViewStream } from '@material-ui/icons';
+import AccountBalanceWalletRounded from '@material-ui/icons/AccountBalanceWalletRounded';
+import Business from '@material-ui/icons/Business';
+import BusinessCenter from '@material-ui/icons/BusinessCenter';
+import PaymentRounded from '@material-ui/icons/PaymentRounded';
+import Phone from '@material-ui/icons/Phone';
+import RecentActors from '@material-ui/icons/RecentActors';
+import Subtitles from '@material-ui/icons/Subtitles';
+import Title from '@material-ui/icons/Title';
+import ViewStream from '@material-ui/icons/ViewStream';
 
 function validate(values: { [x: string]: any; }) {
     const errors: any = {};
@@ -23,7 +31,7 @@ function validate(values: { [x: string]: any; }) {
 
 async function asyncValidate(values: { code?: string; }, _: any, props: any) {
     return Promise.resolve()
-};
+}
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({

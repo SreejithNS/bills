@@ -24,7 +24,7 @@ function validate(values: { [x: string]: any; }) {
 
 async function asyncValidate(values: { phone: string; } /*, dispatch */) {
     if ((values["phone"] + "").length < 10) return null;
-    if (!await checkPhoneNumberExists(values.phone)) {
+    if (!(await checkPhoneNumberExists(values.phone))) {
         return Promise.reject({ phone: 'Phone Number already used' });
     }
 };

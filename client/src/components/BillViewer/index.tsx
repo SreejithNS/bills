@@ -28,14 +28,19 @@ import {
     AccordionDetails,
     Box
 } from "@material-ui/core";
-import { Add, DeleteRounded, InfoOutlined, RoomRounded, WhatsApp, ExpandMore } from "@material-ui/icons";
-import MaterialTable, { Column } from "material-table";
+import Add from '@material-ui/icons/Add';
+import DeleteRounded from '@material-ui/icons/DeleteRounded';
+import InfoOutlined from '@material-ui/icons/InfoOutlined';
+import RoomRounded from '@material-ui/icons/RoomRounded';
+import WhatsApp from '@material-ui/icons/WhatsApp';
+import ExpandMore from '@material-ui/icons/ExpandMore';
+import MaterialTable from "material-table";
 import * as React from "react";
 import { useCallback, useRef } from "react";
 import { tableIcons } from "../MaterialTableIcons";
 import PaymentsList from "../PaymentsList";
 import moment from "moment";
-import { BillData, BillItem } from "../../reducers/bill.reducer";
+import { BillData } from "../../reducers/bill.reducer";
 import { useHistory } from "react-router";
 import { billsPaths, customersPaths, paths } from "../../routes/paths.enum";
 import Print from "../Print";
@@ -210,7 +215,7 @@ function GSTSummary({ data }: {
     ) : data;
 }
 
-export default function BillViewer(props: BillData & AdditionalProps) {
+export default function BillViewer(props: BillData<true> & AdditionalProps) {
     const classes = useStyles();
     const history = useHistory();
     const theme = useTheme();

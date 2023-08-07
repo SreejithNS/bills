@@ -7,7 +7,8 @@ import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
 import AccountCircleRoundedIcon from '@material-ui/icons/AccountCircleRounded';
 import { IconButton, ListItemSecondaryAction } from "@material-ui/core";
-import { DeleteForeverRounded, Edit } from "@material-ui/icons";
+import DeleteForeverRounded from '@material-ui/icons/DeleteForeverRounded';
+import Edit from '@material-ui/icons/Edit';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({

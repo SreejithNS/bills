@@ -36,7 +36,8 @@ import { useHasPermission } from "../../actions/auth.actions";
 import useAxios from "axios-hooks";
 import { BillItem } from "../../reducers/bill.reducer";
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) =>
+	createStyles({
 	"buttons": {
 		"&>*": {
 			marginRight: theme.spacing(1)

@@ -3,7 +3,7 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import { List, ListItem, ListItemText } from '@material-ui/core';
 import { parseCsvItemsArray } from '../../actions/item.actions';
-import { LineStyleTwoTone } from '@material-ui/icons';
+import LineStyleTwoTone from '@material-ui/icons/LineStyleTwoTone';
 import MaterialTable from 'material-table';
 import { tableIcons } from '../MaterialTableIcons';
 import LineStyleIcon from '@material-ui/icons/LineStyle';

@@ -1,11 +1,12 @@
 export enum paths {
-    home = '/',
-    login = '/login',
-    customer = '/customers',
-    billsHome = '/bills',
-    items = "/items",
-    account = "/account",
-    checkIn = "/checkin",
+	home = "/",
+	login = "/login",
+	customer = "/customers",
+	billsHome = "/bills",
+	items = "/items",
+	account = "/account",
+	checkIn = "/checkin",
+	analytics = "/analytics",
 }
 
 export enum billsPaths {

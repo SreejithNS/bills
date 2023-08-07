@@ -10,7 +10,7 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import QueryBuilderRoundedIcon from '@material-ui/icons/QueryBuilderRounded';
 import clsx from "clsx";
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import { RoomRounded } from "@material-ui/icons";
+import RoomRounded from '@material-ui/icons/RoomRounded';
 import useAxios from "axios-hooks";
 import { toast } from "react-toastify";
 import { APIResponse, handleAxiosError } from "../Axios";

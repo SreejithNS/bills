@@ -1,4 +1,4 @@
-import { AlbumRounded } from "@material-ui/icons";
+import AlbumRounded from '@material-ui/icons/AlbumRounded';
 import React, { useCallback, useContext } from "react";
 import QueryFilterUI, { Field } from "../components/QueryFilterUI";
 import { QueryParamsContext, /*useQueryParams*/ } from "../components/QueryFilterUI/useQueryParams";

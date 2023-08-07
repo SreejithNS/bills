@@ -1,5 +1,4 @@
 import React, { forwardRef } from 'react';
-
 import AddBox from '@material-ui/icons/AddBox';
 import ArrowDownward from '@material-ui/icons/ArrowDownward';
 import Check from '@material-ui/icons/Check';
@@ -16,6 +15,7 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import { Icons } from 'material-table';
+import { TablePagination, TablePaginationProps } from '@material-ui/core';
 
 export const tableIcons: Icons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref} />),
@@ -36,3 +36,32 @@ export const tableIcons: Icons = {
     ThirdStateCheck: forwardRef((props, ref) => <Remove {...props} ref={ref} />),
     ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref} />)
 };
+
+
+export function PatchedPagination(props: TablePaginationProps) {
+    const {
+        ActionsComponent,
+        onChangePage,
+        onChangeRowsPerPage,
+        ...tablePaginationProps
+    } = props;
+
+    return (
+        <TablePagination
+            {...tablePaginationProps}
+            // @ts-expect-error onChangePage was renamed to onPageChange
+            onPageChange={onChangePage!}
+            onRowsPerPageChange={onChangeRowsPerPage}
+            ActionsComponent={(subprops) => {
+                const { onPageChange, ...actionsComponentProps } = subprops;
+                return ActionsComponent ? (
+                    // @ts-expect-error ActionsComponent is provided by material-table
+                    <ActionsComponent
+                        {...actionsComponentProps}
+                        onChangePage={onPageChange}
+                    />
+                ) : <></>;
+            }}
+        />
+    );
+}

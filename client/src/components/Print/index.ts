@@ -1,5 +1,5 @@
 /// <reference types="web-bluetooth" />
-import { BillData, BillItem } from './../../reducers/bill.reducer';
+import { BillData } from "./../../reducers/bill.reducer";
 import BillText from "./BillText";
 
 type PrintBillData = Pick<BillData, "customer" | "soldBy" | "serialNumber" | "createdAt" | "billAmount" | "discountAmount" | "itemsTotalAmount" | "items" | "gstSummary">;

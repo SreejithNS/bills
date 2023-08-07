@@ -1,7 +1,9 @@
 import { configure } from 'axios-hooks'
-import Axios, { AxiosError } from 'axios'
+import Axios, { AxiosError } from 'axios';
 import { toast } from 'react-toastify';
 import { Query } from 'material-table';
+import { setupCache } from 'axios-cache-adapter'
+import localforage from 'localforage'
 
 export interface APIResponse<Data> {
     status: number;
@@ -13,14 +15,30 @@ const MAX_REQUESTS_COUNT = 5
 const INTERVAL_MS = 10
 let PENDING_REQUESTS = 0
 
+const forageStore = localforage.createInstance({
+    // List of drivers used
+    driver: [
+        localforage.INDEXEDDB,
+        localforage.LOCALSTORAGE,
+    ],
+
+    // Prefix all storage keys to prevent conflicts
+    name: 'billzapp-api'
+})
+
+// Create `axios-cache-adapter` instance
+const cache = setupCache({
+    maxAge: 60 * 1000, // 
+    store: forageStore,
+    exclude: {
+        query: false,
+    }
+})
+
 const axios = Axios.create({
     baseURL: process.env.REACT_APP_API_URL + '/api',
     withCredentials: true,
-    headers: {
-        "Cache-Control": "no-store",
-        'Pragma': 'no-cache',
-        'Expires': '0',
-    }
+    adapter: cache.adapter
 })
 
 /**
@@ -114,5 +132,8 @@ export function loginPost(url: URL, params: any, method = 'post') {
     form.submit();
 }
 
-export { axios, interpretMTQuery };
+export {
+    axios,
+    interpretMTQuery
+};
 export default initAxios;

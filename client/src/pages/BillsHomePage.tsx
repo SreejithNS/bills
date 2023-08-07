@@ -5,7 +5,7 @@ import ParagraphIconCard from "../components/ParagraphIconCard";
 import AddIcon from '@material-ui/icons/Add';
 import { useHistory } from 'react-router-dom';
 import { billsPaths, paths } from '../routes/paths.enum';
-import { LineWeightRounded } from '@material-ui/icons';
+import LineWeightRounded from '@material-ui/icons/LineWeightRounded';
 import BillSearch from '../components/BillSearch';
 import PageContainer from '../components/PageContainer';
 import { useCallback, useEffect, useState } from 'react';

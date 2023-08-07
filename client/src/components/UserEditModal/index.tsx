@@ -1,7 +1,13 @@
 import { Checkbox, Divider, Grid, IconButton, List, ListItem, ListItemIcon, ListItemSecondaryAction, ListItemText, ListSubheader, Paper as BasePaper, Switch, TextField, Theme, withStyles } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import Modal from "../Modal";
-import { AccountCircleRounded, CalendarViewDay, Check, Close, Receipt, RecentActors, Room } from "@material-ui/icons";
+import AccountCircleRounded from '@material-ui/icons/AccountCircleRounded';
+import CalendarViewDay from '@material-ui/icons/CalendarViewDay';
+import Check from '@material-ui/icons/Check';
+import Close from '@material-ui/icons/Close';
+import Receipt from '@material-ui/icons/Receipt';
+import RecentActors from '@material-ui/icons/RecentActors';
+import Room from '@material-ui/icons/Room';
 import { UserData, UserPermissions } from "../../reducers/auth.reducer";
 import useAxios from "axios-hooks";
 import { APIResponse, handleAxiosError } from "../Axios";

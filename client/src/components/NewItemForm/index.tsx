@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { Button, CircularProgress, createStyles, Grid, IconButton, InputAdornment, makeStyles, TextField, TextFieldProps, Theme, Zoom } from '@material-ui/core';
 import { Field, FieldArray, reduxForm } from 'redux-form';
 import ReduxTextField from "../ReduxEnabledFormControls/ReduxTextField";
@@ -6,7 +6,7 @@ import RemoveCircleOutlineRoundedIcon from '@material-ui/icons/RemoveCircleOutli
 import { APIResponse, axios } from '../Axios';
 import { Unit } from '../../reducers/product.reducer';
 import ReduxCheckbox from '../ReduxEnabledFormControls/ReduxCheckBox';
-import { SearchRounded } from '@material-ui/icons';
+import SearchRounded from '@material-ui/icons/SearchRounded';
 
 function validate(values: { [x: string]: any; }) {
     const errors: any = {};
@@ -104,7 +104,7 @@ const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; subm
     const { handleSubmit, pristine, reset, submitting } = props;
     const classes = useStyles();
 
-    const hsnField = useCallback(textField({
+    const hsnField = useCallback(() => textField({
         label: "HSN Code",
         fullWidth: true,
         InputProps: {
@@ -116,7 +116,7 @@ const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; subm
         },
     }), []);
 
-    const sgstField = useCallback(textField({
+    const sgstField = useCallback(() => textField({
         label: "SGST %",
         fullWidth: true,
         type: "number",
@@ -125,7 +125,7 @@ const NewItemForm = (props: { handleSubmit: any; pristine: any; reset: any; subm
         }
     }), []);
 
-    const cgstField = useCallback(textField({
+    const cgstField = useCallback(() => textField({
         label: "CGST %",
         fullWidth: true,
         type: "number",

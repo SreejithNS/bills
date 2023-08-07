@@ -11,7 +11,8 @@ const apiResponse = require("../../helpers/apiResponse");
 const authenticate = require("../../middlewares/jwt");
 const express = require("express");
 
-/** @typedef {Object} CheckInDTO
+/**
+ * @typedef {Object} CheckInDTO
  * @property {string=} _id
  * @property {string} createdAt
  * @property {string} updatedAt

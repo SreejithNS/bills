@@ -7,9 +7,11 @@ import PageContainer from '../components/PageContainer';
 import { version as appVersion } from '../../package.json';
 import { useHasPermission } from '../actions/auth.actions';
 import { UserPermissions } from '../reducers/auth.reducer';
-import { Receipt, Room } from '@material-ui/icons';
+import Receipt from '@material-ui/icons/Receipt';
+import Room from '@material-ui/icons/Room';
 import PostAddIcon from '@material-ui/icons/PostAdd';
 import PersonAddIcon from '@material-ui/icons/PersonAdd';
+import TimelineIcon from '@material-ui/icons/Timeline';
 import AssessmentIcon from '@material-ui/icons/Assessment';
 import { useSelector } from 'react-redux';
 import { RootState } from '../reducers/rootReducer';
@@ -148,6 +150,17 @@ export default function HomePage() {
                             onClick={openLink(paths.billsHome + billsPaths.exportBills)}
                             title="Reports"
                             content="Get customised reports from Bills generated and Products sold."
+                        />
+                    </Grid>
+                }
+
+                {hasAdminPermissions
+                    && <Grid item xs={12} sm={6} md={4}>
+                        <HomeCard
+                            icon={<TimelineIcon fontSize="large" />}
+                            onClick={openLink(paths.analytics)}
+                            title="Analytics"
+                            content="View improved analytics and reports."
                         />
                     </Grid>
                 }

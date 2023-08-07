@@ -12,7 +12,9 @@ import {
     withStyles,
     Zoom,
 } from "@material-ui/core";
-import { EditRounded, InfoOutlined, RefreshRounded } from "@material-ui/icons";
+import EditRounded from '@material-ui/icons/EditRounded';
+import InfoOutlined from '@material-ui/icons/InfoOutlined';
+import RefreshRounded from '@material-ui/icons/RefreshRounded';
 import useAxios from "axios-hooks";
 import MaterialTable, { Query, QueryResult } from "material-table";
 import React, { useEffect, useRef, useState } from "react";

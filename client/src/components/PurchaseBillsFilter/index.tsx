@@ -4,7 +4,7 @@ import BillCard from '../BillCard';
 import ParagraphIconCard from "../ParagraphIconCard";
 import { useHistory } from 'react-router-dom';
 import { itemPaths, paths } from '../../routes/paths.enum';
-import { LineWeightRounded } from '@material-ui/icons';
+import LineWeightRounded from '@material-ui/icons/LineWeightRounded';
 import { useCallback, useEffect, useState } from 'react';
 import useAxios from 'axios-hooks';
 import { APIResponse, axios, handleAxiosError } from '../Axios';

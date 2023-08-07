@@ -38,7 +38,8 @@ import useAxios from "axios-hooks";
 import { customersPaths, paths } from "../../routes/paths.enum";
 import { useHistory } from "react-router-dom";
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) =>
+	createStyles({
 	"buttons": {
 		"&>*": {
 			marginRight: theme.spacing(1)

@@ -12,7 +12,10 @@ import {
     Tooltip,
     Typography
 } from "@material-ui/core";
-import { Add, DeleteRounded, InfoOutlined, RoomRounded } from "@material-ui/icons";
+import Add from '@material-ui/icons/Add';
+import DeleteRounded from '@material-ui/icons/DeleteRounded';
+import InfoOutlined from '@material-ui/icons/InfoOutlined';
+import RoomRounded from '@material-ui/icons/RoomRounded';
 import MaterialTable from "material-table";
 import * as React from "react";
 import { useRef } from "react";

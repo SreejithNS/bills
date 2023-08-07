@@ -12,6 +12,8 @@ import { createLogger } from 'redux-logger';
 import initAxios from './components/Axios';
 import 'react-toastify/dist/ReactToastify.css';
 import 'leaflet/dist/leaflet.css';
+import 'react-date-range/dist/styles.css'; // main css file
+import 'react-date-range/dist/theme/default.css'; // theme css file
 import { toast, ToastContainer } from 'react-toastify';
 import { version as appVersion } from '../package.json';
 
@@ -67,7 +69,7 @@ const theme = createTheme({
 initAxios();
 
 const container = document.getElementById('root');
-const root = ReactDOMClient.createRoot(container); // createRoot(container!) if you use TypeScript
+const root = ReactDOMClient.createRoot(container!); // createRoot(container!) if you use TypeScript
 root.render(
   <React.Fragment>
     <ThemeProvider theme={theme}>

@@ -5,5 +5,8 @@
     "mocha.options": {
         "timeout": 10000,
     },
-    "typescript.tsdk": "./client/node_modules/typescript/lib"
+    "typescript.tsdk": "./client/node_modules/typescript/lib",
+    "files.associations": {
+        "*.css": "tailwindcss"
+    }
 }

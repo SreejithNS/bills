@@ -18,7 +18,10 @@ import { tableIcons } from "../MaterialTableIcons";
 import { useHasPermission } from "../../actions/auth.actions";
 import RefreshIcon from '@material-ui/icons/Refresh';
 import { toast } from "react-toastify";
-import { Clear, DateRange, Delete, StreetviewRounded } from "@material-ui/icons";
+import Clear from '@material-ui/icons/Clear';
+import DateRange from '@material-ui/icons/DateRange';
+import Delete from '@material-ui/icons/Delete';
+import StreetviewRounded from '@material-ui/icons/StreetviewRounded';
 import { DateFilter, DateFilterDialog } from "./DateFilterDialog";
 import { useConfirm } from "material-ui-confirm";
 

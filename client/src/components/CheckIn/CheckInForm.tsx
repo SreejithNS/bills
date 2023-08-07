@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 import { ProductsSelect } from "../ProductsSelect";
 import { tableIcons } from "../MaterialTableIcons";
 import MaterialTable from "material-table";
-import { Delete } from "@material-ui/icons";
+import Delete from '@material-ui/icons/Delete';
 
 interface FormState {
     contact: string | null;
@@ -29,7 +29,8 @@ interface FormState {
     }[];
 }
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) =>
+    createStyles({
     form: {
         "& > *": {
             marginTop: theme.spacing(2),

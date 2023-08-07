@@ -3,7 +3,8 @@ import React from 'react';
 import { CheckInDTO } from '../../types/CheckIn';
 import moment from "moment";
 
-const useStyles = makeStyles((theme: Theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) =>
+    createStyles({
     root: {
         padding: theme.spacing(2),
         display: "flex",

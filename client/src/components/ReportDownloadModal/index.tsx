@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
-import { CloudDownloadRounded } from '@material-ui/icons';
+import CloudDownloadRounded from '@material-ui/icons/CloudDownloadRounded';
 import useAxios from 'axios-hooks';
 import Modal, { ModalProps } from '../Modal';
 import { handleAxiosError } from '../Axios';
