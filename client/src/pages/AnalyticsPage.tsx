@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react'
 import { useState } from 'react';
 import _ from "lodash";
-import { AreaChart, Tooltip as ChartTooltip, Area, ResponsiveContainer, XAxis, Line, LineChart, Label } from 'recharts';
+import { AreaChart, Tooltip as ChartTooltip, Area, ResponsiveContainer, XAxis, Line, LineChart } from 'recharts';
 import MaterialTable, { MTableToolbar } from 'material-table';
 import { Typography, List, ListItem, ListItemIcon, ListItemText, Divider, Paper, Grid, makeStyles, createStyles, Theme, Dialog, DialogTitle, DialogContent, DialogActions, Button, useTheme, useMediaQuery, ButtonGroup, Box, DialogContentText, TextField, InputAdornment, ButtonGroupProps, Tooltip, ListSubheader } from '@material-ui/core';
 import PageContainer from '../components/PageContainer';
