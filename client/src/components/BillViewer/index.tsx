@@ -222,6 +222,7 @@ export default function BillViewer(props: BillData<true> & AdditionalProps) {
     const printRef = useRef<HTMLDivElement>(null);
     const billRef = useRef<HTMLDivElement>(null);
     const userData = useSelector((state: RootState) => state.auth.userData);
+    const adminData = useSelector((state: RootState) => state.auth.userData?.belongsTo);
     const [qrDialogOpen, setQrDialogOpen] = React.useState(false);
     const { available, uri } = useUPI({
         billId: props._id,
@@ -259,15 +260,15 @@ export default function BillViewer(props: BillData<true> & AdditionalProps) {
             if (navigator.share) {
                 await navigator.share({
                     title: `BillzApp | Bill#${props.serialNumber}`,
-                    text: `BillzApp | Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""}`,
-                    url: window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`,
+                    text: `Contact us at https://wa.me/+91${adminData?.phone ?? userData?.phone}`,
+                    url: `https://wa.me/+91${adminData?.phone ?? userData?.phone}`,
                     files: file ? [file] : []
                 })
                     .then(() => console.log('Successful share'))
                     .catch((error: any) => console.log('Error in sharing', error));
             }
         }
-    }, [props, userData, printRef]);
+    }, [props.serialNumber, userData, adminData?.phone]);
 
     const handleWhatsApp = useCallback(() => {
         const text = "Hi from *" + (userData?.organisation?.printTitle.replace(/\n/g, " ") ?? "") + "*" +
