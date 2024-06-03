@@ -27,18 +27,18 @@ const forageStore = localforage.createInstance({
 })
 
 // Create `axios-cache-adapter` instance
-const cache = setupCache({
-    maxAge: 60 * 1000, // 
-    store: forageStore,
-    exclude: {
-        query: false,
-    }
-})
+// const cache = setupCache({
+//     maxAge: 60 * 1000, // 
+//     store: forageStore,
+//     exclude: {
+//         query: false,
+//     }
+// })
 
 const axios = Axios.create({
     baseURL: process.env.REACT_APP_API_URL + '/api',
     withCredentials: true,
-    adapter: cache.adapter
+    //adapter: cache.adapter
 })
 
 /**
