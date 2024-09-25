@@ -279,7 +279,7 @@ export default function BillViewer(props: BillData<true> & AdditionalProps) {
         //const url = `${encodeURIComponent(`Bill#${props.serialNumber} ${userData ? "shared by " + userData.name : ""} ${window.location.origin + paths.billsHome + billsPaths.billDetail.replace(":id", props._id) + `#from=${userData?._id ?? ""}`}`)}`
         window.open(uri);
     }, [props.billAmount, props.customer.phone, userData?.organisation?.printTitle]);
-    return (
+    return (<>
         <Paper ref={billRef}>
             <Grid
                 container
@@ -514,7 +514,6 @@ export default function BillViewer(props: BillData<true> & AdditionalProps) {
                     </Paper>
                 </Grid>
             </Grid>
-            <PlainPrint bill={props} ref={printRef} />
             {available &&
                 <QRDialog
                     content={uri}
@@ -524,6 +523,9 @@ export default function BillViewer(props: BillData<true> & AdditionalProps) {
                 />
             }
         </Paper >
+        
+        <PlainPrint bill={props} ref={printRef} />
+        </>
     );
 }
 

@@ -1,8 +1,8 @@
 :root {
-	--base-size: 1.5vw;
-	--base-font-size: calc(var(--base-size) + 0.25em);
+	--base-size: 1vw;
+	--base-font-size: calc(var(--base-size) + 0.15em);
 	--print-margin: calc(var(--base-font-size) * 2);
-	--print-title-font-size: calc(var(--base-font-size) * 4);
+	--print-title-font-size: calc(var(--base-font-size) * 3);
 }
 
 @media screen {
@@ -13,10 +13,18 @@
 	}
 }
 
-@media print, screen {
+@media print {
+	.MuiContainer-fixed{
+		max-width: 100%;
+	}
 	@page {
-		size: auto;
+		size: A4;
 		margin: var(--print-margin);
+		orientation: landscape;
+	}
+	#print-view{
+		display: flex;
+		justify-content: space-between;
 	}
 	#print-view * {
 		box-sizing: border-box;
@@ -24,6 +32,7 @@
 	#print-view table {
 		padding: var(--print-margin);
 		width: 100%;
+		max-width: 3.5in;
 		font-size: calc(1.5 * var(--base-font-size));
 		font-family: monospace;
 	}
