@@ -28,6 +28,7 @@ function BillData(doc) {
 	this.billAmount = doc.billAmount;
 	this.credit = doc.credit;
 	this.paidAmount = doc.paidAmount;
+	this.paymentMode = doc.paymentMode;
 	this.payments = doc.payments.map((payment) => {
 		payment.paymentReceivedBy = new UserData(payment.paymentReceivedBy);
 		return payment;
@@ -333,6 +334,7 @@ exports.getAllBillsAsCSV = [
 							"Discount Amount": doc.discountAmount,
 							"Bill Amount": doc.billAmount,
 							"Paid Amount": doc.paidAmount,
+							"Payment Mode": doc.paymentMode || "cash",
 							"Status": doc.credit ? "IN CREDIT" : "CLOSED",
 							"Balance": doc.billAmount - doc.paidAmount,
 						};
@@ -580,6 +582,7 @@ exports.saveBill = [
 		.isNumeric(),
 	body("paidAmount").optional().isNumeric(),
 	body("credit").optional().isBoolean(),
+	body("paymentMode").optional().isString(),
 	body("gst").optional().isBoolean(),
 	body("location", "Invalid coordinates")
 		.optional()
@@ -630,6 +633,7 @@ exports.saveBill = [
 						items: req.body.items,
 						discountAmount: req.body.discountAmount,
 						soldBy: req.user._id,
+						paymentMode: req.body.paymentMode || "cash",
 						credit:
 							req.body.credit === undefined ||
 								req.body.credit === null

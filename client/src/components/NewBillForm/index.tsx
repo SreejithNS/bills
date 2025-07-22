@@ -216,6 +216,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 		paidAmount,
 		billSaved,
 		location,
+		paymentMode,
 		gst,
 	} = billState;
 
@@ -268,12 +269,13 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 				credit,
 				gst,
 				discountAmount,
+				paymentMode,
 				paidAmount,
 				...(location && { location: { lat: location[0], lon: location[1] } })
 			};
 		else return null;
 		//eslint-disable-next-line
-	}, [customer, items, credit, discountAmount, paidAmount, gst]);
+	}, [customer, items, credit, discountAmount, paidAmount, gst, paymentMode]);
 
 	const [{ error, loading, data }, saveBill] = useAxios<
 		APIResponse<{ _id: string; serialNumber: number }>
@@ -639,6 +641,25 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 					>
 						RESET
 					</Button>
+					<FormControl variant="outlined" size="small">
+							<InputLabel id="payment-mode-selection-label">Payment Mode</InputLabel>
+							<Select
+								value={paymentMode}
+								labelId="payment-mode-selection-label"
+								label="Payment Mode"
+								onChange={(event) => dispatch({
+									type: "BILL_SET_PAYMENT_MODE",
+									payload: event.target.value
+								})}
+								fullWidth
+								style={{ width: "200px" }}
+							>
+								<MenuItem value="cash">Cash</MenuItem>
+								<MenuItem value="upi">UPI</MenuItem>
+								<MenuItem value="other">Other</MenuItem>
+							</Select>
+					</FormControl>
+					<br />
 					<FormControlLabel
 						control={
 							<Checkbox
@@ -664,7 +685,8 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 							/>
 						}
 						label="GST Bill"
-					/><br />
+					/>
+					<br />
 					{geolocationError && <Typography variant="caption" color="error" display="inline">
 						( No Location ) - Try turning ON GPS.
 					</Typography>

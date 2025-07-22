@@ -35,6 +35,7 @@ export interface BillState<GST = null> {
 	credit: boolean;
 	gstSummary: BillData<GST>["gstSummary"];
 	gst: boolean;
+	paymentMode: string;
 	location: null | [GeolocationCoordinates["longitude"], GeolocationCoordinates["latitude"]]
 }
 
@@ -73,6 +74,7 @@ export interface BillData<GST = null> {
 	} | null;
 	credit: boolean;
 	paidAmount: number;
+	paymentMode: string
 	payments: BillPayments[];
 	createdAt: Date;
 	location?: {
@@ -90,6 +92,7 @@ const initialState: BillState = {
 	billSaved: false,
 	paidAmount: 0,
 	gst: false,
+	paymentMode: "cash",
 	credit: false,
 	location: null,
 };
@@ -101,6 +104,7 @@ export interface BillPostData extends Object {
 	credit: BillState["credit"];
 	paidAmount: BillState["paidAmount"];
 	gst: BillState["gst"];
+	paymentMode: BillState["paymentMode"];
 	location?: {
 		lat: GeolocationCoordinates["latitude"],
 		lon: GeolocationCoordinates["longitude"]
@@ -109,7 +113,7 @@ export interface BillPostData extends Object {
 
 export const getItemsTotalAmount = (billState: BillState<true> | BillState<null>) => {
 	var sum = 0;
-	billState.items.forEach((item) => {
+	billState.items.forEach((item: { amount: any; taxAmount: any; taxableAmount: any; }) => {
 		sum += billState.gstSummary === null
 			? item.amount
 			: item.taxAmount + item.taxableAmount
@@ -285,6 +289,15 @@ export default function billReducer(state: BillState = initialState, action: { t
 				location: action.payload,
 			};
 		}
+
+		case "BILL_SET_PAYMENT_MODE": {
+			return {
+				...state,
+				paymentMode: action.payload,
+			};
+		}
+
+
 		case "BILL_RESET": {
 			return {
 				...initialState,

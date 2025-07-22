@@ -508,6 +508,9 @@ export default function BillViewer(props: BillData<true> & AdditionalProps) {
                                 <Typography variant="h5" display="block" >
                                     <strong>{props?.paidAmount?.toINR() || 0}</strong>
                                 </Typography>
+                                <Typography variant="caption" display="block" >
+                                    {props?.paymentMode.toUpperCase() || ""}
+                                </Typography>
                                 {(props.credit && billUpdatePermission) && <Button variant="outlined" onClick={props.receivePayment} className={classes.button} size="small" startIcon={<Add />}>Receive Payment</Button>}
                             </Grid>
                         </Grid>

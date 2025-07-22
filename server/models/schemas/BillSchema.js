@@ -74,6 +74,10 @@ const BillSchema = new Schema(
 			type: LocationSchema,
 			required: false
 		},
+		paymentMode:{
+			type: String,
+			default: "cash"
+		},
 		payments: {
 			type: [
 				{
