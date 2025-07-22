@@ -591,11 +591,13 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						fullWidth
 					/>
 				</Grid>
-				<Grid item xs>
+        <Grid item xs={6}>
 					<TextField
 						value={paidAmount || ""}
 						InputProps={{
-							startAdornment: <InputAdornment position="start"></InputAdornment>,
+              startAdornment: (
+                <InputAdornment position="start"></InputAdornment>
+              ),
 						}}
 						label="Paid"
 						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -607,12 +609,14 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						fullWidth
 					/>
 				</Grid>
-				<Grid item xs>
+        <Grid item xs={6}>
 					<TextField
 						value={getBillAmount(billState) - paidAmount}
 						InputProps={{
 							readOnly: true,
-							startAdornment: <InputAdornment position="start"></InputAdornment>,
+              startAdornment: (
+                <InputAdornment position="start"></InputAdornment>
+              ),
 						}}
 						label="Balance"
 						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -624,7 +628,7 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 						fullWidth
 					/>
 				</Grid>
-				<Grid item xs={12} className={classes.buttons}>
+        <Grid item className={classes.buttons}>
 					<Button
 						variant="contained"
 						disabled={billSaved || !billData() || loading}
@@ -641,25 +645,30 @@ export default function NewBillForm(props: { closeModal: (id?: string) => void }
 					>
 						RESET
 					</Button>
-					<FormControl variant="outlined" size="small">
-							<InputLabel id="payment-mode-selection-label">Payment Mode</InputLabel>
+        </Grid>
+        <Grid item xs>
+          <FormControl variant="outlined" size="small" fullWidth style={{ maxWidth: 150 }}>
+            <InputLabel id="payment-mode-selection-label">
+              Payment Mode
+            </InputLabel>
 							<Select
 								value={paymentMode}
 								labelId="payment-mode-selection-label"
 								label="Payment Mode"
-								onChange={(event) => dispatch({
+              onChange={(event) =>
+                dispatch({
 									type: "BILL_SET_PAYMENT_MODE",
-									payload: event.target.value
-								})}
-								fullWidth
-								style={{ width: "200px" }}
+                  payload: event.target.value,
+                })
+              }
 							>
 								<MenuItem value="cash">Cash</MenuItem>
 								<MenuItem value="upi">UPI</MenuItem>
 								<MenuItem value="other">Other</MenuItem>
 							</Select>
 					</FormControl>
-					<br />
+        </Grid>
+        <Grid item xs={12}>
 					<FormControlLabel
 						control={
 							<Checkbox
